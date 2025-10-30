@@ -1,0 +1,23 @@
+{
+  "id": "INT-005",
+  "date": "2025-10-25",
+  "method": "in-person",
+  "participant": {
+    "pseudonym": "Réka",
+    "segment": "Gyakran vásárol kisebb boltokban, időhiányos"
+  },
+  "consent": true,
+  "insights": [
+    "Naponta vásárol, de kevés ideje van körbejárni több boltot.",
+    "Fontos számára a gyors információ és az egyszerű kezelhetőség.",
+    "Szívesen használná, ha az appban megadhatná, mit keres gyakran (pl. gyümölcs, tejtermék)."
+  ],
+  "pain_points": [
+    "Nehezen talál releváns akciókat, minden app tele van reklámmal.",
+    "Fél, hogy az értesítések zavaróak lennének, ha nem jól vannak beállítva."
+  ],
+  "quotes": [
+    "\"Ha lenne valami, ami megmondja, hogy a sarkon most féláron van alma, azonnal lecsapnék rá.\"",
+    "\"Nem akarok sokat kattintgatni – legyen egyszerű, gyors és pontos.\""
+  ]
+}

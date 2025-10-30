@@ -1,0 +1,23 @@
+{
+  "id": "INT-004",
+  "date": "2025-10-24",
+  "method": "online",
+  "participant": {
+    "pseudonym": "Norbert",
+    "segment": "Informatikus hallgató, gyakran rendel ételt, ritkán jár boltba"
+  },
+  "consent": true,
+  "insights": [
+    "Ritkán vásárol személyesen, de ha akciót lát, szívesen beugrik egy boltba.",
+    "Fontos neki a gyors információ, de nem akar böngészni sokáig.",
+    "Szereti az appokat, amik automatizáltan ajánlanak neki tartalmat."
+  ],
+  "pain_points": [
+    "A legtöbb akciós oldal nem frissül elég gyorsan.",
+    "Nem szereti a meglepetéscsomagokat, inkább konkrét terméket választana."
+  ],
+  "quotes": [
+    "\"Engem nem érdekel a csomag, csak tudjam, hol van olcsón jó kaja.\"",
+    "\"Többször volt, hogy odaértem és már elfogyott minden – ez elég idegesítő.\""
+  ]
+}

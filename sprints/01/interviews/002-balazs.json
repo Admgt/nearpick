@@ -1,0 +1,24 @@
+{
+  "id": "INT-002",
+  "date": "2025-10-21",
+  "method": "online",
+  "participant": {
+    "pseudonym": "Balázs",
+    "segment": "Dolgozó fiatal, tudatosan spórol"
+  },
+  "consent": true,
+  "insights": [
+    "Mindennap hazafelé vásárol a munka után, gyakran 18 óra körül.",
+    "Fontos neki, hogy gyorsan tudjon dönteni, nem akar sokat keresgélni.",
+    "Tetszik az ötlet, hogy a közelében lévő konkrét termékeket lássa, nem csak akciókat.",
+    "Az értesítéseket hasznosnak tartja, ha valóban személyre szabottak."
+  ],
+  "pain_points": [
+    "Az eddig próbált alkalmazásokban túl sok irreleváns ajánlat volt.",
+    "Nem szereti, ha minden bolt küldözgeti az értesítéseit."
+  ],
+  "quotes": [
+    "\"Ha lenne valami, ami csak a környéken lévő friss leárazásokat mutatja, azt biztos kipróbálnám.\"",
+    "\"Nem akarom, hogy a telefonom folyton pittyegjen minden apróság miatt.\""
+  ]
+}

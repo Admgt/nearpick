@@ -1,0 +1,23 @@
+{
+  "id": "INT-003",
+  "date": "2025-10-23",
+  "method": "in-person",
+  "participant": {
+    "pseudonym": "Kata",
+    "segment": "Fiatal marketinges, fenntarthatóság iránt érdeklődő"
+  },
+  "consent": true,
+  "insights": [
+    "Tudatosan próbál kevesebb élelmiszert pazarolni.",
+    "Szívesen vásárol leárazott termékeket, ha frissek és közel vannak.",
+    "Fontos neki a diétás és allergén szűrés, mivel laktózérzékeny."
+  ],
+  "pain_points": [
+    "Sok alkalmazásban nem lehet szűrni az allergénekre.",
+    "Nehéz megítélni, mennyire friss egy termék online ajánlat alapján.",
+    "Nem mindig egyértelmű, hol található pontosan a bolt."
+  ],
+  "quotes": [
+    "\"Ha tudnám, hogy laktózmentes és a közelben van, biztosan elmennék érte.\""
+  ]
+}
