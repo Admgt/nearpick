@@ -1,0 +1,24 @@
+{
+  "id": "INT-001",
+  "date": "2025-10-21",
+  "method": "in-person",
+  "participant": {
+    "pseudonym": "Zsófi",
+    "segment": "Egyetemista, Szegeden lakik, napi bevásárlásokat végez hazafelé"
+  },
+  "consent": true,
+  "insights": [
+    "Általában kisboltokban és pékségekben vásárol, főleg délután 5 után.",
+    "Sokszor látja, hogy nap végén rengeteg pékáru megmarad, de erről csak helyben derül ki.",
+    "Kedvezményes termékek érdeklik, de nem akar feleslegesen boltokat végigjárni.",
+    "Nyitott lenne értesítésekre, ha azok nem túl gyakoriak és relevánsak."
+  ],
+  "pain_points": [
+    "Nem tudja előre, hol vannak éppen leárazott termékek.",
+    "Néha túl későn értesül egy-egy kedvezményről, mire odaér, elfogyott."
+  ],
+  "quotes": [
+    "\"Sokszor csak véletlenül látom meg, hogy valami akciós, de akkor már nincs is belőle.\"",
+    "\"Nem akarok öt appot megnyitni csak azért, hogy lássam, hol van olcsó szendvics vagy saláta.\""
+  ]
+}

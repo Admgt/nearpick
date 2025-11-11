@@ -6,7 +6,7 @@
   "properties": {
     "id": { "type": "string" },
     "date": { "type": "string" },
-    "method": { "type": "string", "enum": ["online", "in_person", "hybrid"] },
+    "method": { "type": "string", "enum": ["online", "in-person", "hybrid"] },
     "participant": {
       "type": "object",
       "required": ["pseudonym", "segment"],
