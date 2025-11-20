@@ -10,7 +10,7 @@ Gyorsan szállítható, cross-platform mobil kliens és minimális backend üzem
 Választás: Flutter + Firebase
 - Kliens: Flutter (egy kód, iOS/Android), Material/Adaptive UI.
 - Backend: Firebase (Auth, Firestore, Storage, Cloud Functions, FCM).
-Indoklás: gyors fejlesztés, valós idejű adatok, beépített push, jó fejlesztői élmény és ingyenes/olcsó belépő szint.
+  Indoklás: gyors fejlesztés, valós idejű adatok, beépített push, jó fejlesztői élmény és ingyenes/olcsó belépő szint.
 
 ## Alternatívák
 - React Native + Supabase: jó DX, de push/valós idejű ökoszisztéma integrációja több illesztést igényel.
@@ -18,5 +18,5 @@ Indoklás: gyors fejlesztés, valós idejű adatok, beépített push, jó fejles
 - Natív iOS + Android külön: maximális kontroll/perf, de dupla kód, lassabb szállítás.
 
 ## Következmények
-Pozitív: gyors prototípus és MVP, valós idejű feed, egyszerű értesítések, kevés ops.
+Pozitív: gyors prototípus és MVP, valós idejű feed, egyszerű értesítések, kevés ops.  
 Negatív: vendor lock-in (Firebase), komplexebb adatlekérdezések Firestore-ban, későbbi migráció költséges lehet.
