@@ -9,6 +9,7 @@ A NearPick egy Flutter + Firebase mobilalkalmazás, amelyhez szükség van:
 - publikus API végpontok futtatására (Cloud Functions)
 - Firestore szabályok és indexek folyamatos deployjára
 - alacsony költségű és egyszerű hostingra a marketing landing page és a privacy policy/terms oldalak számára
+
 Mivel az alkalmazás backendje Firebase-en fut, fontos a zökkenőmentes integráció, gyors CI/CD és globális elérés.
 
 ## Döntés
@@ -32,6 +33,7 @@ Pozitív:
 - Gyors és olcsó deploy
 - Könnyű CI/CD GitHub Actions-ből
 - Hosting preview linkek PR-enként
+
 Negatív:
 - Firebase vendor lock-in → későbbi migráció költséges
 - Hosting konfiguráció korlátozottabb, mint Vercel/Netlify esetén
