@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="NearPick Test Suite" tests="5" failures="0" errors="0" time="0.42">
+
+    <testcase classname="EmptyStateTests" name="showsEmptyStateMessage" time="0.01"/>
+    <testcase classname="EmptyStateTests" name="showsCreateButton" time="0.01"/>
+
+    <testcase classname="CreateProductTests" name="validProductSavesSuccessfully" time="0.02"/>
+    <testcase classname="CreateProductTests" name="missingRequiredFieldShowsError" time="0.02"/>
+
+    <testcase classname="FeedRefreshTests" name="appearsInFeedAfterUpload" time="0.03"/>
+
+</testsuite>
