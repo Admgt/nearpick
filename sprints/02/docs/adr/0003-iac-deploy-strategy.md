@@ -23,7 +23,7 @@ Választás:
 - Teljesen manuális konzolos beállítás: gyors indulás, de hosszú távon hibás és nem auditálható.
 
 ## Következmények
-Pozitív: reprodukálható környezetek, verziózott infrastruktúra, egykattintásos (pipeline) deploy, alacsony költség.
+Pozitív: reprodukálható környezetek, verziózott infrastruktúra, egykattintásos (pipeline) deploy, alacsony költség.  
 Negatív: Terraform támogatás Firebase-re részlegesen elérhető; vegyes megoldás (Terraform + Firebase CLI) karbantartást igényel.
 
 ## Megjegyzések / Guardrail-ek
