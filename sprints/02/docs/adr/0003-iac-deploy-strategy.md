@@ -7,7 +7,7 @@
 Kell egy egyszerű, olcsó és ismételhető mód a környezetek (dev/staging/prod) létrehozására, a mobil build-ek automatizálására, valamint a Firebase erőforrások (Firestore szabályok, indexek, Functions, Storage) verziózott kiépítésére.
 
 ## Döntés
-Választás: Flutter + Firebase
+Választás:
 - IaC: GCP + Firebase komponensek kezelése Terraformmal (google/google-beta providerek) ott, ahol támogatott; Firebase  CLI a Firestore szabályok/indexek és Functions deployra.
 - Deploy/CI: GitHub Actions
     - Mobile: Flutter build (lint, test, build), artefaktok; opcionálisan fastlane a store-feltöltéshez később.
