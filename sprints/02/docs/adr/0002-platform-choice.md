@@ -10,6 +10,7 @@ Gyorsan szállítható, cross-platform mobil kliens és minimális backend üzem
 Választás: Flutter + Firebase
 - Kliens: Flutter (egy kód, iOS/Android), Material/Adaptive UI.
 - Backend: Firebase (Auth, Firestore, Storage, Cloud Functions, FCM).
+  
     Indoklás: gyors fejlesztés, valós idejű adatok, beépített push, jó fejlesztői élmény és ingyenes/olcsó belépő szint.
 
 ## Alternatívák
