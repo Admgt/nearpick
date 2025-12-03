@@ -1,0 +1,19 @@
+type: flutter_firebase_app
+build:
+  command: "flutter pub get && flutter build web"
+  artifacts: ["build/web"]
+serve:
+  command: "firebase emulators:start --only hosting"
+  base_url: "http://localhost:5000"
+smoke:
+  path: "/"
+  expect_status: 200
+iac:
+  tool: "terraform"
+  dir: "infra/terraform"
+  plan_out: "infra/terraform/plan.out"
+notes: >
+  A Flutter web build + Firebase Hosting kombináció egyszerű, olcsó és jól automatizálható.
+  A Hosting preview channel támogatása ideális PR ellenőrzésekhez.
+  Terraformmal a GCP/Firebase erőforrások reprodukálhatók és verziózhatók,
+  a Firebase CLI pedig a Functions, Rules és Hosting deploy-t kezelhetővé teszi CI-ből.
