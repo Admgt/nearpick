@@ -4,6 +4,8 @@ import 'product_detail_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import 'favorites_screen.dart';
+import 'profile_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ConsumerHomeScreen extends StatefulWidget {
   const ConsumerHomeScreen({super.key});
@@ -15,8 +17,30 @@ class ConsumerHomeScreen extends StatefulWidget {
 class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
   final ProductService _productService = ProductService();
 
-  // kategória-szűrő
+  List<String> _favoriteCategories = [];
+
   String _selectedCategory = _allCategories.first;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserPreferences();
+  }
+
+  Future<void> _loadUserPreferences() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    setState(() {
+      _favoriteCategories =
+          List<String>.from(doc.data()?['favoriteCategories'] ?? []);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +48,15 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
       appBar: AppBar(
         title: const Text('NearPick - Ajánlatok a közelben'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: 'Profil',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
+          ),
           IconButton(
             onPressed: () {
               Navigator.of(context).push(
@@ -42,7 +75,6 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
       ),
       body: Column(
         children: [
-          // Kategória szűrő sáv
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -76,7 +108,6 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
 
           const Divider(height: 1),
 
-          // Terméklista
           Expanded(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: _productService.activeProductsStream(),
@@ -96,14 +127,12 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
 
                 final docs = snapshot.data?.docs ?? [];
 
-                // kliensoldali szűrés: mennyiség > 0 + kategória
                 final filteredDocs = docs.where((doc) {
                   final data = doc.data();
                   final quantity = data['quantity'] as int? ?? 0;
                   if (quantity <= 0) return false;
 
                   if (_selectedCategory == _allCategories.first) {
-                    // "Összes kategória"
                     return true;
                   }
 
@@ -116,6 +145,18 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                     child: Text('Jelenleg nincs elérhető ajánlat ebben a kategóriában.'),
                   );
                 }
+
+                filteredDocs.sort((a, b) {
+                  final aCat = a['category'];
+                  final bCat = b['category'];
+
+                  final aFav = _favoriteCategories.contains(aCat);
+                  final bFav = _favoriteCategories.contains(bCat);
+
+                  if (aFav && !bFav) return -1;
+                  if (!aFav && bFav) return 1;
+                  return 0;
+                });
 
                 return ListView.separated(
                   itemCount: filteredDocs.length,
@@ -200,7 +241,6 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
   }
 }
 
-// Globális kategórialista – ez igazodjon a merchant képernyőhöz
 const List<String> _allCategories = [
   'Összes kategória',
   'Péksütemény',
