@@ -28,6 +28,7 @@ class ProductService {
       'quantity': quantity,
       'expiresAt': Timestamp.fromDate(expiresAt),
       'createdAt': FieldValue.serverTimestamp(),
+      'interestCount': 0,
     });
   }
 
@@ -60,20 +61,61 @@ class ProductService {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Nincs bejelentkezett felhasználó.');
 
-    final docId = '${user.uid}_$productId';
+    final interestDocId = '${user.uid}_$productId';
+    final interestRef = _db.collection('interests').doc(interestDocId);
+    final productRef = _db.collection('products').doc(productId);
 
-    await _db.collection('interests').doc(docId).set({
-      'userId': user.uid,
-      'productId': productId,
-      'createdAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    await _db.runTransaction((tx) async {
+      final interestSnap = await tx.get(interestRef);
+
+      if (interestSnap.exists) return;
+
+      tx.set(interestRef, {
+        'userId': user.uid,
+        'productId': productId,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      tx.update(productRef, {
+        'interestCount': FieldValue.increment(1),
+      });
+    });
   }
 
   Future<void> unmarkInterest({required String productId}) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Nincs bejelentkezett felhasználó.');
 
-    final docId = '${user.uid}_$productId';
-    await _db.collection('interests').doc(docId).delete();
+    final interestDocId = '${user.uid}_$productId';
+    final interestRef = _db.collection('interests').doc(interestDocId);
+    final productRef = _db.collection('products').doc(productId);
+
+    await _db.runTransaction((tx) async {
+      final interestSnap = await tx.get(interestRef);
+
+      if (!interestSnap.exists) return;
+
+      tx.delete(interestRef);
+
+      final productSnap = await tx.get(productRef);
+      final current = (productSnap.data()?['interestCount'] as int?) ?? 0;
+      if (current > 0) {
+        tx.update(productRef, {
+          'interestCount': FieldValue.increment(-1),
+        });
+      }
+    });
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> myInterestsStream() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return const Stream<QuerySnapshot<Map<String, dynamic>>>.empty();
+    }
+
+    return _db
+        .collection('interests')
+        .where('userId', isEqualTo: user.uid)
+        .snapshots();
   }
 }

@@ -7,6 +7,8 @@ import 'firebase_options.dart';
 import 'features/auth/login_screen.dart';
 import 'features/consumer/consumer_home_screen.dart';
 import 'features/merchant/merchant_home_screen.dart';
+import 'services/notification_service.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,8 +50,16 @@ class NearPickApp extends StatelessWidget {
   }
 }
 
-class RootRouter extends StatelessWidget {
+class RootRouter extends StatefulWidget {
   const RootRouter({super.key});
+
+  @override
+  State<RootRouter> createState() => _RootRouterState();
+
+}
+
+class _RootRouterState extends State<RootRouter> {
+  bool _tokenInitDone = false;
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +92,13 @@ class RootRouter extends StatelessWidget {
 
             final data = snap.data!.data() as Map<String, dynamic>?;
             final role = data?['role'] as String? ?? 'consumer';
+
+            if (!_tokenInitDone) {
+              _tokenInitDone = true;
+              NotificationService().initAndSaveToken(
+                vapidKey: 'BJQgYIGTpei0KVzMliZ2mqoPMiY3N2UGYCa_-PiPjnE0kXE0Rv72x6BI6TPYVdLUxf7aLioCRsRIu0pN8Vp-YVM',
+              );
+            }
 
             if (role == 'merchant') {
               return const MerchantHomeScreen();
