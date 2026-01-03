@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'product_detail_screen.dart';
+import '../../recommendation/recommendation_engine.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import 'favorites_screen.dart';
@@ -19,6 +23,7 @@ class ConsumerHomeScreen extends StatefulWidget {
 
 class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
   final ProductService _productService = ProductService();
+  StreamSubscription<RemoteMessage>? _foregroundMessageSub;
 
   List<String> _favoriteCategories = [];
 
@@ -28,6 +33,13 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
   void initState() {
     super.initState();
     _loadUserPreferences();
+    _listenForForegroundMessages();
+  }
+
+  @override
+  void dispose() {
+    _foregroundMessageSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadUserPreferences() async {
@@ -42,6 +54,45 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
     setState(() {
       _favoriteCategories =
           List<String>.from(doc.data()?['favoriteCategories'] ?? []);
+    });
+  }
+
+  void _listenForForegroundMessages() {
+    _foregroundMessageSub = FirebaseMessaging.onMessage.listen((message) async {
+      if (!mounted) return;
+
+      final title = message.notification?.title ?? 'New offer';
+      final body = message.notification?.body ?? 'A new product is available.';
+      final productId = message.data['productId'] as String?;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$title\n$body'),
+          duration: const Duration(seconds: 6),
+          action: productId == null || productId.isEmpty
+              ? null
+              : SnackBarAction(
+                  label: 'Open',
+                  onPressed: () async {
+                    final doc = await FirebaseFirestore.instance
+                        .collection('products')
+                        .doc(productId)
+                        .get();
+
+                    if (!doc.exists || !mounted) return;
+                    final data = doc.data() as Map<String, dynamic>;
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ProductDetailScreen(
+                          productId: productId,
+                          data: data,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      );
     });
   }
 
@@ -125,12 +176,38 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                     (d.data()['productId'] as String?) ?? ''
                 }..remove('');
 
-                return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: _productService.activeProductsStream(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
+                final user = FirebaseAuth.instance.currentUser;
+                final prefsStream = user == null
+                    ? Stream<DocumentSnapshot<Map<String, dynamic>>>.empty()
+                    : FirebaseFirestore.instance
+                        .collection('userImplicitPrefs')
+                        .doc(user.uid)
+                        .snapshots();
+
+                return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  stream: prefsStream,
+                  builder: (context, prefsSnap) {
+                    final implicitCategoryViews = <String, int>{};
+                    final rawViews = prefsSnap.data?.data()?['categoryViews'];
+                    if (rawViews is Map) {
+                      rawViews.forEach((key, value) {
+                        if (key is String) {
+                          final intValue = value is int
+                              ? value
+                              : (value is num ? value.toInt() : null);
+                          if (intValue != null) {
+                            implicitCategoryViews[key] = intValue;
+                          }
+                        }
+                      });
                     }
+
+                    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      stream: _productService.activeProductsStream(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
 
                     if (snapshot.hasError) {
                       return Center(
@@ -154,30 +231,40 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                       return category == _selectedCategory;
                     }).toList();
 
-                    filteredDocs.sort((a, b) {
-                      final aScore = _scoreProduct(a, interestedProductIds);
-                      final bScore = _scoreProduct(b, interestedProductIds);
+                    final favSet = _favoriteCategories.toSet();
+                    final scored = filteredDocs
+                        .map(
+                          (doc) => scoreProductDoc(
+                            productId: doc.id,
+                            product: doc.data(),
+                            favoriteCategories: favSet,
+                            implicitCategoryViews: implicitCategoryViews,
+                          ),
+                        )
+                        .toList();
 
-                      if (aScore != bScore) return bScore.compareTo(aScore);
+                    scored.sort((a, b) {
+                      if (a.score != b.score) return b.score.compareTo(a.score);
 
-                      final aExp = (a.data()['expiresAt'] as Timestamp?)?.toDate();
-                      final bExp = (b.data()['expiresAt'] as Timestamp?)?.toDate();
+                      final aExp = (a.product['expiresAt'] as Timestamp?)?.toDate();
+                      final bExp = (b.product['expiresAt'] as Timestamp?)?.toDate();
                       if (aExp == null || bExp == null) return 0;
                       return aExp.compareTo(bExp);
                     });
 
-                    if (filteredDocs.isEmpty) {
+                    if (scored.isEmpty) {
                       return const Center(
                         child: Text('Jelenleg nincs elérhető ajánlat ebben a kategóriában.'),
                       );
                     }
 
-                    return ListView.separated(
-                      itemCount: filteredDocs.length,
+                        return ListView.separated(
+                      itemCount: scored.length,
                       separatorBuilder: (_, __) => const Divider(height: 1),
                       itemBuilder: (context, index) {
-                        final doc = filteredDocs[index];
-                        final data = doc.data();
+                        final result = scored[index];
+                        final docId = result.productId;
+                        final data = result.product;
 
                         final name = data['name'] as String? ?? 'Névtelen termék';
                         final category = data['category'] as String? ?? 'Ismeretlen kategória';
@@ -185,7 +272,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                         final original = data['originalPrice'] as int? ?? 0;
                         final quantity = data['quantity'] as int? ?? 0;
                         final expiresAt = (data['expiresAt'] as Timestamp?)?.toDate();
-                        final isInterested = interestedProductIds.contains(doc.id);
+                        final isInterested = interestedProductIds.contains(docId);
 
                         String expiresText = 'Ismeretlen lejárat';
                         if (expiresAt != null) {
@@ -203,14 +290,97 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                           }
                         }
 
+
+                        void showReasons() {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              final scorePercent =
+                                  (result.score * 100).clamp(0, 100).toStringAsFixed(0);
+                              final reasons = result.reasons;
+                              final maxHeight =
+                                  MediaQuery.of(context).size.height * 0.6;
+                              return AlertDialog(
+                                title: const Text('Miert ajanlott?'),
+                                content: ConstrainedBox(
+                                  constraints: BoxConstraints(maxHeight: maxHeight),
+                                  child: SingleChildScrollView(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Pontszam: $scorePercent%'),
+                                        const SizedBox(height: 8),
+                                        if (reasons.isEmpty)
+                                          const Text('Nincs elerheto indok.')
+                                        else
+                                          ...reasons.map(
+                                            (r) => ListTile(
+                                              dense: true,
+                                              contentPadding: EdgeInsets.zero,
+                                              title: Text(r.label),
+                                              subtitle: (r.detail == null ||
+                                                      r.detail!.isEmpty)
+                                                  ? null
+                                                  : Text(r.detail!),
+                                              trailing: Text(
+                                                '${(r.contribution * 100).toStringAsFixed(0)}%',
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(),
+                                    child: const Text('Bezar'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        }
+
                         return ListTile(
                           title: Row(
                             children: [
                               Expanded(child: Text(name)),
                               if (isInterested) const Icon(Icons.favorite, size: 18),
+                              IconButton(
+                                icon: const Icon(Icons.info_outline, size: 18),
+                                tooltip: 'Miert ajanlott?',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: showReasons,
+                              ),
                             ],
                           ),
-                          subtitle: Text('$category\n$expiresText • Elérhető: $quantity db'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('$category\n$expiresText - Elerheto: $quantity db'),
+                              const SizedBox(height: 6),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                children: result.reasons
+                                    .take(2)
+                                    .map(
+                                      (r) => Chip(
+                                        label: Text(
+                                          r.label,
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                        visualDensity: VisualDensity.compact,
+                                        materialTapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                            ],
+                          ),
                           isThreeLine: true,
                           trailing: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -231,17 +401,18 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                             ],
                           ),
                           onTap: () {
-                            final doc = filteredDocs[index];
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => ProductDetailScreen(
-                                  productId: doc.id,
-                                  data: doc.data(),
+                                  productId: docId,
+                                  data: data,
                                 ),
                               ),
                             );
                           },
                         );
+                      },
+                    );
                       },
                     );
                   },
@@ -252,45 +423,6 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
         ],
       ),
     );
-  }
-
-  int _scoreProduct(
-    QueryDocumentSnapshot<Map<String, dynamic>> doc,
-    Set<String> interestedProductIds,
-  ) {
-    final data = doc.data();
-
-    final category = data['category'] as String? ?? '';
-    final expiresAt = (data['expiresAt'] as Timestamp?)?.toDate();
-    final interestCount = data['interestCount'] as int? ?? 0;
-
-    int score = 0;
-
-    if (_favoriteCategories.contains(category)) {
-      score += 100;
-    }
-
-    if (interestedProductIds.contains(doc.id)) {
-      score += 80;
-    }
-
-    score += (interestCount > 20) ? 20 : interestCount;
-
-    if (expiresAt != null) {
-      final minutes = expiresAt.difference(DateTime.now()).inMinutes;
-
-      if (minutes <= 0) {
-        score += 0;
-      } else if (minutes <= 60) {
-        score += 60; 
-      } else if (minutes <= 24 * 60) {
-        score += 30; 
-      } else {
-        score += 5; 
-      }
-    }
-
-    return score;
   }
 
 }

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../services/product_service.dart';
+import '../../services/user_interaction_service.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -20,6 +21,7 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _loading = false;
   String? _message;
+  bool _viewLogged = false;
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _interestDocStream() {
     final user = FirebaseAuth.instance.currentUser;
@@ -31,6 +33,31 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         .collection('interests')
         .doc(docId)
         .snapshots();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _logViewIfNeeded();
+  }
+
+  Future<void> _logViewIfNeeded() async {
+    if (_viewLogged) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final category = (widget.data['category'] as String?)?.trim() ?? '';
+    if (category.isEmpty) return;
+
+    _viewLogged = true;
+    try {
+      await UserInteractionService().logProductView(
+        uid: user.uid,
+        productId: widget.productId,
+        category: category,
+      );
+    } catch (_) {}
   }
 
   @override

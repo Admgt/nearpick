@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class NotificationService {
@@ -8,7 +9,19 @@ class NotificationService {
   final _auth = FirebaseAuth.instance;
 
   Future<void> initAndSaveToken({String? vapidKey}) async {
-    await _messaging.requestPermission();
+    try {
+      final settings = await _messaging.requestPermission();
+      final status = settings.authorizationStatus;
+      if (status == AuthorizationStatus.denied ||
+          status == AuthorizationStatus.notDetermined) {
+        return;
+      }
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-blocked') {
+        return;
+      }
+      rethrow;
+    }
 
     final user = _auth.currentUser;
     if (user == null) return;
