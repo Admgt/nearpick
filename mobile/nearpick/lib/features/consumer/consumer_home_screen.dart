@@ -7,6 +7,7 @@ import 'product_detail_screen.dart';
 import '../../recommendation/recommendation_engine.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
+import '../../services/user_interaction_service.dart';
 import 'favorites_screen.dart';
 import 'profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -24,6 +25,7 @@ class ConsumerHomeScreen extends StatefulWidget {
 class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
   final ProductService _productService = ProductService();
   StreamSubscription<RemoteMessage>? _foregroundMessageSub;
+  bool _compactionTriggered = false;
 
   List<String> _favoriteCategories = [];
 
@@ -33,6 +35,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
   void initState() {
     super.initState();
     _loadUserPreferences();
+    _triggerImplicitPrefsCompaction();
     _listenForForegroundMessages();
   }
 
@@ -55,6 +58,17 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
       _favoriteCategories =
           List<String>.from(doc.data()?['favoriteCategories'] ?? []);
     });
+  }
+
+  void _triggerImplicitPrefsCompaction() {
+    if (_compactionTriggered) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    _compactionTriggered = true;
+    unawaited(
+      UserInteractionService().compactImplicitPrefsIfNeeded(uid: user.uid),
+    );
   }
 
   void _listenForForegroundMessages() {
@@ -201,6 +215,16 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                         }
                       });
                     }
+                    final implicitLastViewedAt = <String, Timestamp>{};
+                    final rawLastViewed =
+                        prefsSnap.data?.data()?['categoryLastViewedAt'];
+                    if (rawLastViewed is Map) {
+                      rawLastViewed.forEach((key, value) {
+                        if (key is String && value is Timestamp) {
+                          implicitLastViewedAt[key] = value;
+                        }
+                      });
+                    }
 
                     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                       stream: _productService.activeProductsStream(),
@@ -239,6 +263,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                             product: doc.data(),
                             favoriteCategories: favSet,
                             implicitCategoryViews: implicitCategoryViews,
+                            implicitLastViewedAt: implicitLastViewedAt,
                           ),
                         )
                         .toList();

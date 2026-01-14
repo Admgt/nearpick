@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RecommendationReason {
@@ -79,12 +81,14 @@ RecommendationResult scoreProductDoc({
   required Map<String, dynamic> product,
   required Set<String> favoriteCategories,
   Map<String, int>? implicitCategoryViews,
+  Map<String, Timestamp>? implicitLastViewedAt,
 }) {
   const wFav = 0.40;
   const wExp = 0.30;
   const wRec = 0.13;
   const wInt = 0.05;
   const wImplicit = 0.12;
+  const halfLifeDays = 7.0;
 
   final category = product['category'] as String?;
   final expiresAt = _asDate(product['expiresAt']);
@@ -92,12 +96,22 @@ RecommendationResult scoreProductDoc({
   final interestCount = product['interestCount'] as int? ?? 0;
   final implicitViews = implicitCategoryViews ?? const <String, int>{};
   final implicitCount = category == null ? 0 : (implicitViews[category] ?? 0);
+  final implicitLastViewed = implicitLastViewedAt ?? const <String, Timestamp>{};
+  final lastViewedAt = category == null ? null : _asDate(implicitLastViewed[category]);
+
+  final now = DateTime.now();
+  final ageDays = lastViewedAt == null
+      ? 999.0
+      : (now.difference(lastViewedAt).inMinutes / 60.0 / 24.0).clamp(0.0, 999.0);
+  final lambda = math.log(2) / halfLifeDays;
+  final decayFactor = math.exp(-lambda * ageDays);
+  final effectiveCount = implicitCount * decayFactor;
 
   final favScore = favoriteScore(category, favoriteCategories);
   final expScore = expiryScore(expiresAt);
   final recScore = recencyScore(createdAt);
   final intScore = interestScore(interestCount);
-  final implicitScore = _clamp01(implicitCount / 10.0);
+  final implicitScore = _clamp01(effectiveCount / 10.0);
 
   final score = _clamp01(
     (wFav * favScore) +
@@ -155,11 +169,21 @@ RecommendationResult scoreProductDoc({
   }
 
   if (implicitScore > 0.2) {
+    final ageDetail = () {
+      if (lastViewedAt == null) {
+        return 'utoljara: 999 napja';
+      }
+      final hoursAgo = now.difference(lastViewedAt).inMinutes / 60.0;
+      if (hoursAgo < 1) return 'utoljara: ma';
+      if (hoursAgo < 24) return 'utoljara: ${hoursAgo.round()} oraja';
+      return 'utoljara: ${ageDays.round()} napja';
+    }();
     reasons.add(
       RecommendationReason(
         code: 'OFTEN_VIEWED',
         label: 'Gyakran nezett kategoria',
-        detail: '$implicitCount megnyitas',
+        detail:
+            '$implicitCount megnyitas • $ageDetail • hatas: ${effectiveCount.toStringAsFixed(1)}',
         contribution: wImplicit * implicitScore,
       ),
     );
