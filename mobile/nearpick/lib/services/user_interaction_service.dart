@@ -11,13 +11,18 @@ class UserInteractionService {
   Future<void> logProductView({
     required String uid,
     required String productId,
+    required String ownerId,
     required String category,
   }) async {
-    if (uid.isEmpty || productId.isEmpty || category.isEmpty) return;
+    if (uid.isEmpty || productId.isEmpty || ownerId.isEmpty || category.isEmpty) {
+      return;
+    }
 
     try {
       await _firestore.collection('userInteractions').add({
         'uid': uid,
+        'userId': uid,
+        'ownerId': ownerId,
         'type': 'view',
         'productId': productId,
         'category': category,
@@ -35,6 +40,31 @@ class UserInteractionService {
       },
       SetOptions(merge: true),
     );
+  }
+
+  Future<void> logProductInterest({
+    required String uid,
+    required String productId,
+    required String ownerId,
+    required String category,
+  }) async {
+    if (uid.isEmpty || productId.isEmpty || ownerId.isEmpty || category.isEmpty) {
+      return;
+    }
+
+    try {
+      await _firestore.collection('userInteractions').add({
+        'uid': uid,
+        'userId': uid,
+        'ownerId': ownerId,
+        'type': 'interest',
+        'productId': productId,
+        'category': category,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // Ignore audit failures to keep implicit prefs working.
+    }
   }
 
   Future<void> compactImplicitPrefsIfNeeded({required String uid}) async {

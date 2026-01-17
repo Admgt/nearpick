@@ -48,13 +48,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (user == null) return;
 
     final category = (widget.data['category'] as String?)?.trim() ?? '';
-    if (category.isEmpty) return;
+    final ownerId = (widget.data['ownerId'] as String?)?.trim() ?? '';
+    if (category.isEmpty || ownerId.isEmpty) return;
 
     _viewLogged = true;
     try {
       await UserInteractionService().logProductView(
         uid: user.uid,
         productId: widget.productId,
+        ownerId: ownerId,
         category: category,
       );
     } catch (_) {}
@@ -154,6 +156,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               } else {
                                 await ProductService()
                                     .markInterest(productId: widget.productId);
+                                final category =
+                                    (widget.data['category'] as String?)?.trim() ?? '';
+                                final ownerId =
+                                    (widget.data['ownerId'] as String?)?.trim() ?? '';
+                                if (category.isNotEmpty && ownerId.isNotEmpty) {
+                                  await UserInteractionService().logProductInterest(
+                                    uid: FirebaseAuth.instance.currentUser?.uid ?? '',
+                                    productId: widget.productId,
+                                    ownerId: ownerId,
+                                    category: category,
+                                  );
+                                }
                                 setState(() => _message = 'OK: Hozzáadva a kedvencekhez.');
                               }
                             } catch (e) {

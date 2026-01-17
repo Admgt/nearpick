@@ -13,13 +13,14 @@ class ProductService {
     required int discountedPrice,
     required int quantity,
     required DateTime expiresAt,
+    GeoPoint? location,
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw Exception('Nincs bejelentkezett felhasználó.');
     }
 
-    await _db.collection('products').add({
+    final data = <String, dynamic>{
       'ownerId': user.uid,
       'name': name,
       'category': category,
@@ -29,7 +30,12 @@ class ProductService {
       'expiresAt': Timestamp.fromDate(expiresAt),
       'createdAt': FieldValue.serverTimestamp(),
       'interestCount': 0,
-    });
+    };
+    if (location != null) {
+      data['location'] = location;
+    }
+
+    await _db.collection('products').add(data);
   }
 
   /// Az aktuális kereskedő saját termékei
@@ -76,9 +82,7 @@ class ProductService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      tx.update(productRef, {
-        'interestCount': FieldValue.increment(1),
-      });
+      tx.update(productRef, {'interestCount': FieldValue.increment(1)});
     });
   }
 
@@ -100,9 +104,7 @@ class ProductService {
       final productSnap = await tx.get(productRef);
       final current = (productSnap.data()?['interestCount'] as int?) ?? 0;
       if (current > 0) {
-        tx.update(productRef, {
-          'interestCount': FieldValue.increment(-1),
-        });
+        tx.update(productRef, {'interestCount': FieldValue.increment(-1)});
       }
     });
   }

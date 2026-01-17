@@ -9,11 +9,11 @@ import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import '../../services/user_interaction_service.dart';
 import 'favorites_screen.dart';
+import 'location_settings_screen.dart';
 import 'profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 //import 'package:firebase_auth/firebase_auth.dart';
 //import 'package:cloud_firestore/cloud_firestore.dart';
-
 
 class ConsumerHomeScreen extends StatefulWidget {
   const ConsumerHomeScreen({super.key});
@@ -28,6 +28,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
   bool _compactionTriggered = false;
 
   List<String> _favoriteCategories = [];
+  GeoPoint? _userLocation;
 
   String _selectedCategory = _allCategories.first;
 
@@ -55,8 +56,10 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
         .get();
 
     setState(() {
-      _favoriteCategories =
-          List<String>.from(doc.data()?['favoriteCategories'] ?? []);
+      _favoriteCategories = List<String>.from(
+        doc.data()?['favoriteCategories'] ?? [],
+      );
+      _userLocation = doc.data()?['homeLocation'] as GeoPoint?;
     });
   }
 
@@ -117,12 +120,26 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
         title: const Text('NearPick - Ajánlatok a közelben'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.place),
+            tooltip: 'Hely beallitasa',
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const LocationSettingsScreen(),
+                ),
+              );
+              if (mounted) {
+                await _loadUserPreferences();
+              }
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.person),
             tooltip: 'Profil',
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
             },
           ),
           IconButton(
@@ -154,12 +171,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                     value: _selectedCategory,
                     isExpanded: true,
                     items: _allCategories
-                        .map(
-                          (c) => DropdownMenuItem(
-                            value: c,
-                            child: Text(c),
-                          ),
-                        )
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                         .toList(),
                     onChanged: (value) {
                       if (value != null) {
@@ -187,16 +199,16 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                 final interestDocs = interestsSnap.data?.docs ?? [];
                 final interestedProductIds = <String>{
                   for (final d in interestDocs)
-                    (d.data()['productId'] as String?) ?? ''
+                    (d.data()['productId'] as String?) ?? '',
                 }..remove('');
 
                 final user = FirebaseAuth.instance.currentUser;
                 final prefsStream = user == null
                     ? Stream<DocumentSnapshot<Map<String, dynamic>>>.empty()
                     : FirebaseFirestore.instance
-                        .collection('userImplicitPrefs')
-                        .doc(user.uid)
-                        .snapshots();
+                          .collection('userImplicitPrefs')
+                          .doc(user.uid)
+                          .snapshots();
 
                 return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                   stream: prefsStream,
@@ -216,8 +228,8 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                       });
                     }
                     final implicitLastViewedAt = <String, Timestamp>{};
-                    final rawLastViewed =
-                        prefsSnap.data?.data()?['categoryLastViewedAt'];
+                    final rawLastViewed = prefsSnap.data
+                        ?.data()?['categoryLastViewedAt'];
                     if (rawLastViewed is Map) {
                       rawLastViewed.forEach((key, value) {
                         if (key is String && value is Timestamp) {
@@ -229,215 +241,256 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                       stream: _productService.activeProductsStream(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
-                        }
-
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          'Hiba a termékek betöltésekor: ${snapshot.error}',
-                          textAlign: TextAlign.center,
-                        ),
-                      );
-                    }
-
-                    final docs = snapshot.data?.docs ?? [];
-
-                    final filteredDocs = docs.where((doc) {
-                      final data = doc.data();
-                      final quantity = data['quantity'] as int? ?? 0;
-                      if (quantity <= 0) return false;
-
-                      if (_selectedCategory == _allCategories.first) return true;
-
-                      final category = data['category'] as String? ?? '';
-                      return category == _selectedCategory;
-                    }).toList();
-
-                    final favSet = _favoriteCategories.toSet();
-                    final scored = filteredDocs
-                        .map(
-                          (doc) => scoreProductDoc(
-                            productId: doc.id,
-                            product: doc.data(),
-                            favoriteCategories: favSet,
-                            implicitCategoryViews: implicitCategoryViews,
-                            implicitLastViewedAt: implicitLastViewedAt,
-                          ),
-                        )
-                        .toList();
-
-                    scored.sort((a, b) {
-                      if (a.score != b.score) return b.score.compareTo(a.score);
-
-                      final aExp = (a.product['expiresAt'] as Timestamp?)?.toDate();
-                      final bExp = (b.product['expiresAt'] as Timestamp?)?.toDate();
-                      if (aExp == null || bExp == null) return 0;
-                      return aExp.compareTo(bExp);
-                    });
-
-                    if (scored.isEmpty) {
-                      return const Center(
-                        child: Text('Jelenleg nincs elérhető ajánlat ebben a kategóriában.'),
-                      );
-                    }
-
-                        return ListView.separated(
-                      itemCount: scored.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final result = scored[index];
-                        final docId = result.productId;
-                        final data = result.product;
-
-                        final name = data['name'] as String? ?? 'Névtelen termék';
-                        final category = data['category'] as String? ?? 'Ismeretlen kategória';
-                        final discounted = data['discountedPrice'] as int? ?? 0;
-                        final original = data['originalPrice'] as int? ?? 0;
-                        final quantity = data['quantity'] as int? ?? 0;
-                        final expiresAt = (data['expiresAt'] as Timestamp?)?.toDate();
-                        final isInterested = interestedProductIds.contains(docId);
-
-                        String expiresText = 'Ismeretlen lejárat';
-                        if (expiresAt != null) {
-                          final now = DateTime.now();
-                          final diff = expiresAt.difference(now);
-                          if (diff.inMinutes <= 0) {
-                            expiresText = 'Hamarosan lejár';
-                          } else if (diff.inHours < 1) {
-                            expiresText = 'Lejár ${diff.inMinutes} percen belül';
-                          } else if (diff.inHours < 24) {
-                            expiresText = 'Lejár ${diff.inHours} órán belül';
-                          } else {
-                            expiresText =
-                                'Lejár: ${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')}';
-                          }
-                        }
-
-
-                        void showReasons() {
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              final scorePercent =
-                                  (result.score * 100).clamp(0, 100).toStringAsFixed(0);
-                              final reasons = result.reasons;
-                              final maxHeight =
-                                  MediaQuery.of(context).size.height * 0.6;
-                              return AlertDialog(
-                                title: const Text('Miert ajanlott?'),
-                                content: ConstrainedBox(
-                                  constraints: BoxConstraints(maxHeight: maxHeight),
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('Pontszam: $scorePercent%'),
-                                        const SizedBox(height: 8),
-                                        if (reasons.isEmpty)
-                                          const Text('Nincs elerheto indok.')
-                                        else
-                                          ...reasons.map(
-                                            (r) => ListTile(
-                                              dense: true,
-                                              contentPadding: EdgeInsets.zero,
-                                              title: Text(r.label),
-                                              subtitle: (r.detail == null ||
-                                                      r.detail!.isEmpty)
-                                                  ? null
-                                                  : Text(r.detail!),
-                                              trailing: Text(
-                                                '${(r.contribution * 100).toStringAsFixed(0)}%',
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(),
-                                    child: const Text('Bezar'),
-                                  ),
-                                ],
-                              );
-                            },
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
                           );
                         }
 
-                        return ListTile(
-                          title: Row(
-                            children: [
-                              Expanded(child: Text(name)),
-                              if (isInterested) const Icon(Icons.favorite, size: 18),
-                              IconButton(
-                                icon: const Icon(Icons.info_outline, size: 18),
-                                tooltip: 'Miert ajanlott?',
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                onPressed: showReasons,
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'Hiba a termekek betolteseakor: ${snapshot.error}',
+                              textAlign: TextAlign.center,
+                            ),
+                          );
+                        }
+
+                        final docs = snapshot.data?.docs ?? [];
+
+                        final filteredDocs = docs.where((doc) {
+                          final data = doc.data();
+                          final quantity = data['quantity'] as int? ?? 0;
+                          if (quantity <= 0) return false;
+
+                          if (_selectedCategory == _allCategories.first) {
+                            return true;
+                          }
+
+                          final category = data['category'] as String? ?? '';
+                          return category == _selectedCategory;
+                        }).toList();
+
+                        final favSet = _favoriteCategories.toSet();
+                        final scored = filteredDocs
+                            .map(
+                              (doc) => scoreProductDoc(
+                                productId: doc.id,
+                                product: doc.data(),
+                                favoriteCategories: favSet,
+                                userLocation: _userLocation,
+                                implicitCategoryViews: implicitCategoryViews,
+                                implicitLastViewedAt: implicitLastViewedAt,
                               ),
-                            ],
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('$category\n$expiresText - Elerheto: $quantity db'),
-                              const SizedBox(height: 6),
-                              Wrap(
-                                spacing: 6,
-                                runSpacing: 6,
-                                children: result.reasons
-                                    .take(2)
-                                    .map(
-                                      (r) => Chip(
-                                        label: Text(
-                                          r.label,
-                                          style: const TextStyle(fontSize: 12),
-                                        ),
-                                        visualDensity: VisualDensity.compact,
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
+                            )
+                            .toList();
+
+                        scored.sort((a, b) {
+                          if (a.score != b.score) {
+                            return b.score.compareTo(a.score);
+                          }
+
+                          final aExp = (a.product['expiresAt'] as Timestamp?)
+                              ?.toDate();
+                          final bExp = (b.product['expiresAt'] as Timestamp?)
+                              ?.toDate();
+                          if (aExp == null || bExp == null) return 0;
+                          return aExp.compareTo(bExp);
+                        });
+
+                        if (scored.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              'Jelenleg nincs elerheto ajanlat ebben a kategoriaban.',
+                            ),
+                          );
+                        }
+
+                        return ListView.separated(
+                          itemCount: scored.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final result = scored[index];
+                            final docId = result.productId;
+                            final data = result.product;
+
+                            final name =
+                                data['name'] as String? ?? 'Nevtelen termek';
+                            final category =
+                                data['category'] as String? ??
+                                'Ismeretlen kategoria';
+                            final discounted =
+                                data['discountedPrice'] as int? ?? 0;
+                            final original = data['originalPrice'] as int? ?? 0;
+                            final quantity = data['quantity'] as int? ?? 0;
+                            final expiresAt = (data['expiresAt'] as Timestamp?)
+                                ?.toDate();
+                            final isInterested = interestedProductIds.contains(
+                              docId,
+                            );
+
+                            String expiresText = 'Ismeretlen lejarat';
+                            if (expiresAt != null) {
+                              final now = DateTime.now();
+                              final diff = expiresAt.difference(now);
+                              if (diff.inMinutes <= 0) {
+                                expiresText = 'Hamarosan lejar';
+                              } else if (diff.inHours < 1) {
+                                expiresText =
+                                    'Lejar ${diff.inMinutes} percen belul';
+                              } else if (diff.inHours < 24) {
+                                expiresText =
+                                    'Lejar ${diff.inHours} oran belul';
+                              } else {
+                                expiresText =
+                                    'Lejar: ${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')}';
+                              }
+                            }
+
+                            void showReasons() {
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  final scorePercent = (result.score * 100)
+                                      .clamp(0, 100)
+                                      .toStringAsFixed(0);
+                                  final reasons = result.reasons;
+                                  final maxHeight =
+                                      MediaQuery.of(context).size.height * 0.6;
+                                  return AlertDialog(
+                                    title: const Text('Miert ajanlott?'),
+                                    content: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxHeight: maxHeight,
                                       ),
-                                    )
-                                    .toList(),
-                              ),
-                            ],
-                          ),
-                          isThreeLine: true,
-                          trailing: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                '$discounted Ft',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              if (original > discounted)
-                                Text(
-                                  '$original Ft',
-                                  style: const TextStyle(
-                                    decoration: TextDecoration.lineThrough,
-                                    fontSize: 12,
+                                      child: SingleChildScrollView(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Pontszam: $scorePercent%'),
+                                            const SizedBox(height: 8),
+                                            if (reasons.isEmpty)
+                                              const Text(
+                                                'Nincs elerheto indok.',
+                                              )
+                                            else
+                                              ...reasons.map(
+                                                (r) => ListTile(
+                                                  dense: true,
+                                                  contentPadding:
+                                                      EdgeInsets.zero,
+                                                  title: Text(r.label),
+                                                  subtitle:
+                                                      (r.detail == null ||
+                                                          r.detail!.isEmpty)
+                                                      ? null
+                                                      : Text(r.detail!),
+                                                  trailing: Text(
+                                                    '${(r.contribution * 100).toStringAsFixed(0)}%',
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
+                                        child: const Text('Bezar'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            }
+
+                            return ListTile(
+                              title: Row(
+                                children: [
+                                  Expanded(child: Text(name)),
+                                  if (isInterested)
+                                    const Icon(Icons.favorite, size: 18),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.info_outline,
+                                      size: 18,
+                                    ),
+                                    tooltip: 'Miert ajanlott?',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: showReasons,
                                   ),
-                                ),
-                            ],
-                          ),
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ProductDetailScreen(
-                                  productId: docId,
-                                  data: data,
-                                ),
+                                ],
                               ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '$category\n$expiresText - Elerheto: $quantity db',
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: result.reasons
+                                        .take(2)
+                                        .map(
+                                          (r) => Chip(
+                                            label: Text(
+                                              r.label,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            materialTapTargetSize:
+                                                MaterialTapTargetSize
+                                                    .shrinkWrap,
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
+                                ],
+                              ),
+                              isThreeLine: true,
+                              trailing: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '$discounted Ft',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  if (original > discounted)
+                                    Text(
+                                      '$original Ft',
+                                      style: const TextStyle(
+                                        decoration: TextDecoration.lineThrough,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => ProductDetailScreen(
+                                      productId: docId,
+                                      data: data,
+                                    ),
+                                  ),
+                                );
+                              },
                             );
                           },
                         );
-                      },
-                    );
                       },
                     );
                   },
@@ -449,7 +502,6 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
       ),
     );
   }
-
 }
 
 const List<String> _allCategories = [

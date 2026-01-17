@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../utils/geo_utils.dart';
+
 class RecommendationReason {
   final String code;
   final String label;
@@ -80,29 +82,39 @@ RecommendationResult scoreProductDoc({
   required String productId,
   required Map<String, dynamic> product,
   required Set<String> favoriteCategories,
+  GeoPoint? userLocation,
   Map<String, int>? implicitCategoryViews,
   Map<String, Timestamp>? implicitLastViewedAt,
 }) {
-  const wFav = 0.40;
-  const wExp = 0.30;
-  const wRec = 0.13;
+  const wFav = 0.35;
+  const wExp = 0.25;
+  const wRec = 0.12;
   const wInt = 0.05;
-  const wImplicit = 0.12;
+  const wImplicit = 0.13;
+  const wDist = 0.10;
   const halfLifeDays = 7.0;
+  const maxDistanceKm = 10.0;
 
   final category = product['category'] as String?;
   final expiresAt = _asDate(product['expiresAt']);
   final createdAt = _asDate(product['createdAt']);
   final interestCount = product['interestCount'] as int? ?? 0;
+  final productLoc = product['location'] as GeoPoint?;
   final implicitViews = implicitCategoryViews ?? const <String, int>{};
   final implicitCount = category == null ? 0 : (implicitViews[category] ?? 0);
-  final implicitLastViewed = implicitLastViewedAt ?? const <String, Timestamp>{};
-  final lastViewedAt = category == null ? null : _asDate(implicitLastViewed[category]);
+  final implicitLastViewed =
+      implicitLastViewedAt ?? const <String, Timestamp>{};
+  final lastViewedAt = category == null
+      ? null
+      : _asDate(implicitLastViewed[category]);
 
   final now = DateTime.now();
   final ageDays = lastViewedAt == null
       ? 999.0
-      : (now.difference(lastViewedAt).inMinutes / 60.0 / 24.0).clamp(0.0, 999.0);
+      : (now.difference(lastViewedAt).inMinutes / 60.0 / 24.0).clamp(
+          0.0,
+          999.0,
+        );
   final lambda = math.log(2) / halfLifeDays;
   final decayFactor = math.exp(-lambda * ageDays);
   final effectiveCount = implicitCount * decayFactor;
@@ -112,13 +124,25 @@ RecommendationResult scoreProductDoc({
   final recScore = recencyScore(createdAt);
   final intScore = interestScore(interestCount);
   final implicitScore = _clamp01(effectiveCount / 10.0);
+  double distanceKm = 0;
+  double distanceScore = 0;
+  if (userLocation != null && productLoc != null) {
+    distanceKm = GeoUtils.haversineKm(
+      userLocation.latitude,
+      userLocation.longitude,
+      productLoc.latitude,
+      productLoc.longitude,
+    );
+    distanceScore = _clamp01(1.0 - (distanceKm / maxDistanceKm));
+  }
 
   final score = _clamp01(
     (wFav * favScore) +
         (wExp * expScore) +
         (wRec * recScore) +
         (wInt * intScore) +
-        (wImplicit * implicitScore),
+        (wImplicit * implicitScore) +
+        (wDist * distanceScore),
   );
 
   final reasons = <RecommendationReason>[];
@@ -185,6 +209,17 @@ RecommendationResult scoreProductDoc({
         detail:
             '$implicitCount megnyitas • $ageDetail • hatas: ${effectiveCount.toStringAsFixed(1)}',
         contribution: wImplicit * implicitScore,
+      ),
+    );
+  }
+
+  if (distanceScore > 0.2) {
+    reasons.add(
+      RecommendationReason(
+        code: 'NEARBY',
+        label: 'Közel van',
+        detail: '${distanceKm.toStringAsFixed(1)} km',
+        contribution: wDist * distanceScore,
       ),
     );
   }

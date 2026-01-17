@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../services/product_service.dart';
 
@@ -15,6 +16,8 @@ class _NewProductScreenState extends State<NewProductScreen> {
   final _originalPriceCtrl = TextEditingController();
   final _discountedPriceCtrl = TextEditingController();
   final _quantityCtrl = TextEditingController(text: '1');
+  final _latCtrl = TextEditingController();
+  final _lngCtrl = TextEditingController();
 
   String _selectedCategory = _categories.first;
   DateTime? _selectedExpiry;
@@ -27,6 +30,8 @@ class _NewProductScreenState extends State<NewProductScreen> {
     _originalPriceCtrl.dispose();
     _discountedPriceCtrl.dispose();
     _quantityCtrl.dispose();
+    _latCtrl.dispose();
+    _lngCtrl.dispose();
     super.dispose();
   }
 
@@ -61,6 +66,23 @@ class _NewProductScreenState extends State<NewProductScreen> {
       final originalPrice = int.parse(_originalPriceCtrl.text.trim());
       final discountedPrice = int.parse(_discountedPriceCtrl.text.trim());
       final quantity = int.parse(_quantityCtrl.text.trim());
+      final latText = _latCtrl.text.trim();
+      final lngText = _lngCtrl.text.trim();
+      GeoPoint? location;
+      if (latText.isNotEmpty || lngText.isNotEmpty) {
+        if (latText.isEmpty || lngText.isEmpty) {
+          throw Exception('Kerek add meg mindket koordinatat.');
+        }
+        final lat = double.tryParse(latText);
+        final lng = double.tryParse(lngText);
+        if (lat == null || lng == null) {
+          throw Exception('Adj meg ervenyes szamokat a koordinatakhoz.');
+        }
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          throw Exception('A koordinatak tartomanya hibas.');
+        }
+        location = GeoPoint(lat, lng);
+      }
 
       await ProductService().addProduct(
         name: _nameCtrl.text.trim(),
@@ -68,6 +90,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
         originalPrice: originalPrice,
         discountedPrice: discountedPrice,
         quantity: quantity,
+        location: location,
         // lejáratot beállítjuk a nap végére (23:59)
         expiresAt: DateTime(
           _selectedExpiry!.year,
@@ -115,22 +138,21 @@ class _NewProductScreenState extends State<NewProductScreen> {
                 DropdownButtonFormField<String>(
                   initialValue: _selectedCategory,
                   items: _categories
-                      .map((c) =>
-                          DropdownMenuItem(value: c, child: Text(c)))
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                       .toList(),
                   onChanged: (value) {
                     if (value != null) {
                       setState(() => _selectedCategory = value);
                     }
                   },
-                  decoration:
-                      const InputDecoration(labelText: 'Kategória'),
+                  decoration: const InputDecoration(labelText: 'Kategória'),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _originalPriceCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Eredeti ár (Ft)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Eredeti ár (Ft)',
+                  ),
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value == null || int.tryParse(value) == null) {
@@ -142,8 +164,9 @@ class _NewProductScreenState extends State<NewProductScreen> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _discountedPriceCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Akciós ár (Ft)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Akciós ár (Ft)',
+                  ),
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value == null || int.tryParse(value) == null) {
@@ -155,8 +178,9 @@ class _NewProductScreenState extends State<NewProductScreen> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _quantityCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Mennyiség (db)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Mennyiség (db)',
+                  ),
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     final q = int.tryParse(value ?? '');
@@ -165,6 +189,56 @@ class _NewProductScreenState extends State<NewProductScreen> {
                     }
                     return null;
                   },
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _latCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Bolt latitude',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                          signed: true,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return null;
+                          }
+                          final parsed = double.tryParse(value.trim());
+                          if (parsed == null || parsed < -90 || parsed > 90) {
+                            return 'Adj meg -90 es 90 kozotti erteket';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _lngCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Bolt longitude',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                          signed: true,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return null;
+                          }
+                          final parsed = double.tryParse(value.trim());
+                          if (parsed == null || parsed < -180 || parsed > 180) {
+                            return 'Adj meg -180 es 180 kozotti erteket';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Row(

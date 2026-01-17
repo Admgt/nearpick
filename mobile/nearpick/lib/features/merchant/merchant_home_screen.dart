@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import 'new_product_screen.dart';
+import 'merchant_dashboard_screen.dart';
 
 class MerchantHomeScreen extends StatelessWidget {
   const MerchantHomeScreen({super.key});
@@ -16,6 +17,15 @@ class MerchantHomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('NearPick - Kereskedő'),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MerchantDashboardScreen()),
+              );
+            },
+            icon: const Icon(Icons.analytics_outlined),
+            tooltip: 'Dashboard',
+          ),
           IconButton(
             onPressed: () => AuthService().logout(),
             icon: const Icon(Icons.logout),
