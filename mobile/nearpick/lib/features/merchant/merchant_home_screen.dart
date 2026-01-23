@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../models/product.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
+import '../../widgets/product_list_tile.dart';
 import 'new_product_screen.dart';
 import 'merchant_dashboard_screen.dart';
+import 'merchant_reservations_screen.dart';
 
 class MerchantHomeScreen extends StatelessWidget {
   const MerchantHomeScreen({super.key});
@@ -17,6 +21,17 @@ class MerchantHomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('NearPick - Kereskedő'),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const MerchantReservationsScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.list_alt_outlined),
+            tooltip: 'Foglalasok',
+          ),
           IconButton(
             onPressed: () {
               Navigator.of(context).push(
@@ -50,57 +65,78 @@ class MerchantHomeScreen extends StatelessWidget {
 
           final docs = snapshot.data?.docs ?? [];
 
-          if (docs.isEmpty) {
+          final products = docs
+              .map((doc) => Product.fromDoc(doc))
+              .where((p) => !p.isDeleted)
+              .toList();
+
+          if (products.isEmpty) {
             return const Center(
               child: Text('Még nincs egyetlen feltöltött terméked sem.'),
             );
           }
 
           return ListView.separated(
-            itemCount: docs.length,
+            itemCount: products.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
-              final data = docs[index].data();
-              final name = data['name'] as String? ?? 'Névtelen termék';
-              final category = data['category'] as String? ?? 'Ismeretlen kategória';
-              final discounted = data['discountedPrice'] as int? ?? 0;
-              final original = data['originalPrice'] as int? ?? 0;
-              final quantity = data['quantity'] as int? ?? 0;
-              final expiresAt = (data['expiresAt'] as Timestamp?)?.toDate();
+              final product = products[index];
 
-              String expiresText = 'Ismeretlen lejárat';
-              if (expiresAt != null) {
-                expiresText =
-                    'Lejár: ${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')}';
+              Future<void> archiveProduct() async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Biztosan torlod ezt a termeket?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Megse'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Igen'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmed != true) return;
+                try {
+                  await productService.archiveProduct(productId: product.id);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Termek archivalt.')),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Hiba: $e')),
+                  );
+                }
               }
 
-              return ListTile(
-                title: Text(name),
-                subtitle: Text(
-                  '$category\n$expiresText • Mennyiség: $quantity db',
-                ),
-                isThreeLine: true,
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '$discounted Ft',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (original > discounted)
-                      Text(
-                        '$original Ft',
-                        style: const TextStyle(
-                          decoration: TextDecoration.lineThrough,
-                          fontSize: 12,
-                        ),
-                      ),
-                  ],
-                ),
+              final user = FirebaseAuth.instance.currentUser;
+              final reservationStream = user == null
+                  ? const Stream<QuerySnapshot<Map<String, dynamic>>>.empty()
+                  : FirebaseFirestore.instance
+                      .collection('reservations')
+                      .where('merchantId', isEqualTo: user.uid)
+                      .where('productId', isEqualTo: product.id)
+                      .where('status', isEqualTo: 'reserved')
+                      .snapshots();
+
+              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: reservationStream,
+                builder: (context, reservationSnap) {
+                  final reservedCount = reservationSnap.data?.docs.length ?? 0;
+                  return ProductListTile(
+                    product: product,
+                    reservedCount: reservedCount,
+                    onArchive: archiveProduct,
+                  );
+                },
               );
+
             },
           );
         },

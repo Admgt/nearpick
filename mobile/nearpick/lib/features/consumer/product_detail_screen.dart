@@ -2,7 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../services/product_service.dart';
+import '../../widgets/storage_image.dart';
 import '../../services/user_interaction_service.dart';
+import '../../services/negative_feedback_service.dart';
+import '../../services/reservation_service.dart';
+import 'reservation_detail_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -20,8 +24,87 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _loading = false;
+  bool _dismissLoading = false;
   String? _message;
   bool _viewLogged = false;
+  bool _reserveLoading = false;
+
+  Future<void> _dismissCategoryForProduct() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final category = (widget.data['category'] as String?)?.trim() ?? '';
+    if (category.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nem erdekel'),
+        content: const Text(
+          'Biztosan nem erdekel ez a kategoria? (Kesobb valtozhat)',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Megse'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Igen'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || confirmed != true) return;
+
+    setState(() => _dismissLoading = true);
+    try {
+      await NegativeFeedbackService().dismissCategoryForProduct(
+        userId: user.uid,
+        productId: widget.productId,
+        category: category,
+        ownerId: (widget.data['ownerId'] as String?)?.trim(),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Rendben, kevesebb ilyen ajanlatot mutatunk.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Hiba: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _dismissLoading = false);
+    }
+  }
+
+  Future<void> _reserveProduct() async {
+    setState(() => _reserveLoading = true);
+    try {
+      final reservationId =
+          await ReservationService().reserveProduct(productId: widget.productId);
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ReservationDetailScreen(reservationId: reservationId),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final message = e.toString().contains('Elfogyott')
+          ? 'Elfogyott'
+          : 'Hiba: $e';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) setState(() => _reserveLoading = false);
+    }
+  }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _interestDocStream() {
     final user = FirebaseAuth.instance.currentUser;
@@ -66,11 +149,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget build(BuildContext context) {
     final data = widget.data;
 
+    final imagePath = data['imagePath'] as String?;
+    final hasImage = data['hasImage'] == true;
+
     final name = data['name'] as String? ?? 'Névtelen termék';
     final category = data['category'] as String? ?? 'Ismeretlen kategória';
     final discounted = data['discountedPrice'] as int? ?? 0;
     final original = data['originalPrice'] as int? ?? 0;
-    final quantity = data['quantity'] as int? ?? 0;
+    final quantityAvailable =
+        data['quantityAvailable'] as int? ?? data['quantity'] as int? ?? 0;
     final expiresAt = (data['expiresAt'] as Timestamp?)?.toDate();
 
     String expiresText = 'Ismeretlen lejárat';
@@ -86,6 +173,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (hasImage && imagePath != null && imagePath.isNotEmpty)
+              StorageImage(
+                imagePath: imagePath,
+                width: double.infinity,
+                height: 200,
+                borderRadius: 12,
+                maxSizeBytes: 2 * 1024 * 1024,
+              ),
+            if (hasImage && imagePath != null && imagePath.isNotEmpty)
+              const SizedBox(height: 12),
             Text(
               name,
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -95,9 +192,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             const SizedBox(height: 8),
             Text('Lejárat: $expiresText'),
             const SizedBox(height: 8),
-            Text('Elérhető: $quantity db'),
+            Text('Elérhető: $quantityAvailable db'),
             const SizedBox(height: 16),
-
             Row(
               children: [
                 Text(
@@ -132,6 +228,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
               ),
 
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed:
+                    _reserveLoading || quantityAvailable <= 0 ? null : _reserveProduct,
+                icon: _reserveLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.event_available_outlined),
+                label: const Text('Lefoglalom'),
+              ),
+            ),
+            const SizedBox(height: 12),
             StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
               stream: _interestDocStream(),
               builder: (context, snap) {
@@ -187,6 +299,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                 );
               },
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _dismissLoading ? null : _dismissCategoryForProduct,
+                icon: _dismissLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.thumb_down_outlined),
+                label: const Text('Nem erdekel'),
+              ),
             ),
           ],
         ),

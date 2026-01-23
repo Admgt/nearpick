@@ -1,0 +1,127 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+
+import '../../models/reservation.dart';
+import 'reservation_detail_screen.dart';
+
+class MyReservationsScreen extends StatelessWidget {
+  const MyReservationsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Foglalasaim')),
+        body: const Center(child: Text('Nincs bejelentkezett felhasznalo.')),
+      );
+    }
+
+    final reservationsStream = FirebaseFirestore.instance
+        .collection('reservations')
+        .where('buyerId', isEqualTo: user.uid)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Foglalasaim')),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: reservationsStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Hiba: ${snapshot.error}'),
+            );
+          }
+
+          final docs = snapshot.data?.docs ?? [];
+          if (docs.isEmpty) {
+            return const Center(child: Text('Nincs meg foglalasod.'));
+          }
+
+          return ListView.separated(
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final reservation = Reservation.fromDoc(docs[index]);
+              final snapshotData = reservation.productSnapshot;
+              final imageUrl = snapshotData['imageUrl'] as String?;
+              final name = snapshotData['name'] as String? ?? 'Ismeretlen termek';
+              final discounted = snapshotData['discountedPrice'] as int? ?? 0;
+              final original = snapshotData['originalPrice'] as int? ?? 0;
+              final expiresAt = reservation.expiresAt;
+              String expiresText = 'Ismeretlen lejarat';
+              if (expiresAt != null) {
+                expiresText =
+                    '${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')} '
+                    '${expiresAt.hour.toString().padLeft(2, '0')}:${expiresAt.minute.toString().padLeft(2, '0')}';
+              }
+
+              return ListTile(
+                leading: imageUrl != null && imageUrl.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          imageUrl,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          width: 56,
+                          height: 56,
+                          color: Theme.of(context).colorScheme.surfaceVariant,
+                          child: const Icon(Icons.photo_outlined),
+                        ),
+                      ),
+                title: Text(name),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Kod: ${reservation.pickupCode}'),
+                    Text('Lejar: $expiresText'),
+                    Text('Status: ${reservation.status}'),
+                  ],
+                ),
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '$discounted Ft',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    if (original > discounted)
+                      Text(
+                        '$original Ft',
+                        style: const TextStyle(
+                          decoration: TextDecoration.lineThrough,
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ReservationDetailScreen(
+                        reservationId: reservation.id,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}

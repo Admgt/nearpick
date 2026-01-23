@@ -8,6 +8,11 @@ import '../../recommendation/recommendation_engine.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import '../../services/user_interaction_service.dart';
+import '../../widgets/storage_image.dart';
+import '../../services/negative_feedback_service.dart';
+import '../../services/reservation_service.dart';
+import 'my_reservations_screen.dart';
+import 'reservation_detail_screen.dart';
 import 'favorites_screen.dart';
 import 'location_settings_screen.dart';
 import 'profile_screen.dart';
@@ -24,17 +29,24 @@ class ConsumerHomeScreen extends StatefulWidget {
 
 class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
   final ProductService _productService = ProductService();
+  final NegativeFeedbackService _negativeFeedbackService =
+      NegativeFeedbackService();
   StreamSubscription<RemoteMessage>? _foregroundMessageSub;
   bool _compactionTriggered = false;
 
   List<String> _favoriteCategories = [];
   GeoPoint? _userLocation;
+  final Set<String> _dismissedProductIds = {};
 
   String _selectedCategory = _allCategories.first;
+  int _buildCounter = 0;
 
   @override
   void initState() {
     super.initState();
+    debugPrint(
+      '[ConsumerHome] initState user=${FirebaseAuth.instance.currentUser?.uid}',
+    );
     _loadUserPreferences();
     _triggerImplicitPrefsCompaction();
     _listenForForegroundMessages();
@@ -48,12 +60,16 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
 
   Future<void> _loadUserPreferences() async {
     final user = FirebaseAuth.instance.currentUser;
+    debugPrint('[ConsumerHome] _loadUserPreferences user=${user?.uid}');
     if (user == null) return;
 
     final doc = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .get();
+    debugPrint(
+      '[ConsumerHome] users/${user.uid} exists=${doc.exists} hasData=${doc.data() != null}',
+    );
 
     setState(() {
       _favoriteCategories = List<String>.from(
@@ -113,12 +129,122 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
     });
   }
 
+  Future<void> _dismissCategoryForProduct({
+    required String productId,
+    required String category,
+    String? ownerId,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nem erdekel'),
+        content: const Text(
+          'Biztosan nem erdekel ez a kategoria? (Kesobb valtozhat)',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Megse'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Igen'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || confirmed != true) return;
+
+    try {
+      await _negativeFeedbackService.dismissCategoryForProduct(
+        userId: user.uid,
+        productId: productId,
+        category: category,
+        ownerId: ownerId,
+      );
+      if (!mounted) return;
+      setState(() => _dismissedProductIds.add(productId));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Rendben, kevesebb ilyen ajanlatot mutatunk.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Hiba: $e')),
+      );
+    }
+  }
+
+  Future<void> _reserveProduct(String productId) async {
+    try {
+      final reservationId =
+          await ReservationService().reserveProduct(productId: productId);
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ReservationDetailScreen(reservationId: reservationId),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final message = e.toString().contains('Elfogyott')
+          ? 'Elfogyott'
+          : 'Hiba: $e';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+  }
+
+  Widget _buildThumbnail({required String? imagePath, required bool hasImage}) {
+    final shouldShow = hasImage && imagePath != null && imagePath.isNotEmpty;
+    if (shouldShow) {
+      return StorageImage(
+        imagePath: imagePath!,
+        width: 56,
+        height: 56,
+        borderRadius: 8,
+        maxSizeBytes: 256 * 1024,
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 56,
+        height: 56,
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        child: const Icon(Icons.photo_outlined),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    _buildCounter += 1;
+    if (_buildCounter <= 3 || _buildCounter % 20 == 0) {
+      debugPrint(
+        '[ConsumerHome] build #$_buildCounter user=${FirebaseAuth.instance.currentUser?.uid}',
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('NearPick - Ajánlatok a közelben'),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MyReservationsScreen()),
+              );
+            },
+            icon: const Icon(Icons.event_available_outlined),
+            tooltip: 'Foglalasaim',
+          ),
           IconButton(
             icon: const Icon(Icons.place),
             tooltip: 'Hely beallitasa',
@@ -192,6 +318,11 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: _productService.myInterestsStream(),
               builder: (context, interestsSnap) {
+                if (interestsSnap.hasError) {
+                  debugPrint(
+                    '[ConsumerHome] interests error: ${interestsSnap.error}',
+                  );
+                }
                 if (interestsSnap.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -203,16 +334,30 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                 }..remove('');
 
                 final user = FirebaseAuth.instance.currentUser;
+                debugPrint(
+                  '[ConsumerHome] prefs streams user=${user?.uid}',
+                );
                 final prefsStream = user == null
                     ? Stream<DocumentSnapshot<Map<String, dynamic>>>.empty()
                     : FirebaseFirestore.instance
                           .collection('userImplicitPrefs')
                           .doc(user.uid)
                           .snapshots();
+                final negativePrefsStream = user == null
+                    ? Stream<DocumentSnapshot<Map<String, dynamic>>>.empty()
+                    : FirebaseFirestore.instance
+                          .collection('userNegativePrefs')
+                          .doc(user.uid)
+                          .snapshots();
 
                 return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                   stream: prefsStream,
                   builder: (context, prefsSnap) {
+                    if (prefsSnap.hasError) {
+                      debugPrint(
+                        '[ConsumerHome] implicit prefs error: ${prefsSnap.error}',
+                      );
+                    }
                     final implicitCategoryViews = <String, int>{};
                     final rawViews = prefsSnap.data?.data()?['categoryViews'];
                     if (rawViews is Map) {
@@ -238,9 +383,50 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                       });
                     }
 
-                    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                      stream: _productService.activeProductsStream(),
-                      builder: (context, snapshot) {
+                    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                      stream: negativePrefsStream,
+                      builder: (context, negativeSnap) {
+                        if (negativeSnap.hasError) {
+                          debugPrint(
+                            '[ConsumerHome] negative prefs error: ${negativeSnap.error}',
+                          );
+                        }
+                        final negativeCategoryDismissals = <String, int>{};
+                        final rawDismissals = negativeSnap
+                            .data
+                            ?.data()?['categoryDismissals'];
+                        if (rawDismissals is Map) {
+                          rawDismissals.forEach((key, value) {
+                            if (key is String) {
+                              final intValue = value is int
+                                  ? value
+                                  : (value is num ? value.toInt() : null);
+                              if (intValue != null) {
+                                negativeCategoryDismissals[key] = intValue;
+                              }
+                            }
+                          });
+                        }
+                        final negativeCategoryLastDismissedAt =
+                            <String, Timestamp>{};
+                        final rawLastDismissed = negativeSnap.data
+                            ?.data()?['categoryLastDismissedAt'];
+                        if (rawLastDismissed is Map) {
+                          rawLastDismissed.forEach((key, value) {
+                            if (key is String && value is Timestamp) {
+                              negativeCategoryLastDismissedAt[key] = value;
+                            }
+                          });
+                        }
+
+                        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                          stream: _productService.listActiveProducts(),
+                          builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          debugPrint(
+                            '[ConsumerHome] products error: ${snapshot.error}',
+                          );
+                        }
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return const Center(
@@ -260,9 +446,20 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                         final docs = snapshot.data?.docs ?? [];
 
                         final filteredDocs = docs.where((doc) {
+                          if (_dismissedProductIds.contains(doc.id)) {
+                            return false;
+                          }
                           final data = doc.data();
-                          final quantity = data['quantity'] as int? ?? 0;
-                          if (quantity <= 0) return false;
+                          final isDeleted = data['isDeleted'] == true;
+                          final status = data['status'] as String?;
+                          if (isDeleted || (status != null && status != 'active')) {
+                            return false;
+                          }
+                          final quantityAvailable =
+                              data['quantityAvailable'] as int? ??
+                              data['quantity'] as int? ??
+                              0;
+                          if (quantityAvailable <= 0) return false;
 
                           if (_selectedCategory == _allCategories.first) {
                             return true;
@@ -282,6 +479,10 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                                 userLocation: _userLocation,
                                 implicitCategoryViews: implicitCategoryViews,
                                 implicitLastViewedAt: implicitLastViewedAt,
+                                negativeCategoryDismissals:
+                                    negativeCategoryDismissals,
+                                negativeCategoryLastDismissedAt:
+                                    negativeCategoryLastDismissedAt,
                               ),
                             )
                             .toList();
@@ -314,7 +515,8 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                             final result = scored[index];
                             final docId = result.productId;
                             final data = result.product;
-
+                            final imagePath = data['imagePath'] as String?;
+                            final hasImage = data['hasImage'] == true;
                             final name =
                                 data['name'] as String? ?? 'Nevtelen termek';
                             final category =
@@ -323,7 +525,10 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                             final discounted =
                                 data['discountedPrice'] as int? ?? 0;
                             final original = data['originalPrice'] as int? ?? 0;
-                            final quantity = data['quantity'] as int? ?? 0;
+                            final quantityAvailable =
+                                data['quantityAvailable'] as int? ??
+                                data['quantity'] as int? ??
+                                0;
                             final expiresAt = (data['expiresAt'] as Timestamp?)
                                 ?.toDate();
                             final isInterested = interestedProductIds.contains(
@@ -409,6 +614,10 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                             }
 
                             return ListTile(
+                              leading: _buildThumbnail(
+                                imagePath: imagePath,
+                                hasImage: hasImage,
+                              ),
                               title: Row(
                                 children: [
                                   Expanded(child: Text(name)),
@@ -430,7 +639,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '$category\n$expiresText - Elerheto: $quantity db',
+                                    '$category\n$expiresText - Elerheto: $quantityAvailable db',
                                   ),
                                   const SizedBox(height: 6),
                                   Wrap(
@@ -458,24 +667,64 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                                 ],
                               ),
                               isThreeLine: true,
-                              trailing: Column(
+                              trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  Text(
-                                    '$discounted Ft',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '$discounted Ft',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      if (original > discounted)
+                                        Text(
+                                          '$original Ft',
+                                          style: const TextStyle(
+                                            decoration:
+                                                TextDecoration.lineThrough,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  ElevatedButton(
+                                    onPressed: quantityAvailable <= 0
+                                        ? null
+                                        : () => _reserveProduct(docId),
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      minimumSize: const Size(0, 0),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      textStyle: const TextStyle(fontSize: 12),
+                                    ),
+                                    child: const Text('Lefoglalom'),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.thumb_down_outlined,
+                                      size: 18,
+                                    ),
+                                    tooltip: 'Nem erdekel',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    visualDensity: VisualDensity.compact,
+                                    onPressed: () => _dismissCategoryForProduct(
+                                      productId: docId,
+                                      category: category,
+                                      ownerId: data['ownerId'] as String?,
                                     ),
                                   ),
-                                  if (original > discounted)
-                                    Text(
-                                      '$original Ft',
-                                      style: const TextStyle(
-                                        decoration: TextDecoration.lineThrough,
-                                        fontSize: 12,
-                                      ),
-                                    ),
                                 ],
                               ),
                               onTap: () {
@@ -496,6 +745,8 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                   },
                 );
               },
+            );
+          },
             ),
           ),
         ],

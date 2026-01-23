@@ -61,16 +61,22 @@ class MerchantDashboardScreen extends StatelessWidget {
 
           for (final doc in productDocs) {
             final data = doc.data();
-            final quantity = data['quantity'] as int? ?? 0;
+            final quantityAvailable = data['quantityAvailable'] as int? ??
+                data['quantity'] as int? ??
+                0;
+            final status = data['status'] as String? ?? 'active';
             final expiresAt = (data['expiresAt'] as Timestamp?)?.toDate();
 
-            if (quantity <= 0) {
+            if (status == 'sold_out' || quantityAvailable <= 0) {
               soldOutOffers++;
             }
-            if (expiresAt != null && !expiresAt.isAfter(now)) {
+            if (status == 'expired' ||
+                (expiresAt != null && !expiresAt.isAfter(now))) {
               expiredOffers++;
             }
-            if (quantity > 0 && (expiresAt == null || expiresAt.isAfter(now))) {
+            if (status == 'active' &&
+                quantityAvailable > 0 &&
+                (expiresAt == null || expiresAt.isAfter(now))) {
               activeOffers++;
             }
           }

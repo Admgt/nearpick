@@ -95,7 +95,10 @@ class FavoritesScreen extends StatelessWidget {
                   final category = p['category'] as String? ?? 'Ismeretlen kategória';
                   final discounted = p['discountedPrice'] as int? ?? 0;
                   final original = p['originalPrice'] as int? ?? 0;
-                  final quantity = p['quantity'] as int? ?? 0;
+                  final quantityAvailable =
+                      p['quantityAvailable'] as int? ??
+                      p['quantity'] as int? ??
+                      0;
                   final expiresAt = (p['expiresAt'] as Timestamp?)?.toDate();
 
                   String expiresText = 'Ismeretlen lejárat';
@@ -112,7 +115,7 @@ class FavoritesScreen extends StatelessWidget {
                     title: Text(name),
                     subtitle: Text(
                       '$category • $expiresText\n'
-                      'Ár: $discounted Ft${(original > discounted) ? " (eredeti: $original Ft)" : ""} • Elérhető: $quantity db',
+                      'Ár: $discounted Ft${(original > discounted) ? " (eredeti: $original Ft)" : ""} • Elérhető: $quantityAvailable db',
                     ),
                     isThreeLine: true,
 

@@ -78,6 +78,15 @@ String expiryDetail(DateTime expiresAt) {
   return 'Lejar: ${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')}';
 }
 
+String _relativeTimeLabel(DateTime? date, DateTime now) {
+  if (date == null) return 'ismeretlen';
+  final diff = now.difference(date);
+  if (diff.inMinutes <= 1) return 'most';
+  if (diff.inHours < 1) return '${diff.inMinutes} perce';
+  if (diff.inHours < 24) return '${diff.inHours} oraja';
+  return '${diff.inDays} napja';
+}
+
 RecommendationResult scoreProductDoc({
   required String productId,
   required Map<String, dynamic> product,
@@ -85,6 +94,8 @@ RecommendationResult scoreProductDoc({
   GeoPoint? userLocation,
   Map<String, int>? implicitCategoryViews,
   Map<String, Timestamp>? implicitLastViewedAt,
+  Map<String, int>? negativeCategoryDismissals,
+  Map<String, Timestamp>? negativeCategoryLastDismissedAt,
 }) {
   const wFav = 0.35;
   const wExp = 0.25;
@@ -136,13 +147,32 @@ RecommendationResult scoreProductDoc({
     distanceScore = _clamp01(1.0 - (distanceKm / maxDistanceKm));
   }
 
+  final negativeDismissals = negativeCategoryDismissals ?? const <String, int>{};
+  final negativeLastDismissed =
+      negativeCategoryLastDismissedAt ?? const <String, Timestamp>{};
+  final dismissCount = category == null ? 0 : (negativeDismissals[category] ?? 0);
+  final lastDismissedAt =
+      category == null ? null : _asDate(negativeLastDismissed[category]);
+  final daysSinceDismiss = dismissCount == 0
+      ? 0.0
+      : (lastDismissedAt == null
+              ? 0.0
+              : (now.difference(lastDismissedAt).inMinutes / 60.0 / 24.0))
+          .clamp(0.0, 999.0);
+  final dismissDecay = dismissCount == 0 ? 0.0 : math.exp(-daysSinceDismiss / 7.0);
+  final dismissPenaltyBase = dismissCount == 0
+      ? 0.0
+      : math.min(0.25, 0.08 * dismissCount);
+  final dismissPenalty = dismissPenaltyBase * dismissDecay;
+
   final score = _clamp01(
     (wFav * favScore) +
         (wExp * expScore) +
         (wRec * recScore) +
         (wInt * intScore) +
         (wImplicit * implicitScore) +
-        (wDist * distanceScore),
+        (wDist * distanceScore) -
+        dismissPenalty,
   );
 
   final reasons = <RecommendationReason>[];
@@ -209,6 +239,19 @@ RecommendationResult scoreProductDoc({
         detail:
             '$implicitCount megnyitas • $ageDetail • hatas: ${effectiveCount.toStringAsFixed(1)}',
         contribution: wImplicit * implicitScore,
+      ),
+    );
+  }
+
+  if (dismissCount > 0 && dismissPenalty > 0.005) {
+    final lastDismissedText = _relativeTimeLabel(lastDismissedAt, now);
+    reasons.add(
+      RecommendationReason(
+        code: 'DISMISSED_CATEGORY',
+        label: 'Korabban elutasitott kategoria',
+        detail:
+            '$dismissCount elutasitas - utoljara: $lastDismissedText - hatas: ${(dismissPenalty * 100).toStringAsFixed(0)}%',
+        contribution: -dismissPenalty,
       ),
     );
   }

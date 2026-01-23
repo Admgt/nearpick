@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function getQuantity(data) {
+      return data.quantityAvailable is int
+        ? data.quantityAvailable
+        : data.quantity;
+    }
+
+    function isOwner() {
+      return request.auth != null
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId;
+    }
+
+    function isReserveUpdate() {
+      // TODO: Move reserve logic to a Cloud Function for stronger validation.
+      let before = getQuantity(resource.data);
+      let after = getQuantity(request.resource.data);
+      return request.auth != null
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['quantityAvailable', 'quantity', 'status', 'soldOutAt'])
+        && before is int
+        && after is int
+        && after == before - 1
+        && resource.data.status == 'active';
+    }
+
+    match /products/{productId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isOwner() || isReserveUpdate();
+      allow delete: if isOwner();
+    }
+
+    match /reservations/{reservationId} {
+      allow create: if request.auth != null
+        && request.resource.data.buyerId == request.auth.uid;
+      allow read: if request.auth != null
+        && (resource.data.buyerId == request.auth.uid
+          || resource.data.merchantId == request.auth.uid);
+      allow update: if request.auth != null
+        && (
+          (resource.data.buyerId == request.auth.uid
+            && request.resource.data.status == 'cancelled')
+          || (resource.data.merchantId == request.auth.uid
+            && request.resource.data.status == 'completed')
+        );
+    }
+
+    function isMerchantStatsUpdate() {
+      return request.auth != null
+        && request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['reservedCount', 'soldOutCount', 'completedCount', 'updatedAt']);
+    }
+
+    match /merchantStats/{merchantId} {
+      allow read: if request.auth != null && request.auth.uid == merchantId;
+      allow write: if request.auth != null
+        && (request.auth.uid == merchantId || isMerchantStatsUpdate());
+    }
+
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/fcmTokens/{tokenId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /interests/{interestId} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    match /userInteractions/{interactionId} {
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null
+        && (resource.data.ownerId == request.auth.uid
+          || resource.data.userId == request.auth.uid);
+    }
+
+    match /userImplicitPrefs/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /userNegativePrefs/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
