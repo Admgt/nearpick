@@ -84,7 +84,10 @@ class FavoritesScreen extends StatelessWidget {
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () async {
-                          await ProductService().unmarkInterest(productId: productId);
+                          await ProductService().unmarkInterestByRef(
+                          interestRef: interestDocs[index].reference,
+                          productId: productId,
+                        );
                         },
                       ),
                     );
@@ -125,7 +128,10 @@ class FavoritesScreen extends StatelessWidget {
                       icon: const Icon(Icons.favorite, size: 20),
                       tooltip: 'Eltávolítás a kedvencekből',
                       onPressed: () async {
-                        await ProductService().unmarkInterest(productId: productId);
+                        await ProductService().unmarkInterestByRef(
+                          interestRef: interestDocs[index].reference,
+                          productId: productId,
+                        );
                       },
                     ),
 
@@ -149,3 +155,4 @@ class FavoritesScreen extends StatelessWidget {
     );
   }
 }
+

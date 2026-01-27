@@ -27,11 +27,24 @@ service cloud.firestore {
         && resource.data.status == 'active';
     }
 
+    function isInterestCountUpdate() {
+      let before = resource.data.interestCount;
+      let after = request.resource.data.interestCount;
+      return request.auth != null
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['interestCount'])
+        && before is int
+        && after is int
+        && after >= 0
+        && (after == before + 1 || after == before - 1);
+    }
+
     match /products/{productId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
         && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isOwner() || isReserveUpdate();
+      allow update: if isOwner() || isReserveUpdate() || isInterestCountUpdate();
       allow delete: if isOwner();
     }
 
@@ -58,7 +71,10 @@ service cloud.firestore {
 
     match /merchantStats/{merchantId} {
       allow read: if request.auth != null && request.auth.uid == merchantId;
-      allow write: if request.auth != null
+      allow create: if request.auth != null
+        && request.resource.data.keys()
+          .hasOnly(['reservedCount', 'soldOutCount', 'completedCount', 'updatedAt']);
+      allow update: if request.auth != null
         && (request.auth.uid == merchantId || isMerchantStatsUpdate());
     }
 
@@ -72,14 +88,23 @@ service cloud.firestore {
 
     match /interests/{interestId} {
       allow read: if request.auth != null
-        && resource.data.userId == request.auth.uid;
+        && (
+          resource.data.userId == request.auth.uid
+          || interestId.matches('^' + request.auth.uid + '_.*')
+        );
       allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid;
       allow update: if request.auth != null
-        && resource.data.userId == request.auth.uid
-        && request.resource.data.userId == request.auth.uid;
+        && (
+          resource.data.userId == request.auth.uid
+          || interestId.matches('^' + request.auth.uid + '_.*')
+        )
+        && request.resource.data.userId == resource.data.userId;
       allow delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
+        && (
+          resource.data.userId == request.auth.uid
+          || interestId.matches('^' + request.auth.uid + '_.*')
+        );
     }
 
     match /userInteractions/{interactionId} {

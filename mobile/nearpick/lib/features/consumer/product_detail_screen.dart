@@ -263,7 +263,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             try {
                               if (isFavorite) {
                                 await ProductService()
-                                    .unmarkInterest(productId: widget.productId);
+                                    .unmarkInterestForCurrentUser(productId: widget.productId);
                                 setState(() => _message = 'OK: Eltávolítva a kedvencekből.');
                               } else {
                                 await ProductService()
@@ -321,3 +321,4 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 }
+

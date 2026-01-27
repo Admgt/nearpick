@@ -88,6 +88,8 @@ class ProductService {
   }
 
   /// Az aktuális kereskedő saját termékei
+
+
   Stream<QuerySnapshot<Map<String, dynamic>>> myProductsStream() {
     final user = _auth.currentUser;
     if (user == null) {
@@ -102,6 +104,8 @@ class ProductService {
         .snapshots();
   }
 
+
+
   Stream<QuerySnapshot<Map<String, dynamic>>> activeProductsStream() {
     final now = DateTime.now();
 
@@ -112,6 +116,7 @@ class ProductService {
         .orderBy('expiresAt')
         .snapshots();
   }
+
 
   Stream<QuerySnapshot<Map<String, dynamic>>> listActiveProducts() {
     return activeProductsStream();
@@ -178,6 +183,53 @@ class ProductService {
     });
   }
 
+
+  Future<void> unmarkInterestForCurrentUser({
+    required String productId,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('Nincs bejelentkezett felhasználó.');
+
+    final query = await _db
+        .collection('interests')
+        .where('userId', isEqualTo: user.uid)
+        .where('productId', isEqualTo: productId)
+        .limit(1)
+        .get();
+
+    if (query.docs.isEmpty) return;
+
+    await unmarkInterestByRef(
+      interestRef: query.docs.first.reference,
+      productId: productId,
+    );
+  }
+
+  Future<void> unmarkInterestByRef({
+    required DocumentReference<Map<String, dynamic>> interestRef,
+    required String productId,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('Nincs bejelentkezett felhasznÃ¡lÃ³.');
+
+    final productRef = _db.collection('products').doc(productId);
+
+    final interestSnap = await interestRef.get();
+    if (!interestSnap.exists) return;
+
+    final ownerId = interestSnap.data()?['userId'] as String?;
+    if (ownerId != null && ownerId != user.uid) {
+      throw Exception('Nincs jogosultsÃ¡g.');
+    }
+
+    await interestRef.delete();
+
+    // Best-effort counter update; do not block favorite removal on permission issues.
+    try {
+      await productRef.update({'interestCount': FieldValue.increment(-1)});
+    } catch (_) {}
+  }
+
   Stream<QuerySnapshot<Map<String, dynamic>>> myInterestsStream() {
     final user = _auth.currentUser;
     if (user == null) {
@@ -190,3 +242,8 @@ class ProductService {
         .snapshots();
   }
 }
+
+
+
+
+
