@@ -1,4 +1,4 @@
-﻿# Szakdolgozat (Admgt)
+﻿# Szakdolgozat (NearPick)
 
 Rövid áttekintés a projekt felépítéséről és futtatásáról.
 
