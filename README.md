@@ -16,7 +16,7 @@ Rövid áttekintés a projekt felépítéséről és futtatásáról.
 Az alkalmazás indítása a `mobile/nearpick/` könyvtárból:
 
 ```bash
-flutter run -d edge --web-port 49904
+flutter run -d edge --web-port 49904  
 ```
 
 Magyarázat:

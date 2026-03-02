@@ -47,7 +47,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCkX3Urt8XKngrn-rP8drgsZBDoLSV03ds',
+    apiKey: '<FIREBASE_API_KEY>',
     appId: '1:864369516764:web:aad02dd9ef0aeec9f65419',
     messagingSenderId: '864369516764',
     projectId: 'nearpick-c0fea',
@@ -57,7 +57,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyA4He-ajfRpR6oG8nNnOdQcALCLvOWWs4Y',
+    apiKey: '<FIREBASE_API_KEY>',
     appId: '1:864369516764:android:7064f34230e00fe6f65419',
     messagingSenderId: '864369516764',
     projectId: 'nearpick-c0fea',
@@ -65,7 +65,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAACDbFfB9LNQxomFBUWSzc2RFUJxL_gkA',
+    apiKey: '<FIREBASE_API_KEY>',
     appId: '1:864369516764:ios:4caa7f870e3af0bef65419',
     messagingSenderId: '864369516764',
     projectId: 'nearpick-c0fea',
@@ -73,3 +73,4 @@ class DefaultFirebaseOptions {
     iosBundleId: 'com.example.nearpick',
   );
 }
+

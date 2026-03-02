@@ -2,7 +2,7 @@ importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js
 importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js");
 
 firebase.initializeApp({
-  apiKey: "AIzaSyCkX3Urt8XKngrn-rP8drgsZBDoLSV03ds",
+  apiKey: "<FIREBASE_WEB_API_KEY>",
   authDomain: "nearpick-c0fea.firebaseapp.com",
   projectId: "nearpick-c0fea",
   storageBucket: "nearpick-c0fea.firebasestorage.app",
@@ -18,3 +18,4 @@ messaging.onBackgroundMessage((payload) => {
     { body: payload.notification?.body ?? "" }
   );
 });
+
