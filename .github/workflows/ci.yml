@@ -19,7 +19,7 @@ env:
   FLUTTER_PROJECT_DIR: mobile/nearpick
   FUNCTIONS_DIR: functions
   FLUTTER_CHANNEL: stable
-  FLUTTER_VERSION: 3.35.0
+  FLUTTER_VERSION: 3.41.3
   NODE_VERSION: "22"
 
 jobs:
