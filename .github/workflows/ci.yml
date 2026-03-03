@@ -1,0 +1,172 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_PROJECT_DIR: mobile/nearpick
+  FUNCTIONS_DIR: functions
+  FLUTTER_CHANNEL: stable
+  FLUTTER_VERSION: 3.35.0
+  NODE_VERSION: "22"
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Flutter pub get
+        working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
+        run: flutter pub get
+
+      - name: Flutter format gate
+        working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
+        run: dart format --set-exit-if-changed .
+
+      - name: Flutter analyze
+        working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
+        run: flutter analyze
+
+      - name: Setup Node (functions)
+        if: ${{ hashFiles('functions/package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Functions npm ci
+        if: ${{ hashFiles('functions/package.json') != '' }}
+        working-directory: ${{ env.FUNCTIONS_DIR }}
+        run: npm ci
+
+      - name: Functions lint (if present)
+        if: ${{ hashFiles('functions/package.json') != '' }}
+        working-directory: ${{ env.FUNCTIONS_DIR }}
+        run: npm run lint --if-present
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Flutter pub get
+        working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
+        run: flutter pub get
+
+      - name: Flutter build web
+        working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
+        run: flutter build web --release
+
+      - name: Setup Node (functions)
+        if: ${{ hashFiles('functions/package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Functions npm ci
+        if: ${{ hashFiles('functions/package.json') != '' }}
+        working-directory: ${{ env.FUNCTIONS_DIR }}
+        run: npm ci
+
+      - name: Functions build (if present)
+        if: ${{ hashFiles('functions/package.json') != '' }}
+        working-directory: ${{ env.FUNCTIONS_DIR }}
+        run: npm run build --if-present
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Flutter pub get
+        working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
+        run: flutter pub get
+
+      - name: Install JUnit converter
+        run: |
+          dart pub global activate junitreport
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+
+      - name: Flutter unit/widget tests + JUnit
+        working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p reports
+          flutter test --machine | tojunit > reports/junit-flutter.xml
+
+      - name: Flutter integration tests (if present)
+        if: ${{ hashFiles('mobile/nearpick/integration_test/**') != '' }}
+        working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
+        run: flutter test integration_test
+
+      - name: Setup Node (functions)
+        if: ${{ hashFiles('functions/package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Functions npm ci
+        if: ${{ hashFiles('functions/package.json') != '' }}
+        working-directory: ${{ env.FUNCTIONS_DIR }}
+        run: npm ci
+
+      - name: Functions tests (if present)
+        if: ${{ hashFiles('functions/package.json') != '' }}
+        working-directory: ${{ env.FUNCTIONS_DIR }}
+        run: npm run test --if-present
+
+      - name: Upload Flutter JUnit artifact
+        if: ${{ always() && hashFiles('mobile/nearpick/reports/junit-flutter.xml') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-junit
+          path: mobile/nearpick/reports/junit-flutter.xml
+          if-no-files-found: error

@@ -1,5 +1,7 @@
 ﻿# Szakdolgozat (NearPick)
 
+[![CI](https://github.com/SZTE-SZF/1-sprint-Admgt/actions/workflows/ci.yml/badge.svg)](https://github.com/SZTE-SZF/1-sprint-Admgt/actions/workflows/ci.yml)
+
 Rövid áttekintés a projekt felépítéséről és futtatásáról.
 
 ## Mappastruktúra
