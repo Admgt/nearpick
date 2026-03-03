@@ -33,9 +33,7 @@ class MyReservationsScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(
-              child: Text('Hiba: ${snapshot.error}'),
-            );
+            return Center(child: Text('Hiba: ${snapshot.error}'));
           }
 
           final docs = snapshot.data?.docs ?? [];
@@ -50,7 +48,8 @@ class MyReservationsScreen extends StatelessWidget {
               final reservation = Reservation.fromDoc(docs[index]);
               final snapshotData = reservation.productSnapshot;
               final imageUrl = snapshotData['imageUrl'] as String?;
-              final name = snapshotData['name'] as String? ?? 'Ismeretlen termek';
+              final name =
+                  snapshotData['name'] as String? ?? 'Ismeretlen termek';
               final discounted = snapshotData['discountedPrice'] as int? ?? 0;
               final original = snapshotData['originalPrice'] as int? ?? 0;
               final expiresAt = reservation.expiresAt;

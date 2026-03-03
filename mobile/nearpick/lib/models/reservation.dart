@@ -43,8 +43,9 @@ class Reservation {
       createdAt: asDate(data['createdAt']),
       expiresAt: asDate(data['expiresAt']),
       pickupCode: data['pickupCode'] as String? ?? '',
-      productSnapshot:
-          Map<String, dynamic>.from(data['productSnapshot'] as Map? ?? {}),
+      productSnapshot: Map<String, dynamic>.from(
+        data['productSnapshot'] as Map? ?? {},
+      ),
     );
   }
 }

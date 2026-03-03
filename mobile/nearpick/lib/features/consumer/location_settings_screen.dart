@@ -51,9 +51,7 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
 
   void _showSnackBar(String text) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
   Future<void> _fetchLocation() async {
@@ -82,9 +80,7 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
           'melletti beallitasoknal.',
         );
       } else {
-        _showSnackBar(
-          'Hozzaferes megtagadva. Engedelyezd a Beallitasokban.',
-        );
+        _showSnackBar('Hozzaferes megtagadva. Engedelyezd a Beallitasokban.');
       }
     } catch (_) {
       _showSnackBar('Nem sikerult meghatarozni a helyet.');

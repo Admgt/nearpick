@@ -35,7 +35,9 @@ class MerchantHomeScreen extends StatelessWidget {
           IconButton(
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MerchantDashboardScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const MerchantDashboardScreen(),
+                ),
               );
             },
             icon: const Icon(Icons.analytics_outlined),
@@ -44,7 +46,7 @@ class MerchantHomeScreen extends StatelessWidget {
           IconButton(
             onPressed: () => AuthService().logout(),
             icon: const Icon(Icons.logout),
-          )
+          ),
         ],
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -109,9 +111,9 @@ class MerchantHomeScreen extends StatelessWidget {
                   );
                 } catch (e) {
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Hiba: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Hiba: $e')));
                 }
               }
 
@@ -119,11 +121,11 @@ class MerchantHomeScreen extends StatelessWidget {
               final reservationStream = user == null
                   ? const Stream<QuerySnapshot<Map<String, dynamic>>>.empty()
                   : FirebaseFirestore.instance
-                      .collection('reservations')
-                      .where('merchantId', isEqualTo: user.uid)
-                      .where('productId', isEqualTo: product.id)
-                      .where('status', isEqualTo: 'reserved')
-                      .snapshots();
+                        .collection('reservations')
+                        .where('merchantId', isEqualTo: user.uid)
+                        .where('productId', isEqualTo: product.id)
+                        .where('status', isEqualTo: 'reserved')
+                        .snapshots();
 
               return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: reservationStream,
@@ -136,16 +138,15 @@ class MerchantHomeScreen extends StatelessWidget {
                   );
                 },
               );
-
             },
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const NewProductScreen()),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const NewProductScreen()));
         },
         child: const Icon(Icons.add),
       ),

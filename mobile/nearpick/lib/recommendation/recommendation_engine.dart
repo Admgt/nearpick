@@ -147,19 +147,25 @@ RecommendationResult scoreProductDoc({
     distanceScore = _clamp01(1.0 - (distanceKm / maxDistanceKm));
   }
 
-  final negativeDismissals = negativeCategoryDismissals ?? const <String, int>{};
+  final negativeDismissals =
+      negativeCategoryDismissals ?? const <String, int>{};
   final negativeLastDismissed =
       negativeCategoryLastDismissedAt ?? const <String, Timestamp>{};
-  final dismissCount = category == null ? 0 : (negativeDismissals[category] ?? 0);
-  final lastDismissedAt =
-      category == null ? null : _asDate(negativeLastDismissed[category]);
+  final dismissCount = category == null
+      ? 0
+      : (negativeDismissals[category] ?? 0);
+  final lastDismissedAt = category == null
+      ? null
+      : _asDate(negativeLastDismissed[category]);
   final daysSinceDismiss = dismissCount == 0
       ? 0.0
       : (lastDismissedAt == null
-              ? 0.0
-              : (now.difference(lastDismissedAt).inMinutes / 60.0 / 24.0))
-          .clamp(0.0, 999.0);
-  final dismissDecay = dismissCount == 0 ? 0.0 : math.exp(-daysSinceDismiss / 7.0);
+                ? 0.0
+                : (now.difference(lastDismissedAt).inMinutes / 60.0 / 24.0))
+            .clamp(0.0, 999.0);
+  final dismissDecay = dismissCount == 0
+      ? 0.0
+      : math.exp(-daysSinceDismiss / 7.0);
   final dismissPenaltyBase = dismissCount == 0
       ? 0.0
       : math.min(0.25, 0.08 * dismissCount);

@@ -25,7 +25,8 @@ class ProductListTile extends StatelessWidget {
     }
 
     final imagePath = product.imagePath;
-    final hasImage = product.hasImage && imagePath != null && imagePath.isNotEmpty;
+    final hasImage =
+        product.hasImage && imagePath != null && imagePath.isNotEmpty;
 
     return ListTile(
       leading: hasImage

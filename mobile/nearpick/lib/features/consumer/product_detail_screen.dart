@@ -74,9 +74,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hiba: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Hiba: $e')));
     } finally {
       if (mounted) setState(() => _dismissLoading = false);
     }
@@ -85,8 +85,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Future<void> _reserveProduct() async {
     setState(() => _reserveLoading = true);
     try {
-      final reservationId =
-          await ReservationService().reserveProduct(productId: widget.productId);
+      final reservationId = await ReservationService().reserveProduct(
+        productId: widget.productId,
+      );
       if (!mounted) return;
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -98,9 +99,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       final message = e.toString().contains('Elfogyott')
           ? 'Elfogyott'
           : 'Hiba: $e';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _reserveLoading = false);
     }
@@ -223,7 +224,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 child: Text(
                   _message!,
                   style: TextStyle(
-                    color: _message!.startsWith('OK') ? Colors.green : Colors.red,
+                    color: _message!.startsWith('OK')
+                        ? Colors.green
+                        : Colors.red,
                   ),
                 ),
               ),
@@ -231,8 +234,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed:
-                    _reserveLoading || quantityAvailable <= 0 ? null : _reserveProduct,
+                onPressed: _reserveLoading || quantityAvailable <= 0
+                    ? null
+                    : _reserveProduct,
                 icon: _reserveLoading
                     ? const SizedBox(
                         width: 18,
@@ -263,24 +267,43 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             try {
                               if (isFavorite) {
                                 await ProductService()
-                                    .unmarkInterestForCurrentUser(productId: widget.productId);
-                                setState(() => _message = 'OK: Eltávolítva a kedvencekből.');
+                                    .unmarkInterestForCurrentUser(
+                                      productId: widget.productId,
+                                    );
+                                setState(
+                                  () => _message =
+                                      'OK: Eltávolítva a kedvencekből.',
+                                );
                               } else {
-                                await ProductService()
-                                    .markInterest(productId: widget.productId);
+                                await ProductService().markInterest(
+                                  productId: widget.productId,
+                                );
                                 final category =
-                                    (widget.data['category'] as String?)?.trim() ?? '';
+                                    (widget.data['category'] as String?)
+                                        ?.trim() ??
+                                    '';
                                 final ownerId =
-                                    (widget.data['ownerId'] as String?)?.trim() ?? '';
+                                    (widget.data['ownerId'] as String?)
+                                        ?.trim() ??
+                                    '';
                                 if (category.isNotEmpty && ownerId.isNotEmpty) {
-                                  await UserInteractionService().logProductInterest(
-                                    uid: FirebaseAuth.instance.currentUser?.uid ?? '',
-                                    productId: widget.productId,
-                                    ownerId: ownerId,
-                                    category: category,
-                                  );
+                                  await UserInteractionService()
+                                      .logProductInterest(
+                                        uid:
+                                            FirebaseAuth
+                                                .instance
+                                                .currentUser
+                                                ?.uid ??
+                                            '',
+                                        productId: widget.productId,
+                                        ownerId: ownerId,
+                                        category: category,
+                                      );
                                 }
-                                setState(() => _message = 'OK: Hozzáadva a kedvencekhez.');
+                                setState(
+                                  () => _message =
+                                      'OK: Hozzáadva a kedvencekhez.',
+                                );
                               }
                             } catch (e) {
                               setState(() => _message = 'Hiba: $e');
@@ -294,8 +317,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
-                    label: Text(isFavorite ? 'Eltávolítás a kedvencekből' : 'Kedvenc'),
+                        : Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                          ),
+                    label: Text(
+                      isFavorite ? 'Eltávolítás a kedvencekből' : 'Kedvenc',
+                    ),
                   ),
                 );
               },
@@ -321,4 +348,3 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 }
-

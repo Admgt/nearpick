@@ -87,9 +87,9 @@ class _NewProductScreenState extends State<NewProductScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hiba: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Hiba: $e')));
     } finally {
       if (mounted) setState(() => _imageLoading = false);
     }
@@ -112,9 +112,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
 
   void _showSnackBar(String text) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
   Future<void> _fetchLocation() async {
@@ -141,9 +139,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
           'melletti beallitasoknal.',
         );
       } else {
-        _showSnackBar(
-          'Hozzaferes megtagadva. Engedelyezd a Beallitasokban.',
-        );
+        _showSnackBar('Hozzaferes megtagadva. Engedelyezd a Beallitasokban.');
       }
     } catch (_) {
       _showSnackBar('Nem sikerult meghatarozni a helyet.');

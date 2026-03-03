@@ -6,7 +6,7 @@ class UserInteractionService {
   final FirebaseFirestore _firestore;
 
   UserInteractionService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   Future<void> logProductView({
     required String uid,
@@ -14,7 +14,10 @@ class UserInteractionService {
     required String ownerId,
     required String category,
   }) async {
-    if (uid.isEmpty || productId.isEmpty || ownerId.isEmpty || category.isEmpty) {
+    if (uid.isEmpty ||
+        productId.isEmpty ||
+        ownerId.isEmpty ||
+        category.isEmpty) {
       return;
     }
 
@@ -32,14 +35,11 @@ class UserInteractionService {
       // Ignore audit failures to keep implicit prefs working.
     }
 
-    await _firestore.collection('userImplicitPrefs').doc(uid).set(
-      {
-        'categoryViews': {category: FieldValue.increment(1)},
-        'categoryLastViewedAt': {category: FieldValue.serverTimestamp()},
-        'lastUpdatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    await _firestore.collection('userImplicitPrefs').doc(uid).set({
+      'categoryViews': {category: FieldValue.increment(1)},
+      'categoryLastViewedAt': {category: FieldValue.serverTimestamp()},
+      'lastUpdatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> logProductInterest({
@@ -48,7 +48,10 @@ class UserInteractionService {
     required String ownerId,
     required String category,
   }) async {
-    if (uid.isEmpty || productId.isEmpty || ownerId.isEmpty || category.isEmpty) {
+    if (uid.isEmpty ||
+        productId.isEmpty ||
+        ownerId.isEmpty ||
+        category.isEmpty) {
       return;
     }
 
@@ -93,12 +96,9 @@ class UserInteractionService {
       final rawViews = data['categoryViews'];
       final rawLastViewed = data['categoryLastViewedAt'];
       if (rawViews is! Map && rawLastViewed is! Map) {
-        await docRef.set(
-          {
-            'lastCompactedAt': FieldValue.serverTimestamp(),
-          },
-          SetOptions(merge: true),
-        );
+        await docRef.set({
+          'lastCompactedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
         return;
       }
 
@@ -143,14 +143,11 @@ class UserInteractionService {
         });
       }
 
-      await docRef.set(
-        {
-          'categoryViews': newCategoryViews,
-          'categoryLastViewedAt': newCategoryLastViewedAt,
-          'lastCompactedAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
+      await docRef.set({
+        'categoryViews': newCategoryViews,
+        'categoryLastViewedAt': newCategoryLastViewedAt,
+        'lastCompactedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     } catch (_) {
       // Best-effort: ignore compaction failures.
     }

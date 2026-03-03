@@ -9,12 +9,9 @@ import 'features/consumer/consumer_home_screen.dart';
 import 'features/merchant/merchant_home_screen.dart';
 import 'services/notification_service.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const NearPickApp());
 }
 
@@ -55,7 +52,6 @@ class RootRouter extends StatefulWidget {
 
   @override
   State<RootRouter> createState() => _RootRouterState();
-
 }
 
 class _RootRouterState extends State<RootRouter> {
@@ -96,7 +92,8 @@ class _RootRouterState extends State<RootRouter> {
             if (!_tokenInitDone) {
               _tokenInitDone = true;
               NotificationService().initAndSaveToken(
-                vapidKey: 'BJQgYIGTpei0KVzMliZ2mqoPMiY3N2UGYCa_-PiPjnE0kXE0Rv72x6BI6TPYVdLUxf7aLioCRsRIu0pN8Vp-YVM',
+                vapidKey:
+                    'BJQgYIGTpei0KVzMliZ2mqoPMiY3N2UGYCa_-PiPjnE0kXE0Rv72x6BI6TPYVdLUxf7aLioCRsRIu0pN8Vp-YVM',
               );
             }
 

@@ -59,9 +59,8 @@ class Product {
       originalPrice: data['originalPrice'] as int? ?? 0,
       discountedPrice: data['discountedPrice'] as int? ?? 0,
       quantity: data['quantity'] as int? ?? 0,
-      quantityAvailable: data['quantityAvailable'] as int? ??
-          data['quantity'] as int? ??
-          0,
+      quantityAvailable:
+          data['quantityAvailable'] as int? ?? data['quantity'] as int? ?? 0,
       expiresAt: asDate(data['expiresAt']),
       createdAt: asDate(data['createdAt']),
       location: data['location'] as GeoPoint?,
@@ -85,18 +84,14 @@ class Product {
       'discountedPrice': discountedPrice,
       'quantity': quantity,
       'quantityAvailable': quantityAvailable,
-      'expiresAt':
-          expiresAt == null ? null : Timestamp.fromDate(expiresAt!),
-      'createdAt':
-          createdAt == null ? null : Timestamp.fromDate(createdAt!),
+      'expiresAt': expiresAt == null ? null : Timestamp.fromDate(expiresAt!),
+      'createdAt': createdAt == null ? null : Timestamp.fromDate(createdAt!),
       'location': location,
       'interestCount': interestCount,
       'status': status,
       'isDeleted': isDeleted,
-      'archivedAt':
-          archivedAt == null ? null : Timestamp.fromDate(archivedAt!),
-      'deletedAt':
-          deletedAt == null ? null : Timestamp.fromDate(deletedAt!),
+      'archivedAt': archivedAt == null ? null : Timestamp.fromDate(archivedAt!),
+      'deletedAt': deletedAt == null ? null : Timestamp.fromDate(deletedAt!),
       'imageUrl': imageUrl,
       'imagePath': imagePath,
       'hasImage': hasImage,

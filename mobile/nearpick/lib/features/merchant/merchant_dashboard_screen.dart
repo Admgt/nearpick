@@ -61,7 +61,8 @@ class MerchantDashboardScreen extends StatelessWidget {
 
           for (final doc in productDocs) {
             final data = doc.data();
-            final quantityAvailable = data['quantityAvailable'] as int? ??
+            final quantityAvailable =
+                data['quantityAvailable'] as int? ??
                 data['quantity'] as int? ??
                 0;
             final status = data['status'] as String? ?? 'active';
@@ -111,8 +112,10 @@ class MerchantDashboardScreen extends StatelessWidget {
 
                 if (productId.isEmpty || createdAt == null) continue;
 
-                final stats =
-                    perProduct.putIfAbsent(productId, () => _ProductInteractionStats());
+                final stats = perProduct.putIfAbsent(
+                  productId,
+                  () => _ProductInteractionStats(),
+                );
 
                 if (type == 'view') {
                   views7d++;
@@ -129,7 +132,9 @@ class MerchantDashboardScreen extends StatelessWidget {
                 }
               }
 
-              final ctr7d = views7d == 0 ? 0.0 : (interests7d / views7d) * 100.0;
+              final ctr7d = views7d == 0
+                  ? 0.0
+                  : (interests7d / views7d) * 100.0;
               final topEntries = perProduct.entries.toList()
                 ..sort((a, b) => b.value.views.compareTo(a.value.views));
               final topProducts = topEntries.take(5).toList();
@@ -209,11 +214,26 @@ class MerchantDashboardScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Expanded(child: _StatusChip(label: 'Active', value: activeOffers)),
+                        Expanded(
+                          child: _StatusChip(
+                            label: 'Active',
+                            value: activeOffers,
+                          ),
+                        ),
                         const SizedBox(width: 8),
-                        Expanded(child: _StatusChip(label: 'Expired', value: expiredOffers)),
+                        Expanded(
+                          child: _StatusChip(
+                            label: 'Expired',
+                            value: expiredOffers,
+                          ),
+                        ),
                         const SizedBox(width: 8),
-                        Expanded(child: _StatusChip(label: 'Sold out', value: soldOutOffers)),
+                        Expanded(
+                          child: _StatusChip(
+                            label: 'Sold out',
+                            value: soldOutOffers,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -255,16 +275,13 @@ class _KpiCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 6),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -288,16 +305,13 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 4),
           Text(
             value.toString(),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),

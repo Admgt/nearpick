@@ -116,21 +116,19 @@ class ReservationService {
       });
 
       final statsRef = _db.collection('merchantStats').doc(merchantId);
-      tx.set(
-        statsRef,
-        {
-          'completedCount': FieldValue.increment(1),
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
+      tx.set(statsRef, {
+        'completedCount': FieldValue.increment(1),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     });
   }
 
   String _generatePickupCode(int length) {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     final rand = Random.secure();
-    return List.generate(length, (_) => chars[rand.nextInt(chars.length)])
-        .join();
+    return List.generate(
+      length,
+      (_) => chars[rand.nextInt(chars.length)],
+    ).join();
   }
 }

@@ -23,7 +23,10 @@ class FavoritesScreen extends StatelessWidget {
   }
 
   Future<DocumentSnapshot<Map<String, dynamic>>> _getProduct(String productId) {
-    return FirebaseFirestore.instance.collection('products').doc(productId).get();
+    return FirebaseFirestore.instance
+        .collection('products')
+        .doc(productId)
+        .get();
   }
 
   @override
@@ -49,9 +52,7 @@ class FavoritesScreen extends StatelessWidget {
           final interestDocs = snapshot.data?.docs ?? [];
 
           if (interestDocs.isEmpty) {
-            return const Center(
-              child: Text('Még nincs kedvenc terméked.'),
-            );
+            return const Center(child: Text('Még nincs kedvenc terméked.'));
           }
 
           return ListView.separated(
@@ -71,9 +72,7 @@ class FavoritesScreen extends StatelessWidget {
                 future: _getProduct(productId),
                 builder: (context, productSnap) {
                   if (!productSnap.hasData) {
-                    return const ListTile(
-                      title: Text('Betöltés...'),
-                    );
+                    return const ListTile(title: Text('Betöltés...'));
                   }
 
                   final productDoc = productSnap.data!;
@@ -85,9 +84,9 @@ class FavoritesScreen extends StatelessWidget {
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () async {
                           await ProductService().unmarkInterestByRef(
-                          interestRef: interestDocs[index].reference,
-                          productId: productId,
-                        );
+                            interestRef: interestDocs[index].reference,
+                            productId: productId,
+                          );
                         },
                       ),
                     );
@@ -95,7 +94,8 @@ class FavoritesScreen extends StatelessWidget {
 
                   final p = productDoc.data()!;
                   final name = p['name'] as String? ?? 'Névtelen termék';
-                  final category = p['category'] as String? ?? 'Ismeretlen kategória';
+                  final category =
+                      p['category'] as String? ?? 'Ismeretlen kategória';
                   final discounted = p['discountedPrice'] as int? ?? 0;
                   final original = p['originalPrice'] as int? ?? 0;
                   final quantityAvailable =
@@ -113,7 +113,10 @@ class FavoritesScreen extends StatelessWidget {
                   return ListTile(
                     dense: true,
                     visualDensity: VisualDensity.compact,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
 
                     title: Text(name),
                     subtitle: Text(
@@ -155,4 +158,3 @@ class FavoritesScreen extends StatelessWidget {
     );
   }
 }
-

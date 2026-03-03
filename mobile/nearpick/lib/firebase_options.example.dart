@@ -73,4 +73,3 @@ class DefaultFirebaseOptions {
     iosBundleId: 'com.example.nearpick',
   );
 }
-

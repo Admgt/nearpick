@@ -175,16 +175,17 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hiba: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Hiba: $e')));
     }
   }
 
   Future<void> _reserveProduct(String productId) async {
     try {
-      final reservationId =
-          await ReservationService().reserveProduct(productId: productId);
+      final reservationId = await ReservationService().reserveProduct(
+        productId: productId,
+      );
       if (!mounted) return;
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -196,9 +197,9 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
       final message = e.toString().contains('Elfogyott')
           ? 'Elfogyott'
           : 'Hiba: $e';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -334,9 +335,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                 }..remove('');
 
                 final user = FirebaseAuth.instance.currentUser;
-                debugPrint(
-                  '[ConsumerHome] prefs streams user=${user?.uid}',
-                );
+                debugPrint('[ConsumerHome] prefs streams user=${user?.uid}');
                 final prefsStream = user == null
                     ? Stream<DocumentSnapshot<Map<String, dynamic>>>.empty()
                     : FirebaseFirestore.instance
@@ -383,7 +382,9 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                       });
                     }
 
-                    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                    return StreamBuilder<
+                      DocumentSnapshot<Map<String, dynamic>>
+                    >(
                       stream: negativePrefsStream,
                       builder: (context, negativeSnap) {
                         if (negativeSnap.hasError) {
@@ -392,8 +393,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                           );
                         }
                         final negativeCategoryDismissals = <String, int>{};
-                        final rawDismissals = negativeSnap
-                            .data
+                        final rawDismissals = negativeSnap.data
                             ?.data()?['categoryDismissals'];
                         if (rawDismissals is Map) {
                           rawDismissals.forEach((key, value) {
@@ -419,322 +419,343 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                           });
                         }
 
-                        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        return StreamBuilder<
+                          QuerySnapshot<Map<String, dynamic>>
+                        >(
                           stream: _productService.listActiveProducts(),
                           builder: (context, snapshot) {
-                        if (snapshot.hasError) {
-                          debugPrint(
-                            '[ConsumerHome] products error: ${snapshot.error}',
-                          );
-                        }
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-
-                        if (snapshot.hasError) {
-                          return Center(
-                            child: Text(
-                              'Hiba a termekek betolteseakor: ${snapshot.error}',
-                              textAlign: TextAlign.center,
-                            ),
-                          );
-                        }
-
-                        final docs = snapshot.data?.docs ?? [];
-
-                        final filteredDocs = docs.where((doc) {
-                          if (_dismissedProductIds.contains(doc.id)) {
-                            return false;
-                          }
-                          final data = doc.data();
-                          final isDeleted = data['isDeleted'] == true;
-                          final status = data['status'] as String?;
-                          if (isDeleted || (status != null && status != 'active')) {
-                            return false;
-                          }
-                          final quantityAvailable =
-                              data['quantityAvailable'] as int? ??
-                              data['quantity'] as int? ??
-                              0;
-                          if (quantityAvailable <= 0) return false;
-
-                          if (_selectedCategory == _allCategories.first) {
-                            return true;
-                          }
-
-                          final category = data['category'] as String? ?? '';
-                          return category == _selectedCategory;
-                        }).toList();
-
-                        final favSet = _favoriteCategories.toSet();
-                        final scored = filteredDocs
-                            .map(
-                              (doc) => scoreProductDoc(
-                                productId: doc.id,
-                                product: doc.data(),
-                                favoriteCategories: favSet,
-                                userLocation: _userLocation,
-                                implicitCategoryViews: implicitCategoryViews,
-                                implicitLastViewedAt: implicitLastViewedAt,
-                                negativeCategoryDismissals:
-                                    negativeCategoryDismissals,
-                                negativeCategoryLastDismissedAt:
-                                    negativeCategoryLastDismissedAt,
-                              ),
-                            )
-                            .toList();
-
-                        scored.sort((a, b) {
-                          if (a.score != b.score) {
-                            return b.score.compareTo(a.score);
-                          }
-
-                          final aExp = (a.product['expiresAt'] as Timestamp?)
-                              ?.toDate();
-                          final bExp = (b.product['expiresAt'] as Timestamp?)
-                              ?.toDate();
-                          if (aExp == null || bExp == null) return 0;
-                          return aExp.compareTo(bExp);
-                        });
-
-                        if (scored.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              'Jelenleg nincs elerheto ajanlat ebben a kategoriaban.',
-                            ),
-                          );
-                        }
-
-                        return ListView.separated(
-                          itemCount: scored.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final result = scored[index];
-                            final docId = result.productId;
-                            final data = result.product;
-                            final imagePath = data['imagePath'] as String?;
-                            final hasImage = data['hasImage'] == true;
-                            final name =
-                                data['name'] as String? ?? 'Nevtelen termek';
-                            final category =
-                                data['category'] as String? ??
-                                'Ismeretlen kategoria';
-                            final discounted =
-                                data['discountedPrice'] as int? ?? 0;
-                            final original = data['originalPrice'] as int? ?? 0;
-                            final quantityAvailable =
-                                data['quantityAvailable'] as int? ??
-                                data['quantity'] as int? ??
-                                0;
-                            final expiresAt = (data['expiresAt'] as Timestamp?)
-                                ?.toDate();
-                            final isInterested = interestedProductIds.contains(
-                              docId,
-                            );
-
-                            String expiresText = 'Ismeretlen lejarat';
-                            if (expiresAt != null) {
-                              final now = DateTime.now();
-                              final diff = expiresAt.difference(now);
-                              if (diff.inMinutes <= 0) {
-                                expiresText = 'Hamarosan lejar';
-                              } else if (diff.inHours < 1) {
-                                expiresText =
-                                    'Lejar ${diff.inMinutes} percen belul';
-                              } else if (diff.inHours < 24) {
-                                expiresText =
-                                    'Lejar ${diff.inHours} oran belul';
-                              } else {
-                                expiresText =
-                                    'Lejar: ${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')}';
-                              }
+                            if (snapshot.hasError) {
+                              debugPrint(
+                                '[ConsumerHome] products error: ${snapshot.error}',
+                              );
                             }
-
-                            void showReasons() {
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  final scorePercent = (result.score * 100)
-                                      .clamp(0, 100)
-                                      .toStringAsFixed(0);
-                                  final reasons = result.reasons;
-                                  final maxHeight =
-                                      MediaQuery.of(context).size.height * 0.6;
-                                  return AlertDialog(
-                                    title: const Text('Miert ajanlott?'),
-                                    content: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxHeight: maxHeight,
-                                      ),
-                                      child: SingleChildScrollView(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text('Pontszam: $scorePercent%'),
-                                            const SizedBox(height: 8),
-                                            if (reasons.isEmpty)
-                                              const Text(
-                                                'Nincs elerheto indok.',
-                                              )
-                                            else
-                                              ...reasons.map(
-                                                (r) => ListTile(
-                                                  dense: true,
-                                                  contentPadding:
-                                                      EdgeInsets.zero,
-                                                  title: Text(r.label),
-                                                  subtitle:
-                                                      (r.detail == null ||
-                                                          r.detail!.isEmpty)
-                                                      ? null
-                                                      : Text(r.detail!),
-                                                  trailing: Text(
-                                                    '${(r.contribution * 100).toStringAsFixed(0)}%',
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(),
-                                        child: const Text('Bezar'),
-                                      ),
-                                    ],
-                                  );
-                                },
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
                               );
                             }
 
-                            return ListTile(
-                              leading: _buildThumbnail(
-                                imagePath: imagePath,
-                                hasImage: hasImage,
-                              ),
-                              title: Row(
-                                children: [
-                                  Expanded(child: Text(name)),
-                                  if (isInterested)
-                                    const Icon(Icons.favorite, size: 18),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.info_outline,
-                                      size: 18,
-                                    ),
-                                    tooltip: 'Miert ajanlott?',
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    onPressed: showReasons,
+                            if (snapshot.hasError) {
+                              return Center(
+                                child: Text(
+                                  'Hiba a termekek betolteseakor: ${snapshot.error}',
+                                  textAlign: TextAlign.center,
+                                ),
+                              );
+                            }
+
+                            final docs = snapshot.data?.docs ?? [];
+
+                            final filteredDocs = docs.where((doc) {
+                              if (_dismissedProductIds.contains(doc.id)) {
+                                return false;
+                              }
+                              final data = doc.data();
+                              final isDeleted = data['isDeleted'] == true;
+                              final status = data['status'] as String?;
+                              if (isDeleted ||
+                                  (status != null && status != 'active')) {
+                                return false;
+                              }
+                              final quantityAvailable =
+                                  data['quantityAvailable'] as int? ??
+                                  data['quantity'] as int? ??
+                                  0;
+                              if (quantityAvailable <= 0) return false;
+
+                              if (_selectedCategory == _allCategories.first) {
+                                return true;
+                              }
+
+                              final category =
+                                  data['category'] as String? ?? '';
+                              return category == _selectedCategory;
+                            }).toList();
+
+                            final favSet = _favoriteCategories.toSet();
+                            final scored = filteredDocs
+                                .map(
+                                  (doc) => scoreProductDoc(
+                                    productId: doc.id,
+                                    product: doc.data(),
+                                    favoriteCategories: favSet,
+                                    userLocation: _userLocation,
+                                    implicitCategoryViews:
+                                        implicitCategoryViews,
+                                    implicitLastViewedAt: implicitLastViewedAt,
+                                    negativeCategoryDismissals:
+                                        negativeCategoryDismissals,
+                                    negativeCategoryLastDismissedAt:
+                                        negativeCategoryLastDismissedAt,
                                   ),
-                                ],
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '$category\n$expiresText - Elerheto: $quantityAvailable db',
+                                )
+                                .toList();
+
+                            scored.sort((a, b) {
+                              if (a.score != b.score) {
+                                return b.score.compareTo(a.score);
+                              }
+
+                              final aExp =
+                                  (a.product['expiresAt'] as Timestamp?)
+                                      ?.toDate();
+                              final bExp =
+                                  (b.product['expiresAt'] as Timestamp?)
+                                      ?.toDate();
+                              if (aExp == null || bExp == null) return 0;
+                              return aExp.compareTo(bExp);
+                            });
+
+                            if (scored.isEmpty) {
+                              return const Center(
+                                child: Text(
+                                  'Jelenleg nincs elerheto ajanlat ebben a kategoriaban.',
+                                ),
+                              );
+                            }
+
+                            return ListView.separated(
+                              itemCount: scored.length,
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                final result = scored[index];
+                                final docId = result.productId;
+                                final data = result.product;
+                                final imagePath = data['imagePath'] as String?;
+                                final hasImage = data['hasImage'] == true;
+                                final name =
+                                    data['name'] as String? ??
+                                    'Nevtelen termek';
+                                final category =
+                                    data['category'] as String? ??
+                                    'Ismeretlen kategoria';
+                                final discounted =
+                                    data['discountedPrice'] as int? ?? 0;
+                                final original =
+                                    data['originalPrice'] as int? ?? 0;
+                                final quantityAvailable =
+                                    data['quantityAvailable'] as int? ??
+                                    data['quantity'] as int? ??
+                                    0;
+                                final expiresAt =
+                                    (data['expiresAt'] as Timestamp?)?.toDate();
+                                final isInterested = interestedProductIds
+                                    .contains(docId);
+
+                                String expiresText = 'Ismeretlen lejarat';
+                                if (expiresAt != null) {
+                                  final now = DateTime.now();
+                                  final diff = expiresAt.difference(now);
+                                  if (diff.inMinutes <= 0) {
+                                    expiresText = 'Hamarosan lejar';
+                                  } else if (diff.inHours < 1) {
+                                    expiresText =
+                                        'Lejar ${diff.inMinutes} percen belul';
+                                  } else if (diff.inHours < 24) {
+                                    expiresText =
+                                        'Lejar ${diff.inHours} oran belul';
+                                  } else {
+                                    expiresText =
+                                        'Lejar: ${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')}';
+                                  }
+                                }
+
+                                void showReasons() {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      final scorePercent = (result.score * 100)
+                                          .clamp(0, 100)
+                                          .toStringAsFixed(0);
+                                      final reasons = result.reasons;
+                                      final maxHeight =
+                                          MediaQuery.of(context).size.height *
+                                          0.6;
+                                      return AlertDialog(
+                                        title: const Text('Miert ajanlott?'),
+                                        content: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxHeight: maxHeight,
+                                          ),
+                                          child: SingleChildScrollView(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Pontszam: $scorePercent%',
+                                                ),
+                                                const SizedBox(height: 8),
+                                                if (reasons.isEmpty)
+                                                  const Text(
+                                                    'Nincs elerheto indok.',
+                                                  )
+                                                else
+                                                  ...reasons.map(
+                                                    (r) => ListTile(
+                                                      dense: true,
+                                                      contentPadding:
+                                                          EdgeInsets.zero,
+                                                      title: Text(r.label),
+                                                      subtitle:
+                                                          (r.detail == null ||
+                                                              r.detail!.isEmpty)
+                                                          ? null
+                                                          : Text(r.detail!),
+                                                      trailing: Text(
+                                                        '${(r.contribution * 100).toStringAsFixed(0)}%',
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(),
+                                            child: const Text('Bezar'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                }
+
+                                return ListTile(
+                                  leading: _buildThumbnail(
+                                    imagePath: imagePath,
+                                    hasImage: hasImage,
                                   ),
-                                  const SizedBox(height: 6),
-                                  Wrap(
-                                    spacing: 6,
-                                    runSpacing: 6,
-                                    children: result.reasons
-                                        .take(2)
-                                        .map(
-                                          (r) => Chip(
-                                            label: Text(
-                                              r.label,
+                                  title: Row(
+                                    children: [
+                                      Expanded(child: Text(name)),
+                                      if (isInterested)
+                                        const Icon(Icons.favorite, size: 18),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.info_outline,
+                                          size: 18,
+                                        ),
+                                        tooltip: 'Miert ajanlott?',
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        onPressed: showReasons,
+                                      ),
+                                    ],
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '$category\n$expiresText - Elerheto: $quantityAvailable db',
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 6,
+                                        children: result.reasons
+                                            .take(2)
+                                            .map(
+                                              (r) => Chip(
+                                                label: Text(
+                                                  r.label,
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                materialTapTargetSize:
+                                                    MaterialTapTargetSize
+                                                        .shrinkWrap,
+                                              ),
+                                            )
+                                            .toList(),
+                                      ),
+                                    ],
+                                  ),
+                                  isThreeLine: true,
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            '$discounted Ft',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          if (original > discounted)
+                                            Text(
+                                              '$original Ft',
                                               style: const TextStyle(
+                                                decoration:
+                                                    TextDecoration.lineThrough,
                                                 fontSize: 12,
                                               ),
                                             ),
-                                            visualDensity:
-                                                VisualDensity.compact,
-                                            materialTapTargetSize:
-                                                MaterialTapTargetSize
-                                                    .shrinkWrap,
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                ],
-                              ),
-                              isThreeLine: true,
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        '$discounted Ft',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        ],
                                       ),
-                                      if (original > discounted)
-                                        Text(
-                                          '$original Ft',
-                                          style: const TextStyle(
-                                            decoration:
-                                                TextDecoration.lineThrough,
+                                      const SizedBox(width: 4),
+                                      ElevatedButton(
+                                        onPressed: quantityAvailable <= 0
+                                            ? null
+                                            : () => _reserveProduct(docId),
+                                        style: ElevatedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          minimumSize: const Size(0, 0),
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          textStyle: const TextStyle(
                                             fontSize: 12,
                                           ),
                                         ),
+                                        child: const Text('Lefoglalom'),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.thumb_down_outlined,
+                                          size: 18,
+                                        ),
+                                        tooltip: 'Nem erdekel',
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        visualDensity: VisualDensity.compact,
+                                        onPressed: () =>
+                                            _dismissCategoryForProduct(
+                                              productId: docId,
+                                              category: category,
+                                              ownerId:
+                                                  data['ownerId'] as String?,
+                                            ),
+                                      ),
                                     ],
                                   ),
-                                  const SizedBox(width: 4),
-                                  ElevatedButton(
-                                    onPressed: quantityAvailable <= 0
-                                        ? null
-                                        : () => _reserveProduct(docId),
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => ProductDetailScreen(
+                                          productId: docId,
+                                          data: data,
+                                        ),
                                       ),
-                                      minimumSize: const Size(0, 0),
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      textStyle: const TextStyle(fontSize: 12),
-                                    ),
-                                    child: const Text('Lefoglalom'),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.thumb_down_outlined,
-                                      size: 18,
-                                    ),
-                                    tooltip: 'Nem erdekel',
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    visualDensity: VisualDensity.compact,
-                                    onPressed: () => _dismissCategoryForProduct(
-                                      productId: docId,
-                                      category: category,
-                                      ownerId: data['ownerId'] as String?,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => ProductDetailScreen(
-                                      productId: docId,
-                                      data: data,
-                                    ),
-                                  ),
+                                    );
+                                  },
                                 );
                               },
                             );
@@ -745,8 +766,6 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                   },
                 );
               },
-            );
-          },
             ),
           ),
         ],

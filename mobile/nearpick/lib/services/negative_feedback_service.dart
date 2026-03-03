@@ -4,7 +4,7 @@ class NegativeFeedbackService {
   final FirebaseFirestore _firestore;
 
   NegativeFeedbackService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   Future<void> dismissCategoryForProduct({
     required String userId,
@@ -30,13 +30,10 @@ class NegativeFeedbackService {
       // Best-effort audit logging.
     }
 
-    await _firestore.collection('userNegativePrefs').doc(userId).set(
-      {
-        'categoryDismissals': {category: FieldValue.increment(1)},
-        'categoryLastDismissedAt': {category: FieldValue.serverTimestamp()},
-        'lastUpdatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    await _firestore.collection('userNegativePrefs').doc(userId).set({
+      'categoryDismissals': {category: FieldValue.increment(1)},
+      'categoryLastDismissedAt': {category: FieldValue.serverTimestamp()},
+      'lastUpdatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 }

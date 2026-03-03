@@ -56,7 +56,9 @@ class _StorageImageState extends State<StorageImage> {
       builder: (context, snapshot) {
         Widget content;
         if (snapshot.connectionState == ConnectionState.waiting) {
-          content = const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          content = const Center(
+            child: CircularProgressIndicator(strokeWidth: 2),
+          );
         } else if (snapshot.hasData) {
           content = Image.memory(
             snapshot.data!,

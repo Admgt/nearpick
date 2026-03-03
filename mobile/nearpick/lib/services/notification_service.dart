@@ -35,10 +35,10 @@ class NotificationService {
         .collection('fcmTokens')
         .doc(token)
         .set({
-      'token': token,
-      'createdAt': FieldValue.serverTimestamp(),
-      'platform': 'flutter',
-    });
+          'token': token,
+          'createdAt': FieldValue.serverTimestamp(),
+          'platform': 'flutter',
+        });
 
     _messaging.onTokenRefresh.listen((newToken) async {
       await _db
@@ -47,10 +47,10 @@ class NotificationService {
           .collection('fcmTokens')
           .doc(newToken)
           .set({
-        'token': newToken,
-        'createdAt': FieldValue.serverTimestamp(),
-        'platform': 'flutter',
-      });
+            'token': newToken,
+            'createdAt': FieldValue.serverTimestamp(),
+            'platform': 'flutter',
+          });
     });
   }
 }

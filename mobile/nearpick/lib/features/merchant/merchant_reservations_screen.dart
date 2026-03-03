@@ -94,13 +94,12 @@ class _MerchantReservationsScreenState
                         onPressed: _loadingIds.contains(reservation.id)
                             ? null
                             : () async {
-                                setState(
-                                  () => _loadingIds.add(reservation.id),
-                                );
+                                setState(() => _loadingIds.add(reservation.id));
                                 try {
-                                  await ReservationService().completeReservation(
-                                    reservationId: reservation.id,
-                                  );
+                                  await ReservationService()
+                                      .completeReservation(
+                                        reservationId: reservation.id,
+                                      );
                                 } catch (e) {
                                   if (!mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(

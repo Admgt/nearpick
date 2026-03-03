@@ -89,7 +89,6 @@ class ProductService {
 
   /// Az aktuális kereskedő saját termékei
 
-
   Stream<QuerySnapshot<Map<String, dynamic>>> myProductsStream() {
     final user = _auth.currentUser;
     if (user == null) {
@@ -104,8 +103,6 @@ class ProductService {
         .snapshots();
   }
 
-
-
   Stream<QuerySnapshot<Map<String, dynamic>>> activeProductsStream() {
     final now = DateTime.now();
 
@@ -116,7 +113,6 @@ class ProductService {
         .orderBy('expiresAt')
         .snapshots();
   }
-
 
   Stream<QuerySnapshot<Map<String, dynamic>>> listActiveProducts() {
     return activeProductsStream();
@@ -183,10 +179,7 @@ class ProductService {
     });
   }
 
-
-  Future<void> unmarkInterestForCurrentUser({
-    required String productId,
-  }) async {
+  Future<void> unmarkInterestForCurrentUser({required String productId}) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Nincs bejelentkezett felhasználó.');
 
@@ -242,8 +235,3 @@ class ProductService {
         .snapshots();
   }
 }
-
-
-
-
-
