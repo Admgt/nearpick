@@ -22,7 +22,7 @@ class ReservationService {
       if (!productSnap.exists) {
         throw Exception('A termek nem talalhato.');
       }
-      final data = productSnap.data() as Map<String, dynamic>? ?? {};
+      final data = productSnap.data() ?? {};
       final status = data['status'] as String? ?? 'active';
       final isDeleted = data['isDeleted'] as bool? ?? false;
       if (status != 'active' || isDeleted) {
@@ -102,7 +102,7 @@ class ReservationService {
       if (!snap.exists) {
         throw Exception('A foglalas nem talalhato.');
       }
-      final data = snap.data() as Map<String, dynamic>? ?? {};
+      final data = snap.data() ?? {};
       final merchantId = data['merchantId'] as String? ?? '';
       if (merchantId.isEmpty || merchantId != user.uid) {
         throw Exception('Nincs jogosultsag a foglalashoz.');

@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 
 import '../models/product.dart';
@@ -25,13 +27,11 @@ class ProductListTile extends StatelessWidget {
     }
 
     final imagePath = product.imagePath;
-    final hasImage =
-        product.hasImage && imagePath != null && imagePath.isNotEmpty;
 
     return ListTile(
-      leading: hasImage
+      leading: product.hasImage && imagePath != null && imagePath.isNotEmpty
           ? StorageImage(
-              imagePath: imagePath!,
+              imagePath: imagePath,
               width: 56,
               height: 56,
               borderRadius: 8,

@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -204,10 +206,9 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
   }
 
   Widget _buildThumbnail({required String? imagePath, required bool hasImage}) {
-    final shouldShow = hasImage && imagePath != null && imagePath.isNotEmpty;
-    if (shouldShow) {
+    if (hasImage && imagePath != null && imagePath.isNotEmpty) {
       return StorageImage(
-        imagePath: imagePath!,
+        imagePath: imagePath,
         width: 56,
         height: 56,
         borderRadius: 8,

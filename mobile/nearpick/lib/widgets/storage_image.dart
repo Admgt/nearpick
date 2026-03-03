@@ -1,6 +1,7 @@
-import 'dart:typed_data';
+// ignore_for_file: deprecated_member_use
 
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:flutter/material.dart';
 
 class StorageImage extends StatefulWidget {

@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 
@@ -70,7 +72,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             displayName: _nameCtrl.text.trim(),
                             role: _role,
                           );
-                          if (mounted) Navigator.of(context).pop();
+                          if (!context.mounted) return;
+                          Navigator.of(context).pop();
                         } catch (e) {
                           setState(() {
                             _error = e.toString();

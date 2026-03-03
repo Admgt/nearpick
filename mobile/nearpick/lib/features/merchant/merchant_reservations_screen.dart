@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -101,15 +103,16 @@ class _MerchantReservationsScreenState
                                         reservationId: reservation.id,
                                       );
                                 } catch (e) {
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('Hiba: $e')),
                                   );
                                 } finally {
-                                  if (!mounted) return;
-                                  setState(
-                                    () => _loadingIds.remove(reservation.id),
-                                  );
+                                  if (mounted) {
+                                    setState(
+                                      () => _loadingIds.remove(reservation.id),
+                                    );
+                                  }
                                 }
                               },
                         child: const Text('Atadva'),
