@@ -37,6 +37,14 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: Prepare Firebase options (CI fallback)
+        shell: bash
+        run: |
+          if [ ! -f "${{ env.FLUTTER_PROJECT_DIR }}/lib/firebase_options.dart" ]; then
+            cp "${{ env.FLUTTER_PROJECT_DIR }}/lib/firebase_options.example.dart" \
+               "${{ env.FLUTTER_PROJECT_DIR }}/lib/firebase_options.dart"
+          fi
+
       - name: Flutter pub get
         working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
         run: flutter pub get
@@ -82,6 +90,14 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: Prepare Firebase options (CI fallback)
+        shell: bash
+        run: |
+          if [ ! -f "${{ env.FLUTTER_PROJECT_DIR }}/lib/firebase_options.dart" ]; then
+            cp "${{ env.FLUTTER_PROJECT_DIR }}/lib/firebase_options.example.dart" \
+               "${{ env.FLUTTER_PROJECT_DIR }}/lib/firebase_options.dart"
+          fi
+
       - name: Flutter pub get
         working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
         run: flutter pub get
@@ -122,6 +138,14 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+
+      - name: Prepare Firebase options (CI fallback)
+        shell: bash
+        run: |
+          if [ ! -f "${{ env.FLUTTER_PROJECT_DIR }}/lib/firebase_options.dart" ]; then
+            cp "${{ env.FLUTTER_PROJECT_DIR }}/lib/firebase_options.example.dart" \
+               "${{ env.FLUTTER_PROJECT_DIR }}/lib/firebase_options.dart"
+          fi
 
       - name: Flutter pub get
         working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
