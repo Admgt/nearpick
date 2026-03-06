@@ -9,13 +9,13 @@
 
 Evidence referencia:
 - CI workflow: [.github/workflows/ci.yml](../../.github/workflows/ci.yml)
-- JUnit helye (unit/widget + test/**): [mobile/nearpick/reports/junit-flutter.xml](../../mobile/nearpick/reports/junit-flutter.xml)
+- JUnit evidence helye (unit/widget + test/**): [sprints/02/reports/junit.xml](../../sprints/02/reports/junit.xml)
 - Integration step (integration_test/**): `Flutter integration tests (if present)` a CI `test` jobban.
 
 ## Backlog tábla
 | ID | Szint | Tipus | Cél (1 mondat) | Javasolt fájl útvonal | Evidence (CI lépés / riport) |
 |---|---|---|---|---|---|
-| T-01 | unit | happy | Ellenőrizze, hogy `favoriteScore` 1.0-t ad kedvenc kategóriára és 0.0-t másra. | `mobile/nearpick/test/unit/recommendation/favorite_score_test.dart` | `Flutter unit/widget tests + JUnit` / `mobile/nearpick/reports/junit-flutter.xml` |
+| T-01 | unit | happy | Ellenőrizze, hogy `favoriteScore` 1.0-t ad kedvenc kategóriára és 0.0-t másra. | `mobile/nearpick/test/unit/recommendation/favorite_score_test.dart` | `Flutter unit/widget tests + JUnit` / `sprints/02/reports/junit.xml` |
 | T-02 | unit | edge | Ellenőrizze a `recencyScore` határértékeit (0 óra, 72 óra, 72+ óra). | `mobile/nearpick/test/unit/recommendation/recency_score_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
 | T-03 | unit | edge | Ellenőrizze az `expiryScore` határértékeit (<=6 óra, 48 óra, 48+ óra). | `mobile/nearpick/test/unit/recommendation/expiry_score_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
 | T-04 | unit | edge | Ellenőrizze, hogy az `interestScore` clampeli az értéket 0..1 tartományra. | `mobile/nearpick/test/unit/recommendation/interest_score_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |

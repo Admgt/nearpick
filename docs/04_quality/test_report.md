@@ -2,7 +2,7 @@
 
 ## Evidence baseline (CI-hez kötve)
 - CI workflow referencia: [.github/workflows/ci.yml](../../.github/workflows/ci.yml)
-- Flutter JUnit artifact fájl: [mobile/nearpick/reports/junit-flutter.xml](../../mobile/nearpick/reports/junit-flutter.xml)
+- Flutter JUnit evidence fájl: [sprints/02/reports/junit.xml](../../sprints/02/reports/junit.xml)
 - Flutter projekt gyökér: [mobile/nearpick](../../mobile/nearpick)
 - Lokális futtató script (opcionális): [scripts/test_all.sh](../../scripts/test_all.sh)
 
@@ -15,7 +15,7 @@ Ez a riport direkt a jelenlegi CI lépéseire épít:
 |---|---|---|---|---|
 | Format gate | Formázási szabályszerűség | `lint` job | `dart format --set-exit-if-changed .` | CI job log |
 | Static analyze | Dart/Flutter statikus ellenőrzés | `lint` job | `flutter analyze` | CI job log |
-| Unit + widget | `mobile/nearpick/test/**` | `test` job, `Flutter unit/widget tests + JUnit` | `flutter test --machine | tojunit > reports/junit-flutter.xml` | `mobile/nearpick/reports/junit-flutter.xml` + `flutter-junit` artifact |
+| Unit + widget | `mobile/nearpick/test/**` | `test` job, `Flutter unit/widget tests + JUnit` | `flutter test --machine | tojunit > reports/junit-flutter.xml` | `sprints/02/reports/junit.xml` + `flutter-junit` artifact |
 | Integration (Flutter) | `mobile/nearpick/integration_test/**` | `test` job, `Flutter integration tests (if present)` | `flutter test integration_test` | CI step log (jelenleg nincs külön JUnit erre a lépésre) |
 
 ## Legutolsó futás (kitölthető mező)

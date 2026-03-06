@@ -1,26 +1,34 @@
-﻿# Szakdolgozat (NearPick)
+# NearPick
 
 [![CI](https://github.com/SZTE-SZF/1-sprint-Admgt/actions/workflows/ci.yml/badge.svg)](https://github.com/SZTE-SZF/1-sprint-Admgt/actions/workflows/ci.yml)
 
-Rövid áttekintés a projekt felépítéséről és futtatásáról.
+NearPick egy Flutter + Firebase alapú alkalmazás, amely a közeli, kedvezményes termékek gyors megtalálását és lefoglalását támogatja.
 
-## Mappastruktúra
+## Gyors hivatkozások
 
-- `sprints/` – a sprintanyagok
-  - `sprints/1/` – 1. sprint
-  - `sprints/2/` – 2. sprint
-- `mobile/nearpick/` – maga a mobil/web alkalmazás (Flutter)
-- `functions/` – backend függvények (Firebase Functions)
-- `scripts/` – segédscriptek (validáló script)
+- Dokumentációs index: [`docs/00_index.md`](docs/00_index.md)
+- Flutter app leírás: [`mobile/nearpick/README.md`](mobile/nearpick/README.md)
+- Tesztstratégia: [`docs/04_quality/test_strategy.md`](docs/04_quality/test_strategy.md)
 
-## Futtatás
+## Gyors indítás (lokál)
 
-Az alkalmazás indítása a `mobile/nearpick/` könyvtárból:
+Projekt gyökérből:
 
 ```bash
-flutter run -d edge --web-port 49904  
+cd mobile/nearpick
+flutter pub get
+flutter run -d edge --web-port 49904
 ```
 
-Magyarázat:
-- `-d edge` – a célböngésző az Edge. Ezt azért használjuk, mert a helymeghatározása megbízhatóbb, mint a Chrome-é.
-- `--web-port 49904` – fix portot ad meg. Erre a CORS-beállítások miatt van szükség, mert véletlenszerű porton gondot okozhatna.
+Megjegyzés:
+- A fix web port (`49904`) a jelenlegi CORS/Firebase lokális beállítások miatt van használatban.
+
+## Minőségkapuk futtatása
+
+Ha a teljes lokális quality gate-et szeretnéd futtatni:
+
+```bash
+bash scripts/test_all.sh
+```
+
+Ez a script formázás + elemzés + teszt lépéseket futtat, és JUnit kimenetet készít.
