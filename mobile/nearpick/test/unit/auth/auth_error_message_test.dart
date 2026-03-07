@@ -4,7 +4,7 @@ import 'package:nearpick/core/auth/auth_error_message.dart';
 
 void main() {
   test('maps blocked localhost referer errors to a clear message', () {
-    const error = FirebaseAuthException(
+    final error = FirebaseAuthException(
       code: 'unknown',
       message:
           '[firebase_auth/requests-from-referer-http://localhost:49904-are-blocked.] Error',
@@ -17,7 +17,7 @@ void main() {
   });
 
   test('maps invalid credential errors to a user-facing message', () {
-    const error = FirebaseAuthException(code: 'invalid-credential');
+    final error = FirebaseAuthException(code: 'invalid-credential');
 
     expect(authErrorMessage(error), 'Hibas email vagy jelszo.');
   });
