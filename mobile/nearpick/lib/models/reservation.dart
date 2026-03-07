@@ -25,8 +25,7 @@ class Reservation {
     required this.productSnapshot,
   });
 
-  factory Reservation.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? const <String, dynamic>{};
+  factory Reservation.fromMap(String id, Map<String, dynamic> data) {
     DateTime? asDate(dynamic value) {
       if (value is Timestamp) return value.toDate();
       if (value is DateTime) return value;
@@ -34,7 +33,7 @@ class Reservation {
     }
 
     return Reservation(
-      id: doc.id,
+      id: id,
       productId: data['productId'] as String? ?? '',
       merchantId: data['merchantId'] as String? ?? '',
       buyerId: data['buyerId'] as String? ?? '',
@@ -47,5 +46,10 @@ class Reservation {
         data['productSnapshot'] as Map? ?? {},
       ),
     );
+  }
+
+  factory Reservation.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? const <String, dynamic>{};
+    return Reservation.fromMap(doc.id, data);
   }
 }

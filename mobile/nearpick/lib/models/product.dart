@@ -43,8 +43,7 @@ class Product {
     required this.hasImage,
   });
 
-  factory Product.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? const <String, dynamic>{};
+  factory Product.fromMap(String id, Map<String, dynamic> data) {
     DateTime? asDate(dynamic value) {
       if (value is Timestamp) return value.toDate();
       if (value is DateTime) return value;
@@ -52,7 +51,7 @@ class Product {
     }
 
     return Product(
-      id: doc.id,
+      id: id,
       ownerId: data['ownerId'] as String? ?? '',
       name: data['name'] as String? ?? 'Nevtelen termek',
       category: data['category'] as String? ?? 'Ismeretlen kategoria',
@@ -73,6 +72,11 @@ class Product {
       imagePath: data['imagePath'] as String?,
       hasImage: data['hasImage'] as bool? ?? false,
     );
+  }
+
+  factory Product.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? const <String, dynamic>{};
+    return Product.fromMap(doc.id, data);
   }
 
   Map<String, dynamic> toMap() {

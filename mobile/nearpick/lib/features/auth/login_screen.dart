@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:nearpick/core/auth/auth_error_message.dart';
 import '../../services/auth_service.dart';
 import 'register_screen.dart';
 
+typedef LoginAction = Future<void> Function(String email, String password);
+
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final LoginAction? onLogin;
+
+  const LoginScreen({super.key, this.onLogin});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -44,13 +49,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         _error = null;
                       });
                       try {
-                        await AuthService().login(
-                          email: _emailCtrl.text.trim(),
-                          password: _passwordCtrl.text.trim(),
+                        final login =
+                            widget.onLogin ??
+                            (String email, String password) {
+                              return AuthService().login(
+                                email: email,
+                                password: password,
+                              );
+                            };
+                        await login(
+                          _emailCtrl.text.trim(),
+                          _passwordCtrl.text.trim(),
                         );
                       } catch (e) {
                         setState(() {
-                          _error = e.toString();
+                          _error = authErrorMessage(e);
                         });
                       } finally {
                         setState(() => _loading = false);

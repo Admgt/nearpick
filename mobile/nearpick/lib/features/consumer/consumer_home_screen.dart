@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'product_detail_screen.dart';
 import '../../recommendation/recommendation_engine.dart';
+import 'offer_filter.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import '../../services/user_interaction_service.dart';
@@ -449,29 +450,13 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                             final docs = snapshot.data?.docs ?? [];
 
                             final filteredDocs = docs.where((doc) {
-                              if (_dismissedProductIds.contains(doc.id)) {
-                                return false;
-                              }
-                              final data = doc.data();
-                              final isDeleted = data['isDeleted'] == true;
-                              final status = data['status'] as String?;
-                              if (isDeleted ||
-                                  (status != null && status != 'active')) {
-                                return false;
-                              }
-                              final quantityAvailable =
-                                  data['quantityAvailable'] as int? ??
-                                  data['quantity'] as int? ??
-                                  0;
-                              if (quantityAvailable <= 0) return false;
-
-                              if (_selectedCategory == _allCategories.first) {
-                                return true;
-                              }
-
-                              final category =
-                                  data['category'] as String? ?? '';
-                              return category == _selectedCategory;
+                              return shouldIncludeOffer(
+                                productId: doc.id,
+                                product: doc.data(),
+                                dismissedProductIds: _dismissedProductIds,
+                                selectedCategory: _selectedCategory,
+                                allCategoryLabel: _allCategories.first,
+                              );
                             }).toList();
 
                             final favSet = _favoriteCategories.toSet();

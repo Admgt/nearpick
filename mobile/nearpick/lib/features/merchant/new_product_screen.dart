@@ -1,14 +1,22 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../services/product_service.dart';
+
 import '../../services/location_service.dart';
+import '../../services/product_service.dart';
+import 'new_product_form_logic.dart';
+
+typedef SaveProductAction = Future<void> Function(NewProductCommand command);
 
 class NewProductScreen extends StatefulWidget {
-  const NewProductScreen({super.key});
+  final SaveProductAction? onSaveProduct;
+  final DateTime? initialExpiry;
+
+  const NewProductScreen({super.key, this.onSaveProduct, this.initialExpiry});
 
   @override
   State<NewProductScreen> createState() => _NewProductScreenState();
@@ -34,6 +42,12 @@ class _NewProductScreenState extends State<NewProductScreen> {
   DateTime? _selectedExpiry;
   bool _loading = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedExpiry = widget.initialExpiry;
+  }
 
   @override
   void dispose() {
@@ -91,7 +105,9 @@ class _NewProductScreenState extends State<NewProductScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('Hiba: $e')));
     } finally {
-      if (mounted) setState(() => _imageLoading = false);
+      if (mounted) {
+        setState(() => _imageLoading = false);
+      }
     }
   }
 
@@ -153,7 +169,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedExpiry == null) {
-      setState(() => _error = 'Kérlek válaszd ki a lejárati dátumot.');
+      setState(() => _error = 'Kerlek valaszd ki a lejarati datumot.');
       return;
     }
 
@@ -163,36 +179,25 @@ class _NewProductScreenState extends State<NewProductScreen> {
     });
 
     try {
-      final originalPrice = int.parse(_originalPriceCtrl.text.trim());
-      final discountedPrice = int.parse(_discountedPriceCtrl.text.trim());
-      final quantity = int.parse(_quantityCtrl.text.trim());
-      final latText = _latCtrl.text.trim();
-      final lngText = _lngCtrl.text.trim();
-      GeoPoint? location;
-      if (latText.isNotEmpty || lngText.isNotEmpty) {
-        if (latText.isEmpty || lngText.isEmpty) {
-          throw Exception('Kerek add meg mindket koordinatat.');
-        }
-        final lat = double.tryParse(latText);
-        final lng = double.tryParse(lngText);
-        if (lat == null || lng == null) {
-          throw Exception('Adj meg ervenyes szamokat a koordinatakhoz.');
-        }
-        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-          throw Exception('A koordinatak tartomanya hibas.');
-        }
-        location = GeoPoint(lat, lng);
-      }
-
-      await ProductService().createProductWithOptionalImage(
+      final command = NewProductCommand(
         name: _nameCtrl.text.trim(),
         category: _selectedCategory,
-        originalPrice: originalPrice,
-        discountedPrice: discountedPrice,
-        quantity: quantity,
-        location: location,
-        // lejáratot beállítjuk a nap végére (23:59)
-        imageBytes: _selectedImageBytes,
+        originalPrice: parsePositiveInt(
+          _originalPriceCtrl.text,
+          fieldLabel: 'Az eredeti ar',
+        ),
+        discountedPrice: parsePositiveInt(
+          _discountedPriceCtrl.text,
+          fieldLabel: 'Az akcios ar',
+        ),
+        quantity: parsePositiveInt(
+          _quantityCtrl.text,
+          fieldLabel: 'A mennyiseg',
+        ),
+        location: parseOptionalLocation(
+          latitudeText: _latCtrl.text,
+          longitudeText: _lngCtrl.text,
+        ),
         expiresAt: DateTime(
           _selectedExpiry!.year,
           _selectedExpiry!.month,
@@ -202,7 +207,24 @@ class _NewProductScreenState extends State<NewProductScreen> {
         ),
       );
 
-      if (mounted) Navigator.of(context).pop();
+      if (widget.onSaveProduct != null) {
+        await widget.onSaveProduct!(command);
+      } else {
+        await ProductService().createProductWithOptionalImage(
+          name: command.name,
+          category: command.category,
+          originalPrice: command.originalPrice,
+          discountedPrice: command.discountedPrice,
+          quantity: command.quantity,
+          expiresAt: command.expiresAt,
+          location: command.location,
+          imageBytes: _selectedImageBytes,
+        );
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -217,7 +239,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Új termék hozzáadása')),
+      appBar: AppBar(title: const Text('Uj termek hozzaadasa')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
@@ -274,13 +296,8 @@ class _NewProductScreenState extends State<NewProductScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Termék neve'),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Kötelező mező';
-                    }
-                    return null;
-                  },
+                  decoration: const InputDecoration(labelText: 'Termek neve'),
+                  validator: validateRequiredName,
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
@@ -293,50 +310,34 @@ class _NewProductScreenState extends State<NewProductScreen> {
                       setState(() => _selectedCategory = value);
                     }
                   },
-                  decoration: const InputDecoration(labelText: 'Kategória'),
+                  decoration: const InputDecoration(labelText: 'Kategoria'),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _originalPriceCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Eredeti ár (Ft)',
+                    labelText: 'Eredeti ar (Ft)',
                   ),
                   keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || int.tryParse(value) == null) {
-                      return 'Adj meg egy érvényes számot';
-                    }
-                    return null;
-                  },
+                  validator: validateIntegerField,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _discountedPriceCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Akciós ár (Ft)',
+                    labelText: 'Akcios ar (Ft)',
                   ),
                   keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || int.tryParse(value) == null) {
-                      return 'Adj meg egy érvényes számot';
-                    }
-                    return null;
-                  },
+                  validator: validateIntegerField,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _quantityCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Mennyiség (db)',
+                    labelText: 'Mennyiseg (db)',
                   ),
                   keyboardType: TextInputType.number,
-                  validator: (value) {
-                    final q = int.tryParse(value ?? '');
-                    if (q == null || q <= 0) {
-                      return 'Adj meg egy pozitív számot';
-                    }
-                    return null;
-                  },
+                  validator: validatePositiveQuantity,
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
@@ -366,16 +367,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                           decimal: true,
                           signed: true,
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return null;
-                          }
-                          final parsed = double.tryParse(value.trim());
-                          if (parsed == null || parsed < -90 || parsed > 90) {
-                            return 'Adj meg -90 es 90 kozotti erteket';
-                          }
-                          return null;
-                        },
+                        validator: validateLatitude,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -389,16 +381,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                           decimal: true,
                           signed: true,
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return null;
-                          }
-                          final parsed = double.tryParse(value.trim());
-                          if (parsed == null || parsed < -180 || parsed > 180) {
-                            return 'Adj meg -180 es 180 kozotti erteket';
-                          }
-                          return null;
-                        },
+                        validator: validateLongitude,
                       ),
                     ),
                   ],
@@ -409,13 +392,13 @@ class _NewProductScreenState extends State<NewProductScreen> {
                     Expanded(
                       child: Text(
                         _selectedExpiry == null
-                            ? 'Nincs kiválasztva lejárati dátum'
-                            : 'Lejárat: ${_selectedExpiry!.year}.${_selectedExpiry!.month.toString().padLeft(2, '0')}.${_selectedExpiry!.day.toString().padLeft(2, '0')}',
+                            ? 'Nincs kivalasztva lejarati datum'
+                            : 'Lejarat: ${_selectedExpiry!.year}.${_selectedExpiry!.month.toString().padLeft(2, '0')}.${_selectedExpiry!.day.toString().padLeft(2, '0')}',
                       ),
                     ),
                     TextButton(
                       onPressed: _pickExpiryDate,
-                      child: const Text('Lejárati dátum'),
+                      child: const Text('Lejarati datum'),
                     ),
                   ],
                 ),
@@ -427,7 +410,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                   onPressed: _loading ? null : _save,
                   child: _loading
                       ? const CircularProgressIndicator()
-                      : const Text('Mentés'),
+                      : const Text('Mentes'),
                 ),
               ],
             ),
@@ -438,11 +421,10 @@ class _NewProductScreenState extends State<NewProductScreen> {
   }
 }
 
-// egyszerű kategórialista kezdésnek – később bővíthető
 const List<String> _categories = [
-  'Péksütemény',
-  'Tejtermék',
-  'Zöldség / gyümölcs',
-  'Készétel',
-  'Egyéb',
+  'Peksutemeny',
+  'Tejtermek',
+  'Zoldseg / gyumolcs',
+  'Keszetel',
+  'Egyeb',
 ];

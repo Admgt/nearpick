@@ -1,11 +1,20 @@
-import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'pickup_code_generator.dart';
 
 class ReservationService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db;
+  final FirebaseAuth _auth;
+  final PickupCodeGenerator _pickupCodeGenerator;
+
+  ReservationService({
+    FirebaseFirestore? db,
+    FirebaseAuth? auth,
+    PickupCodeGenerator? pickupCodeGenerator,
+  }) : _db = db ?? FirebaseFirestore.instance,
+       _auth = auth ?? FirebaseAuth.instance,
+       _pickupCodeGenerator =
+           pickupCodeGenerator ?? RandomPickupCodeGenerator();
 
   Future<String> reserveProduct({required String productId}) async {
     final user = _auth.currentUser;
@@ -38,7 +47,7 @@ class ReservationService {
       final newQty = quantityAvailable - 1;
       final now = DateTime.now();
       final expiresAt = now.add(const Duration(minutes: 30));
-      final pickupCode = _generatePickupCode(6);
+      final pickupCode = _pickupCodeGenerator.generate(6);
 
       final ownerId = data['ownerId'] as String? ?? '';
       final productSnapshot = <String, dynamic>{
@@ -121,14 +130,5 @@ class ReservationService {
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     });
-  }
-
-  String _generatePickupCode(int length) {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    final rand = Random.secure();
-    return List.generate(
-      length,
-      (_) => chars[rand.nextInt(chars.length)],
-    ).join();
   }
 }
