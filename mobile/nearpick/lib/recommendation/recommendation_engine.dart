@@ -49,17 +49,19 @@ double favoriteScore(String? category, Set<String> favoriteCategories) {
   return favoriteCategories.contains(category) ? 1.0 : 0.0;
 }
 
-double recencyScore(DateTime? createdAt) {
+double recencyScore(DateTime? createdAt, {DateTime? now}) {
   if (createdAt == null) return 0;
-  final hours = DateTime.now().difference(createdAt).inMinutes / 60.0;
+  final referenceNow = now ?? DateTime.now();
+  final hours = referenceNow.difference(createdAt).inMinutes / 60.0;
   if (hours <= 0) return 1.0;
   if (hours >= 72) return 0.0;
   return _clamp01(1.0 - (hours / 72.0));
 }
 
-double expiryScore(DateTime? expiresAt) {
+double expiryScore(DateTime? expiresAt, {DateTime? now}) {
   if (expiresAt == null) return 0;
-  final hours = expiresAt.difference(DateTime.now()).inMinutes / 60.0;
+  final referenceNow = now ?? DateTime.now();
+  final hours = expiresAt.difference(referenceNow).inMinutes / 60.0;
   if (hours <= 6) return 1.0;
   if (hours >= 48) return 0.0;
   return _clamp01((48.0 - hours) / (48.0 - 6.0));
@@ -69,9 +71,9 @@ double interestScore(int interestCount) {
   return _clamp01(interestCount / 30.0);
 }
 
-String expiryDetail(DateTime expiresAt) {
-  final now = DateTime.now();
-  final diff = expiresAt.difference(now);
+String expiryDetail(DateTime expiresAt, {DateTime? now}) {
+  final referenceNow = now ?? DateTime.now();
+  final diff = expiresAt.difference(referenceNow);
   if (diff.inMinutes <= 0) return 'Hamarosan lejar';
   if (diff.inHours < 1) return 'Lejar ${diff.inMinutes} percen belul';
   if (diff.inHours < 24) return 'Lejar ${diff.inHours} oran belul';
@@ -91,6 +93,7 @@ RecommendationResult scoreProductDoc({
   required String productId,
   required Map<String, dynamic> product,
   required Set<String> favoriteCategories,
+  DateTime? now,
   GeoPoint? userLocation,
   Map<String, int>? implicitCategoryViews,
   Map<String, Timestamp>? implicitLastViewedAt,
@@ -119,10 +122,10 @@ RecommendationResult scoreProductDoc({
       ? null
       : _asDate(implicitLastViewed[category]);
 
-  final now = DateTime.now();
+  final referenceNow = now ?? DateTime.now();
   final ageDays = lastViewedAt == null
       ? 999.0
-      : (now.difference(lastViewedAt).inMinutes / 60.0 / 24.0).clamp(
+      : (referenceNow.difference(lastViewedAt).inMinutes / 60.0 / 24.0).clamp(
           0.0,
           999.0,
         );
@@ -131,8 +134,8 @@ RecommendationResult scoreProductDoc({
   final effectiveCount = implicitCount * decayFactor;
 
   final favScore = favoriteScore(category, favoriteCategories);
-  final expScore = expiryScore(expiresAt);
-  final recScore = recencyScore(createdAt);
+  final expScore = expiryScore(expiresAt, now: referenceNow);
+  final recScore = recencyScore(createdAt, now: referenceNow);
   final intScore = interestScore(interestCount);
   final implicitScore = _clamp01(effectiveCount / 10.0);
   double distanceKm = 0;
@@ -161,7 +164,9 @@ RecommendationResult scoreProductDoc({
       ? 0.0
       : (lastDismissedAt == null
                 ? 0.0
-                : (now.difference(lastDismissedAt).inMinutes / 60.0 / 24.0))
+                : (referenceNow.difference(lastDismissedAt).inMinutes /
+                      60.0 /
+                      24.0))
             .clamp(0.0, 999.0);
   final dismissDecay = dismissCount == 0
       ? 0.0
@@ -198,14 +203,14 @@ RecommendationResult scoreProductDoc({
       RecommendationReason(
         code: 'EXPIRING',
         label: 'Hamarosan lejar',
-        detail: expiryDetail(expiresAt),
+        detail: expiryDetail(expiresAt, now: referenceNow),
         contribution: wExp * expScore,
       ),
     );
   }
 
   if (recScore > 0.2 && createdAt != null) {
-    final hoursAgo = DateTime.now().difference(createdAt).inMinutes / 60.0;
+    final hoursAgo = referenceNow.difference(createdAt).inMinutes / 60.0;
     final roundedHours = hoursAgo.isNaN ? 0 : hoursAgo.round();
     reasons.add(
       RecommendationReason(
@@ -233,7 +238,7 @@ RecommendationResult scoreProductDoc({
       if (lastViewedAt == null) {
         return 'utoljara: 999 napja';
       }
-      final hoursAgo = now.difference(lastViewedAt).inMinutes / 60.0;
+      final hoursAgo = referenceNow.difference(lastViewedAt).inMinutes / 60.0;
       if (hoursAgo < 1) return 'utoljara: ma';
       if (hoursAgo < 24) return 'utoljara: ${hoursAgo.round()} oraja';
       return 'utoljara: ${ageDays.round()} napja';
@@ -250,7 +255,7 @@ RecommendationResult scoreProductDoc({
   }
 
   if (dismissCount > 0 && dismissPenalty > 0.005) {
-    final lastDismissedText = _relativeTimeLabel(lastDismissedAt, now);
+    final lastDismissedText = _relativeTimeLabel(lastDismissedAt, referenceNow);
     reasons.add(
       RecommendationReason(
         code: 'DISMISSED_CATEGORY',
