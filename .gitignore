@@ -1,7 +1,13 @@
 __pycache__/
 *.pyc
 .env
+.env.*
+!.env.example
 .DS_Store
 .vscode/
 .idea/
 get-pip.py
+firebase-debug.log
+firebase-debug.*.log
+functions/node_modules/
+mobile/nearpick/reports/
