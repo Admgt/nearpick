@@ -5,11 +5,9 @@ class ReservationService {
   final FirebaseFunctions _functions;
   final FirebaseAuth _auth;
 
-  ReservationService({
-    FirebaseFunctions? functions,
-    FirebaseAuth? auth,
-  }) : _functions = functions ?? FirebaseFunctions.instance,
-       _auth = auth ?? FirebaseAuth.instance;
+  ReservationService({FirebaseFunctions? functions, FirebaseAuth? auth})
+    : _functions = functions ?? FirebaseFunctions.instance,
+      _auth = auth ?? FirebaseAuth.instance;
 
   Future<String> reserveProduct({required String productId}) async {
     final user = _auth.currentUser;
@@ -41,9 +39,7 @@ class ReservationService {
 
     try {
       final callable = _functions.httpsCallable('completeReservation');
-      await callable.call(<String, dynamic>{
-        'reservationId': reservationId,
-      });
+      await callable.call(<String, dynamic>{'reservationId': reservationId});
     } on FirebaseFunctionsException catch (e) {
       throw Exception(e.message ?? 'A foglalas nem teljesitheto.');
     }

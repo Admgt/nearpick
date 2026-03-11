@@ -128,9 +128,7 @@ class ProductService {
 
     try {
       final callable = _functions.httpsCallable('archiveProduct');
-      await callable.call(<String, dynamic>{
-        'productId': productId,
-      });
+      await callable.call(<String, dynamic>{'productId': productId});
     } on FirebaseFunctionsException catch (e) {
       throw Exception(e.message ?? 'A termek archivalsa nem sikerult.');
     }
