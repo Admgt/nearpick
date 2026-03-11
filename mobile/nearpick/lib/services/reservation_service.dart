@@ -1,20 +1,15 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'pickup_code_generator.dart';
 
 class ReservationService {
-  final FirebaseFirestore _db;
+  final FirebaseFunctions _functions;
   final FirebaseAuth _auth;
-  final PickupCodeGenerator _pickupCodeGenerator;
 
   ReservationService({
-    FirebaseFirestore? db,
+    FirebaseFunctions? functions,
     FirebaseAuth? auth,
-    PickupCodeGenerator? pickupCodeGenerator,
-  }) : _db = db ?? FirebaseFirestore.instance,
-       _auth = auth ?? FirebaseAuth.instance,
-       _pickupCodeGenerator =
-           pickupCodeGenerator ?? RandomPickupCodeGenerator();
+  }) : _functions = functions ?? FirebaseFunctions.instance,
+       _auth = auth ?? FirebaseAuth.instance;
 
   Future<String> reserveProduct({required String productId}) async {
     final user = _auth.currentUser;
@@ -22,80 +17,20 @@ class ReservationService {
       throw Exception('Nincs bejelentkezett felhasznalo.');
     }
 
-    final productRef = _db.collection('products').doc(productId);
-    final reservationRef = _db.collection('reservations').doc();
-
-    // TODO: Move this transaction to a Cloud Function for stricter security.
-    await _db.runTransaction((tx) async {
-      final productSnap = await tx.get(productRef);
-      if (!productSnap.exists) {
-        throw Exception('A termek nem talalhato.');
-      }
-      final data = productSnap.data() ?? {};
-      final status = data['status'] as String? ?? 'active';
-      final isDeleted = data['isDeleted'] as bool? ?? false;
-      if (status != 'active' || isDeleted) {
-        throw Exception('A termek mar nem elerheto.');
-      }
-
-      final quantityAvailable =
-          data['quantityAvailable'] as int? ?? data['quantity'] as int? ?? 0;
-      if (quantityAvailable <= 0) {
-        throw Exception('Elfogyott');
-      }
-
-      final newQty = quantityAvailable - 1;
-      final now = DateTime.now();
-      final expiresAt = now.add(const Duration(minutes: 30));
-      final pickupCode = _pickupCodeGenerator.generate(6);
-
-      final ownerId = data['ownerId'] as String? ?? '';
-      final productSnapshot = <String, dynamic>{
-        'name': data['name'] as String? ?? '',
-        'discountedPrice': data['discountedPrice'] as int? ?? 0,
-        'originalPrice': data['originalPrice'] as int? ?? 0,
-        'imageUrl': data['imageUrl'] as String?,
-        'expiresAt': data['expiresAt'],
-        'category': data['category'] as String? ?? '',
-      };
-
-      final updates = <String, dynamic>{
-        'quantityAvailable': newQty,
-        'quantity': newQty,
-      };
-      if (newQty == 0) {
-        updates['status'] = 'sold_out';
-        updates['soldOutAt'] = FieldValue.serverTimestamp();
-      }
-
-      tx.update(productRef, updates);
-
-      tx.set(reservationRef, {
+    try {
+      final callable = _functions.httpsCallable('reserveProduct');
+      final response = await callable.call(<String, dynamic>{
         'productId': productId,
-        'merchantId': ownerId,
-        'buyerId': user.uid,
-        'qty': 1,
-        'status': 'reserved',
-        'createdAt': FieldValue.serverTimestamp(),
-        'expiresAt': Timestamp.fromDate(expiresAt),
-        'pickupCode': pickupCode,
-        'productSnapshot': productSnapshot,
       });
-
-      if (ownerId.isNotEmpty) {
-        final statsRef = _db.collection('merchantStats').doc(ownerId);
-        final statsUpdate = <String, dynamic>{
-          'reservedCount': FieldValue.increment(1),
-          'updatedAt': FieldValue.serverTimestamp(),
-        };
-        if (newQty == 0) {
-          statsUpdate['soldOutCount'] = FieldValue.increment(1);
-        }
-        tx.set(statsRef, statsUpdate, SetOptions(merge: true));
+      final data = Map<String, dynamic>.from(response.data as Map);
+      final reservationId = data['reservationId'] as String?;
+      if (reservationId == null || reservationId.isEmpty) {
+        throw Exception('A foglalas letrejott, de nincs reservationId.');
       }
-    });
-
-    return reservationRef.id;
+      return reservationId;
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'A foglalas nem sikerult.');
+    }
   }
 
   Future<void> completeReservation({required String reservationId}) async {
@@ -104,31 +39,13 @@ class ReservationService {
       throw Exception('Nincs bejelentkezett felhasznalo.');
     }
 
-    final reservationRef = _db.collection('reservations').doc(reservationId);
-
-    await _db.runTransaction((tx) async {
-      final snap = await tx.get(reservationRef);
-      if (!snap.exists) {
-        throw Exception('A foglalas nem talalhato.');
-      }
-      final data = snap.data() ?? {};
-      final merchantId = data['merchantId'] as String? ?? '';
-      if (merchantId.isEmpty || merchantId != user.uid) {
-        throw Exception('Nincs jogosultsag a foglalashoz.');
-      }
-      final status = data['status'] as String? ?? '';
-      if (status != 'reserved') return;
-
-      tx.update(reservationRef, {
-        'status': 'completed',
-        'completedAt': FieldValue.serverTimestamp(),
+    try {
+      final callable = _functions.httpsCallable('completeReservation');
+      await callable.call(<String, dynamic>{
+        'reservationId': reservationId,
       });
-
-      final statsRef = _db.collection('merchantStats').doc(merchantId);
-      tx.set(statsRef, {
-        'completedCount': FieldValue.increment(1),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    });
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'A foglalas nem teljesitheto.');
+    }
   }
 }

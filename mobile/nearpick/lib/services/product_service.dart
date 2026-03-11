@@ -1,11 +1,13 @@
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class ProductService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
@@ -124,13 +126,14 @@ class ProductService {
       throw Exception('Nincs bejelentkezett felhasznÇ­lÇü.');
     }
 
-    // TODO: Add scheduled cleanup for archived product images in Storage.
-    await _db.collection('products').doc(productId).update({
-      'status': 'archived',
-      'isDeleted': true,
-      'archivedAt': FieldValue.serverTimestamp(),
-      'deletedAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      final callable = _functions.httpsCallable('archiveProduct');
+      await callable.call(<String, dynamic>{
+        'productId': productId,
+      });
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'A termek archivalsa nem sikerult.');
+    }
   }
 
   Future<void> markInterest({required String productId}) async {

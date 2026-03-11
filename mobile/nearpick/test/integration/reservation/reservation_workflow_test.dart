@@ -90,4 +90,43 @@ void main() {
       );
     },
   );
+
+  test(
+    'ReservationWorkflow.completeReservation completes reserved reservations for the owning merchant',
+    () async {
+      final session = FakeReservationSessionGateway()
+        ..currentUserId = 'merchant-1';
+      final productGateway = InMemoryReservationProductGateway();
+      final reservationStore = InMemoryReservationStore()
+        ..reservations['reservation-1'] = ReservationRecord(
+          id: 'reservation-1',
+          productId: 'product-1',
+          merchantId: 'merchant-1',
+          buyerId: 'buyer-1',
+          qty: 1,
+          status: 'reserved',
+          createdAt: DateTime(2026, 3, 6, 12),
+          expiresAt: DateTime(2026, 3, 6, 12, 30),
+          pickupCode: 'ABC123',
+          productSnapshot: const {'name': 'Bagel'},
+        );
+      final merchantStats = InMemoryMerchantStatsGateway();
+      final workflow = ReservationWorkflow(
+        sessionGateway: session,
+        productGateway: productGateway,
+        reservationStore: reservationStore,
+        merchantStatsGateway: merchantStats,
+        pickupCodeGenerator: const FixedPickupCodeGenerator('ABC123'),
+        now: () => DateTime(2026, 3, 6, 12),
+      );
+
+      await workflow.completeReservation(reservationId: 'reservation-1');
+
+      expect(
+        reservationStore.reservations['reservation-1']?.status,
+        'completed',
+      );
+      expect(merchantStats.stats['merchant-1']?['completedCount'], 1);
+    },
+  );
 }
