@@ -1,119 +1,72 @@
 # NearPick
 
+Közeli, kedvezményes termékek gyors felfedezésére és lefoglalására készült Flutter + Firebase demóalkalmazás.
+
 [![CI](https://github.com/SZTE-SZF/1-sprint-Admgt/actions/workflows/ci.yml/badge.svg)](https://github.com/SZTE-SZF/1-sprint-Admgt/actions/workflows/ci.yml)
 
-NearPick egy Flutter + Firebase alkalmazás, amely közeli, kedvezményes termékek megtalálását és lefoglalását támogatja vásárlói és kereskedői nézetekkel.
+## Rövid leírás
 
-## Gyors hivatkozások
+A NearPick arra a problémára ad választ, hogy a nap végén megmaradó, időérzékeny termékek ne vesszenek kárba, hanem a közelben lévő vásárlók gyorsan megtalálhassák és lefoglalhassák őket. A megoldás egy kétoldalú piactér: a kereskedő feltölti az ajánlatot, a fogyasztó kategória, hely és érdeklődés alapján böngészi, majd lefoglalja a kiválasztott terméket.
 
-- Dokumentációs index: [`docs/00_index.md`](docs/00_index.md)
-- Mobil app README: [`mobile/nearpick/README.md`](mobile/nearpick/README.md)
-- Tesztstratégia: [`docs/04_quality/test_strategy.md`](docs/04_quality/test_strategy.md)
-- Quality gate script: [`scripts/test_all.sh`](scripts/test_all.sh)
+## Fő funkciók
 
-## Repository felépítése
+- Email/jelszó alapú regisztráció és bejelentkezés fogyasztói vagy kereskedői szereppel.
+- Közeli ajánlatok listázása, kategóriaszűrés és ajánlási rangsorolás.
+- Termék részleteinek megnyitása, érdeklődés jelölése és foglalás indítása.
+- Kereskedői termékfeltöltés képpel, árral, készlettel, lejárattal és helyadattal.
+- Foglalások, kedvencek, profil és helybeállítás kezelése.
 
-- `mobile/nearpick/`: Flutter kliensalkalmazás.
-- `functions/`: Firebase Cloud Functions kód.
-- `docs/`: szakdolgozati és termékminőségi dokumentáció.
-- `scripts/`: lokális quality gate és segédscript.
-- `firebase.json`, `firestore.rules`, `storage.rules`: Firebase backend konfiguráció és szabályok.
+## Architektúra áttekintés
 
-## Előfeltételek
+A repository központi eleme a `mobile/nearpick` Flutter kliens, amely közvetlenül a Firebase Auth, Firestore, Storage, Functions és Messaging szolgáltatásokat használja. A backend logika főként Firebase szabályokban és Cloud Functions kódban jelenik meg, a minőségi és szakdolgozati artefaktumok pedig a `docs/` könyvtárban vannak összegyűjtve.
 
-Az alábbi eszközök kellenek a repo jelenlegi állapota alapján:
+## Technológiai stack
+
+- Flutter 3.41.x, Dart 3.9.x
+- Firebase Auth
+- Cloud Firestore
+- Firebase Cloud Functions
+- Firebase Storage
+- Firebase Cloud Messaging
+- GitHub Actions CI
+- Node.js 22 a `functions/` mappához
+
+## Quickstart (Lokális demo mód)
+
+### Mit jelent a demo mód?
+
+A jelenlegi repository nem tartalmaz beépített Flutter oldali Firebase Emulator átkötést, ezért a leggyorsabb és reprodukálható bírálói futtatás külön demo Firebase projekttel történik. Ez nem production környezet: a bíráló csak egy elkülönített demo projektből generált konfigurációt használ.
+
+### Előfeltételek
 
 - `git`
-- `Flutter SDK` és a hozzá tartozó `Dart` CLI
-- `Node.js 22` és `npm` a `functions/` mappához
-- `Java 11` és Android SDK, ha Androidra futtatnád a Flutter appot
-- `bash`-kompatibilis shell, ha a `scripts/test_all.sh` quality gate-et akarod futtatni
-- egy böngésző-web device (`edge` vagy más, amit a `flutter devices` listáz)
-- Firebase projekt-hozzáférés, ha a valódi backenddel futtatod az appot
-- `firebase-tools` csak akkor kell, ha Functions emulátort vagy deployt futtatsz
+- `Flutter SDK` és `Dart` CLI
+- egy böngésző-alapú Flutter device, például `edge` vagy `chrome`
+- opcionálisan Android Emulator vagy fizikai Android eszköz
+- `Node.js 22` és `npm`
+- opcionálisan `firebase-tools`, ha a Functions emulátort is el akarod indítani
 
-Megjegyzés:
+### Klónozás
 
-- A CI jelenleg `Flutter 3.41.3` és `Node 22` környezetet használ.
-- A Flutter app alapértelmezésben valódi Firebase projektre csatlakozik; a repo-ban nem látszik külön emulator-átkapcsolási logika.
+```bash
+git clone <repo-url>
+cd 1-sprint-Admgt
+```
 
-## Firebase config és lokális secret fájlok
+### Telepítés
 
-A repo-ban az alábbi fájlok sablonként vagy metaadatként verziókezeltek:
-
-- `.env.example`
-- `mobile/nearpick/firebase.json`
-- `mobile/nearpick/lib/firebase_options.example.dart`
-- `mobile/nearpick/android/app/google-services.example.json`
-- `mobile/nearpick/web/firebase-messaging-sw.example.js`
-
-A lokális, nem commitolandó fájlok:
-
-- `mobile/nearpick/lib/firebase_options.dart`
-- `mobile/nearpick/android/app/google-services.json`
-- `mobile/nearpick/web/firebase-messaging-sw.js`
-
-Fontos:
-
-- Az app nem `.env` fájlból olvas futásidőben. Az `.env.example` itt referencia arra, milyen Firebase adatokra lesz szükséged.
-- A kötelező lokális lépés az example fájlokból a valódi, gitignore-olt config fájlok előállítása.
-
-Javasolt minimál setup:
-
-1. Másold le `mobile/nearpick/lib/firebase_options.example.dart` tartalmát `mobile/nearpick/lib/firebase_options.dart` néven.
-2. Cseréld ki a `<FIREBASE_API_KEY>` placeholdereket a saját Firebase projekted kulcsaira.
-3. Android futtatáshoz másold le `mobile/nearpick/android/app/google-services.example.json` tartalmát `mobile/nearpick/android/app/google-services.json` néven, és töltsd ki a placeholder API key-t.
-4. Ha web push értesítést is szeretnél kipróbálni, másold le `mobile/nearpick/web/firebase-messaging-sw.example.js` tartalmát `mobile/nearpick/web/firebase-messaging-sw.js` néven, és töltsd ki a webes API key-t.
-
-Assumption / TODO:
-
-- A repo tartalmaz FlutterFire metaadatot (`mobile/nearpick/firebase.json`), de nincs külön dokumentált, csapatszintű regenerálási parancs a config fájlokhoz. Ezt később érdemes szabványosítani.
-
-## Quickstart web
-
-Projekt gyökérből:
+1. Hozz létre vagy használj egy külön demo Firebase projektet, ne production projektet.
+2. Másold le a `mobile/nearpick/lib/firebase_options.example.dart` fájlt `mobile/nearpick/lib/firebase_options.dart` néven, majd töltsd ki a demo Firebase projektből kapott API kulcsokat.
+3. Webes demóhoz opcionálisan másold le a `mobile/nearpick/web/firebase-messaging-sw.example.js` fájlt `mobile/nearpick/web/firebase-messaging-sw.js` néven, ha push értesítést is szeretnél kipróbálni.
+4. Android demóhoz másold le a `mobile/nearpick/android/app/google-services.example.json` fájlt `mobile/nearpick/android/app/google-services.json` néven, majd írd bele a demo projekt Android API kulcsát.
+5. Telepítsd a Flutter függőségeket:
 
 ```bash
 cd mobile/nearpick
 flutter pub get
-flutter run -d edge --web-port 49904
 ```
 
-Miért fix a port:
-
-- A webes lokális futtatásnál a `49904` port már szerepel a repo-ban, és a tesztek is erre a localhost refererre utalnak. Ha más portot használsz, a Firebase Auth webes domain-listáját is igazítanod kell.
-
-Előtte ellenőrizd:
-
-- létrejött a `lib/firebase_options.dart`
-- ha web push kell, létrejött a `web/firebase-messaging-sw.js`
-
-## Quickstart mobilra
-
-### Android
-
-Projekt gyökérből:
-
-```bash
-cd mobile/nearpick
-flutter pub get
-flutter devices
-flutter run -d <android-device-id>
-```
-
-Androidhoz szükséges plusz lokális fájl:
-
-- `mobile/nearpick/android/app/google-services.json`
-
-### iOS
-
-Assumption / TODO:
-
-- A repo tartalmaz iOS kódot és iOS `FirebaseOptions` mintát, de nincs verziókezelt `GoogleService-Info.plist.example`. Emiatt az iOS lokális setuphoz projekt-specifikus plist fájlt kell beszerezni a Firebase projektből, mielőtt `flutter run -d ios` használható lenne.
-
-## Functions helyi futtatása
-
-Ez opcionális, a standard app quickstartnak nem része.
+### Emulátor indítása
 
 ```bash
 cd functions
@@ -121,64 +74,90 @@ npm ci
 npm run serve
 ```
 
-Megjegyzés:
+Ez a lépés csak a Cloud Functions emulátort indítja el, és helyi logolási segítséget ad. A Flutter kliens ettől még a demo Firebase projektre csatlakozik, ezért ez opcionális kiegészítés, nem teljes offline futtatás.
 
-- A `functions/` mappában csak Functions emulátor script látszik.
-- A klienskódban nincs dokumentált Firebase emulator bekötés, ezért az app normál gyorsindítása nem erre a helyi emulátorra épít.
+### Mobilalkalmazás indítása
 
-## Tesztek és quality gate
+Ajánlott, leggyorsabb bírálói útvonal webes Flutter device-on:
 
-Gyors Flutter teszt:
+```bash
+cd mobile/nearpick
+flutter run -d edge --web-port 49904
+```
+
+Android alternatíva:
+
+```bash
+cd mobile/nearpick
+flutter devices
+flutter run -d <android-device-id>
+```
+
+### Elvárt kezdőképernyő
+
+Sikeres indulás után a `NearPick - Bejelentkezés` képernyő jelenik meg. Bejelentkezés után a szerepkörtől függően vagy a `NearPick - Ajánlatok a közelben`, vagy a `NearPick - Kereskedő` kezdőképernyő nyílik meg.
+
+## Demo hitelesítő adatok
+
+Az alábbi seed felhasználókat a dedikált demo Firebase projektben kell előre létrehozni:
+
+- Fogyasztó: `demo.user@nearpick.local` / `NearPick123!`
+- Kereskedő: `demo.merchant@nearpick.local` / `NearPick123!`
+
+Részletes környezeti elvárások: [`docs/06_release/demo_environment.md`](docs/06_release/demo_environment.md)
+
+## Demo walkthrough
+
+1. Indítsd el az alkalmazást, és ellenőrizd, hogy a bejelentkezési képernyő jelenik meg.
+2. Jelentkezz be a `demo.merchant@nearpick.local` felhasználóval.
+3. Nyisd meg az új termék képernyőt, adj meg nevet, kategóriát, árakat, készletet, lejáratot és mentsd a terméket.
+4. Ellenőrizd, hogy a termék megjelenik a kereskedői listában.
+5. Jelentkezz ki, majd lépj be a `demo.user@nearpick.local` felhasználóval.
+6. A fogyasztói feedben szűrj kategóriára, nyisd meg a termékrészletet, majd foglald le a terméket.
+7. Nyisd meg a foglalás részleteit, és ellenőrizd, hogy a státusz és az átvételi információk láthatók.
+
+## Projektstruktúra áttekintés
+
+- `mobile/nearpick/`: Flutter kliensalkalmazás és tesztek.
+- `functions/`: Firebase Cloud Functions kód és helyi emulátor script.
+- `docs/`: termék-, architektúra-, minőség-, release- és AI dokumentáció.
+- `scripts/`: lokális quality gate és segédszkriptek.
+- `firebase.json`, `firestore.rules`, `storage.rules`: Firebase konfiguráció és szabályok.
+
+## Tesztelési áttekintés
+
+Gyors Flutter tesztfuttatás:
 
 ```bash
 cd mobile/nearpick
 flutter test
 ```
 
-Teljes repo-szintű quality gate:
+Célzott suite-ok:
+
+```bash
+cd mobile/nearpick
+flutter test test/unit
+flutter test test/widget
+flutter test test/integration
+```
+
+Repo szintű quality gate:
 
 ```bash
 bash scripts/test_all.sh
 ```
 
-A script jelenleg ezeket futtatja:
+További evidence:
 
-- `flutter pub get`
-- `dart format --set-exit-if-changed .`
-- `flutter analyze`
-- `flutter test --machine | tojunit`
-- opcionálisan `flutter test integration_test`, ha ott valódi tesztfájl is van
+- Tesztstratégia: [`docs/04_quality/test_strategy.md`](docs/04_quality/test_strategy.md)
+- Tesztriport: [`docs/04_quality/test_report.md`](docs/04_quality/test_report.md)
+- Release checklist: [`docs/06_release/release_checklist.md`](docs/06_release/release_checklist.md)
 
-## Mi kerül gitbe és mi nem
+## CI badge
 
-Verziókezelve marad:
+Az aktuális workflow badge fent látható. Ha a repository URL vagy workflow útvonal változik, ezt a badge hivatkozást kell frissíteni.
 
-- dokumentációk
-- `firebase.json`, `.firebaserc`, `firestore.rules`, `storage.rules`
-- az `*.example` Firebase config fájlok
-- `mobile/nearpick/firebase.json` FlutterFire metaadat
+## Licenc
 
-Ne commitold:
-
-- valódi Firebase kulcsokkal kitöltött lokális config fájlokat
-- lokális `.env` variánsokat
-- build outputokat és lokális teszt riportokat
-- `node_modules` és Firebase debug logokat
-
-## Gyakori hibák / troubleshooting
-
-- `Target of URI doesn't exist: 'firebase_options.dart'`
-  - Hiányzik a `mobile/nearpick/lib/firebase_options.dart`. Hozd létre az example fájlból.
-- Web login/auth hiba localhost referer miatt
-  - Futtasd a web appot a dokumentált `49904` porton, vagy engedélyezd a saját localhost domainedet a Firebase Auth beállításokban.
-- Android build hiba `google-services.json` miatt
-  - Ellenőrizd, hogy létrehoztad-e a `mobile/nearpick/android/app/google-services.json` fájlt.
-- `npm run serve` hiba a Functions mappában
-  - Telepítsd a `firebase-tools` CLI-t, és jelentkezz be a Firebase projektbe.
-
-## Kapcsolódó fájlok
-
-- Gyökér config referencia: [`.env.example`](.env.example)
-- FlutterFire metaadat: [`mobile/nearpick/firebase.json`](mobile/nearpick/firebase.json)
-- Web service worker minta: [`mobile/nearpick/web/firebase-messaging-sw.example.js`](mobile/nearpick/web/firebase-messaging-sw.example.js)
-- Android config minta: [`mobile/nearpick/android/app/google-services.example.json`](mobile/nearpick/android/app/google-services.example.json)
+Licenc placeholder: a szakdolgozati értékelési csomaghoz a végleges nyílt vagy zárt licenc még kijelölendő.

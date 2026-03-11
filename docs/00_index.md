@@ -9,6 +9,7 @@ A projekt indításához és futtatási parancsaihoz használd a [`../README.md`
 - Scope contract: [`01_product/scope_contract.md`](01_product/scope_contract.md)
 - Képességtérkép: [`01_product/capability_map.md`](01_product/capability_map.md)
 - Metrikák: [`01_product/metrics.md`](01_product/metrics.md)
+- UX flow-k: [`01_product/ux_flows.md`](01_product/ux_flows.md)
 
 ## Architektúra
 
@@ -43,6 +44,9 @@ A projekt indításához és futtatási parancsaihoz használd a [`../README.md`
 ## Release
 
 - Demóscript: [`06_release/demo_script.md`](06_release/demo_script.md)
+- Demo környezet: [`06_release/demo_environment.md`](06_release/demo_environment.md)
+- Release checklist: [`06_release/release_checklist.md`](06_release/release_checklist.md)
+- Changelog: [`../CHANGELOG.md`](../CHANGELOG.md)
 
 ## AI engineering
 
@@ -52,4 +56,4 @@ A projekt indításához és futtatási parancsaihoz használd a [`../README.md`
 
 ## Állapot
 
-Ez a struktúra végponttól végpontig létre van hozva. Egyes részek teljesek, mások részlegesek, és a fájlok explicit módon jelölik az ismert hiányokat.
+Ez a struktúra végponttól végpontig létre van hozva. Az egyes dokumentumok explicit módon jelölik, hogy mely területek tekinthetők kész release artefaktumnak, és hol maradt nyitott korlát vagy későbbi megerősítési feladat.

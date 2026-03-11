@@ -1,40 +1,87 @@
-# Demóscript (5-7 perc)
+# Demóscript (6-7 perc)
 
-## 1) Probléma és érték (30 mp)
+## 0. Előkészítés
 
-- Foglald össze egy mondatban a NearPick célját:
-  - tételszintű, közeli kedvezményes ajánlatok kereskedői feltöltéssel és fogyasztói foglalási folyamattal.
+- Javasolt környezet: webes futtatás `flutter run -d edge --web-port 49904`
+- Demo fiókok:
+  - fogyasztó: `demo.user@nearpick.local`
+  - kereskedő: `demo.merchant@nearpick.local`
+- Legyen előkészítve legalább egy demo termék vagy a kereskedői flow során hozd létre élőben.
 
-## 2) Fő flow #1 (2-3 perc)
+## 1. Nyitás és problémafelvetés (0:00-0:30)
 
-Kereskedői útvonal:
-1. Jelentkezz be kereskedőként.
-2. Nyisd meg az új termék képernyőt.
-3. Töltsd ki a kötelező mezőket és mentsd el a terméket.
-4. Mutasd meg, hogy a termék megjelenik a kereskedői listában.
+Mondható szöveg:
 
-## 3) Fő flow #2 (1-2 perc)
+"A NearPick egy közeli, időérzékeny kedvezményes ajánlatokra épülő piactér. A kereskedő gyorsan feltölt egy megmaradó terméket, a fogyasztó pedig néhány lépésben megtalálja és lefoglalja azt."
 
-Fogyasztói útvonal:
-1. Jelentkezz be fogyasztóként.
-2. Nyisd meg a feedet és alkalmazz kategóriaszűrőt.
-3. Nyisd meg a termék részleteit és foglald le a terméket.
-4. Navigálj a foglalás részleteihez.
+Mutasd meg:
 
-## 4) Hibakezelés (1 perc)
+- a bejelentkezési képernyőt
+- a README quickstartot vagy a release dokumentációt röviden
 
-Mutass be egy vagy két hiba-/edge state helyzetet:
-- Hiányzó kötelező termékmező -> validációs visszajelzés.
-- Foglalási konfliktus / sold_out -> determinisztikus felhasználói üzenet.
+## 2. Kereskedői fő flow (0:30-2:30)
 
-## 5) Termékminőségi evidence (30-60 mp)
+Mondható szöveg:
 
-- Mutasd meg a CI workflow-t és a minőségkapukat.
-- Mutasd meg a tesztstratégia és tesztriport hivatkozásokat.
-- Mutasd meg a security rule fájlokat és a docs indexet.
+"Először kereskedőként lépek be, és létrehozok egy új ajánlatot."
 
-## 6) Következő lépések (30 mp)
+Lépések:
 
-- Integration/E2E backlog végrehajtása.
-- Security/observability megerősítés.
-- AI verifikáció és release readiness lezárása.
+1. Jelentkezz be a kereskedői demo fiókkal.
+2. Mutasd meg a kereskedői kezdőképernyőt.
+3. Nyomd meg a `+` gombot.
+4. Töltsd ki a minimális mezőket: név, kategória, eredeti ár, akciós ár, mennyiség, lejárat.
+5. Opcionálisan mutasd meg a helymeghatározás vagy képfeltöltés lehetőségét.
+6. Mentsd a terméket.
+7. Mutasd meg, hogy az új tétel megjelenik a kereskedői listában.
+
+## 3. Fogyasztói fő flow (2:30-4:30)
+
+Mondható szöveg:
+
+"Most átváltok fogyasztói nézetre, ahol a felhasználó szűrni, böngészni és foglalni tud."
+
+Lépések:
+
+1. Jelentkezz ki.
+2. Jelentkezz be a fogyasztói demo fiókkal.
+3. Mutasd meg az ajánlatlistát.
+4. Válts kategóriát a szűrőben.
+5. Nyisd meg a létrehozott vagy előkészített termék részleteit.
+6. Indíts foglalást a `Lefoglalom` gombbal.
+7. Navigálj a foglalás részletképernyőre.
+
+## 4. Hiba- és üres állapotok (4:30-5:30)
+
+Mondható szöveg:
+
+"A bemutatóban nem csak a happy path fontos, hanem az is, hogy a rendszer hogyan reagál hibára vagy hiányzó adatra."
+
+Mutass be legalább egyet:
+
+- termékfeltöltés kötelező mező nélkül, validációs hibával
+- olyan kategória kiválasztása, ahol nincs elérhető ajánlat
+- sold-out vagy általános foglalási hiba szöveges visszajelzése
+
+## 5. Minőségi evidence és release artefaktumok (5:30-6:30)
+
+Mondható szöveg:
+
+"A projekt értékeléséhez a működő demó mellett dokumentált minőségi bizonyítékok is tartoznak."
+
+Mutasd meg:
+
+- `README.md`
+- `docs/01_product/ux_flows.md`
+- `docs/04_quality/test_report.md`
+- `docs/06_release/release_checklist.md`
+- `.github/workflows/ci.yml`
+
+## 6. Fallback lépések hálózati hiba esetére (6:30-7:00)
+
+Ha a Firebase vagy a hálózat éppen nem elérhető:
+
+1. Mutasd meg a `docs/01_product/ux_flows.md` fájlt a képernyőkép-helyőrzőkkel.
+2. Mutasd meg a `docs/04_quality/test_report.md` és a CI workflow evidence-et.
+3. Mondd el, hogy a reprodukálható demo útvonal külön demo Firebase projektre épül, nem production környezetre.
+4. Ha a Functions emulátor fut, mutasd meg a helyi logokat mint technikai fallback evidence-et.
