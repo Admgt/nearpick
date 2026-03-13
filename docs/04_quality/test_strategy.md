@@ -1,5 +1,84 @@
 # Tesztstratégia
 
+## Aktuális állapot 2026-03-12
+
+### Cél és scope
+A NearPick tesztstratégiájának célja, hogy a kritikus üzleti logikát, a fő felhasználói workflow-kat, a Firestore hozzáférési szabályok legfontosabb engedélyezési tiltásait, valamint a Cloud Functions biztonsági segédlogikáját automatizált kapukkal védje.
+
+Az aktuális stratégia a meglévő repo-struktúrára épít:
+- a Flutter tesztek továbbra is a `mobile/nearpick/test/**` alatt futnak
+- a GitHub Actions a meglévő [ci.yml](/d:/Szakdoga/1-sprint-Admgt/.github/workflows/ci.yml) workflow-ban maradt
+- a Firestore rules ellenőrzése jelenleg szerződés- és viselkedésmodell-szintű, nem teljes emulatoros allow/deny suite
+
+### Aktuális tesztkategóriák
+| Kategória | Darab | Hely | Automatizálás |
+|---|---:|---|---|
+| Flutter unit | 36 | `mobile/nearpick/test/widget_test.dart`, `mobile/nearpick/test/unit/**` | igen |
+| Flutter widget | 6 | `mobile/nearpick/test/widget/**` | igen |
+| Flutter integration/workflow | 10 | `mobile/nearpick/test/integration/**` | igen |
+| Functions és rules | 21 | `functions/test/**` | igen |
+| Manuális acceptance leírás | 2 feature | `sprints/02/tests/acceptance/**` | nem |
+
+Összes automata teszt jelenleg: `73`.
+
+### Flutter stratégia
+- Unit: ajánlási logika, geó számítás, modellek, validáció, dashboard, szűrés, pickup kód, auth hibaüzenet-mapping.
+- Widget: login, register és új termék képernyő validációs viselkedés.
+- Integration/workflow: regisztráció, login, terméklétrehozás, browse/detail adatok, érdeklődés, foglalás és completion flow.
+
+Az integration szint ebben a repo-ban workflow/adaptor szintű automatizálás. Nem valódi `integration_test` alapú mobil UI-E2E, de gyors, determinisztikus és külső szolgáltatás nélkül futtatható.
+
+### Firestore és Functions stratégia
+- Firestore rules szerződésvizsgálat: [firestore.rules](/d:/Szakdoga/1-sprint-Admgt/firestore.rules) kulcskorlátainak ellenőrzése.
+- Firestore rules viselkedésmodell: reprezentatív allow/deny esetek a [functions/test/firestore_rules_policy.test.js](/d:/Szakdoga/1-sprint-Admgt/functions/test/firestore_rules_policy.test.js) alatt.
+- Functions quality gate: `npm run lint`, `npm test`, `npm run scan:deps`.
+
+Lefedett rules esetek:
+- csak saját `ownerId`-val hozható létre termék
+- a képes termék `imagePath` mezője csak saját storage útvonalra mutathat
+- anonim terméklétrehozás tiltott
+- `interestCount` csak izolált, engedélyezett módosítással változhat
+- reservation olvasás csak buyer vagy merchant számára engedett
+- merchant statisztika, user dokumentum és interest csak megfelelő saját azonosítóval érhető el
+
+### Automatizált és manuális scope
+Automatizált:
+- Flutter unit, widget és workflow integration tesztek
+- Functions és rules tesztek
+- Flutter format és analyze
+- functions lint
+- secret scan
+- functions dependency audit
+- web build és artifact publikálás
+
+Manuális vagy részben manuális:
+- `mobile/nearpick/integration_test/**/*_test.dart` alapú valódi UI/E2E suite
+- acceptance feature-k automata futtatása
+- teljes Firebase Emulator alapú rules allow/deny végponti ellenőrzés
+
+### Lokális futtatás
+
+```bash
+cd mobile/nearpick
+dart format --set-exit-if-changed .
+flutter analyze
+flutter test
+flutter test test/integration
+
+cd ../../functions
+npm ci
+npm run lint
+npm test
+npm run scan:deps
+```
+
+### Ismert rések
+- Jelenleg nincs futtatható `mobile/nearpick/integration_test/**/*_test.dart` UI/E2E suite.
+- A Firestore rules ellenőrzése még nem emulatoros allow/deny futás, hanem szerződés + viselkedésmodell.
+- A manuális acceptance feature-k még nem kapcsolódnak automata runnerhez.
+
+## Archivált korábbi tartalom
+
 ## Cél és scope
 A NearPick tesztstratégiájának célja, hogy a kritikus üzleti logikát, a fő felhasználói flow-kat és a korábban nehezen tesztelhető UI-validációs részeket determinisztikus automata tesztekkel védje.
 

@@ -1,5 +1,72 @@
 # Teszt riport
 
+## Aktuális állapot 2026-03-12
+
+### Jelenlegi repo-állapot
+A repository jelenlegi, fájlokból számolt automata tesztleltára:
+
+| Kategória | Darab | Hely |
+|---|---:|---|
+| Flutter unit | 36 | `mobile/nearpick/test/widget_test.dart`, `mobile/nearpick/test/unit/**` |
+| Flutter widget | 6 | `mobile/nearpick/test/widget/**` |
+| Flutter integration/workflow | 10 | `mobile/nearpick/test/integration/**` |
+| Functions és Firestore/rules | 21 | `functions/test/**` |
+| Összes automata teszt | 73 | Flutter + functions |
+
+Automatizált, de külön nem futó E2E UI suite:
+- `mobile/nearpick/integration_test/**` jelenleg csak README scaffoldot tartalmaz
+
+Manuális teszt artefaktum:
+- `sprints/02/tests/acceptance/create_product.feature`
+- `sprints/02/tests/acceptance/empty_state.feature`
+
+### Fő lefedett területek
+Flutter:
+- auth regisztráció és login workflow
+- terméklétrehozás, böngészéshez szükséges adatok és érdeklődés jelölése
+- foglalás, készletcsökkentés és completion workflow
+- UI űrlapvalidációk és hibamegjelenítés
+- ajánlási, szűrési, dashboard és modell logika
+
+Functions és security:
+- `security_helpers.js` biztonsági segédlogika
+- Firestore rules szerződéses korlátai
+- Firestore rules reprezentatív allow/deny viselkedési modelljei
+
+### CI evidence
+A GitHub Actions [ci.yml](/d:/Szakdoga/1-sprint-Admgt/.github/workflows/ci.yml) a következő artefaktumokat teszi elérhetővé:
+- `flutter-junit`
+- `quality-test-evidence`
+- `quality-security-evidence`
+- `nearpick-web-build`
+
+Ezek forrásai:
+- Flutter `reports/junit-flutter.xml`
+- Flutter és functions tesztlogok a `reports/` könyvtárakból
+- secret scan és `npm audit` riportok
+- a Flutter web build kimenete
+
+### Ellenőrzés ebben a módosítási körben
+A jelenlegi változtatási körben a következő ellenőrzések futtatása van betervezve:
+
+```bash
+cd mobile/nearpick
+flutter test
+
+cd ../../functions
+npm test
+npm run lint
+```
+
+Ha valamelyik parancs környezeti okból nem futtatható, azt az összegzés külön jelzi.
+
+### Ismert korlátok
+- A `test/integration/**` suite workflow-szintű integráció, nem valódi device/emulator UI-E2E futás.
+- A Firestore rules verifikáció továbbra sem teljes emulatoros allow/deny tesztkészlet.
+- A manuális acceptance feature-k nincsenek automata runnerhez kötve.
+
+## Archivált korábbi tartalom
+
 ## Összegzés
 A Flutter projekt automata tesztkészlete aktuálisan teljesíti a minimum követelményeket.
 

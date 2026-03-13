@@ -27,6 +27,30 @@ void main() {
     });
   });
 
+  test('AuthWorkflow.login succeeds with valid credentials', () async {
+    final authGateway = FakeAuthGateway();
+    final profileGateway = FakeUserProfileGateway();
+    final workflow = AuthWorkflow(
+      authGateway: authGateway,
+      userProfileGateway: profileGateway,
+    );
+
+    await workflow.register(
+      email: 'user@example.com',
+      password: 'correct-password',
+      displayName: 'User',
+      role: 'consumer',
+    );
+    await authGateway.signOut();
+
+    await workflow.login(
+      email: 'user@example.com',
+      password: 'correct-password',
+    );
+
+    expect(authGateway.currentUserId, 'signed-in-user@example.com');
+  });
+
   test('AuthWorkflow.login fails on invalid credentials', () async {
     final authGateway = FakeAuthGateway();
     final profileGateway = FakeUserProfileGateway();

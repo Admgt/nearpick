@@ -1,0 +1,37 @@
+# Quality gate összefoglaló
+
+## Bevezetett kapuk
+- Flutter formázási kapu: `dart format --set-exit-if-changed .`
+- Flutter statikus analízis: `flutter analyze`
+- Flutter automata tesztek: unit, widget és workflow integration suite a `test/**` alatt
+- Opcionális valódi `integration_test` futás csak létező `*_test.dart` esetén
+- Functions JavaScript quality gate: `npm run lint`
+- Functions tesztek: `npm test`
+- Dependency sebezhetőségi ellenőrzés: `npm run scan:deps`
+- Repo szintű secret scan: `bash scripts/secret_scan.sh`
+- Build artifact mentés: Flutter web build
+- Evidence artifact mentés: teszt- és security riportok
+
+## Evidence források
+- GitHub Actions artifactok:
+  - `flutter-junit`
+  - `quality-test-evidence`
+  - `quality-security-evidence`
+  - `nearpick-web-build`
+- Forrásfájlok és konfiguráció:
+  - [ci.yml](/d:/Szakdoga/1-sprint-Admgt/.github/workflows/ci.yml)
+  - [firestore.rules](/d:/Szakdoga/1-sprint-Admgt/firestore.rules)
+  - [functions/package.json](/d:/Szakdoga/1-sprint-Admgt/functions/package.json)
+  - [scripts/secret_scan.sh](/d:/Szakdoga/1-sprint-Admgt/scripts/secret_scan.sh)
+
+## Jelenlegi maradó kockázatok
+- A mobil UI/E2E réteghez még nincs tényleges `integration_test/**/*_test.dart` suite.
+- A Firestore rules ellenőrzése reprezentatív és hasznos, de nem teljes emulatoros allow/deny bizonyítás.
+- A secret scan mintaalapú, ezért nem helyettesít teljes SAST vagy fejlett DLP eszközt.
+- A dependency audit jelenleg a `functions` csomagra koncentrál; a Flutter dependency-vulnerability ellenőrzés külön még nincs bevezetve.
+
+## Következő ajánlott lépések
+- Firebase Emulator alapú rules teszt bootstrap bevezetése a legkritikusabb kollekciókra.
+- Legalább egy valódi `integration_test` UI-flow hozzáadása stabil demo/emulator backendre.
+- Flutter dependency audit vagy SBOM alapú ellenőrzés hozzáadása.
+- Acceptance feature-k automata összekötése smoke vagy BDD runnerrel.

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nearpick/core/product/product_workflow.dart';
 
@@ -61,6 +62,54 @@ void main() {
 
       expect(repository.readInterestCount(productId), 1);
       expect(interestGateway.records, {'consumer-1::$productId'});
+    },
+  );
+
+  test(
+    'ProductWorkflow.createProductWithOptionalImage stores browse and detail data',
+    () async {
+      final session = FakeProductSessionGateway()..currentUserId = 'merchant-1';
+      final repository = InMemoryProductRepository();
+      final interestGateway = InMemoryInterestGateway();
+      final workflow = ProductWorkflow(
+        sessionGateway: session,
+        productRepository: repository,
+        interestGateway: interestGateway,
+        imageGateway: FakeProductImageGateway(),
+      );
+
+      final expiresAt = DateTime(2026, 3, 7, 18, 30);
+      final productId = await workflow.createProductWithOptionalImage(
+        name: 'Bagel Box',
+        category: 'Pekseg',
+        originalPrice: 1200,
+        discountedPrice: 690,
+        quantity: 3,
+        expiresAt: expiresAt,
+        location: GeoPoint(46.253, 20.147),
+        imageBytes: Uint8List.fromList(const [1, 2, 3, 4]),
+      );
+
+      expect(productId, 'product-1');
+      expect(repository.products[productId], {
+        'ownerId': 'merchant-1',
+        'name': 'Bagel Box',
+        'category': 'Pekseg',
+        'originalPrice': 1200,
+        'discountedPrice': 690,
+        'quantity': 3,
+        'quantityAvailable': 3,
+        'expiresAt': expiresAt,
+        'interestCount': 0,
+        'status': 'active',
+        'isDeleted': false,
+        'archivedAt': null,
+        'deletedAt': null,
+        'hasImage': true,
+        'location': GeoPoint(46.253, 20.147),
+        'imageUrl': 'https://example.test/merchant-1/product-1.jpg',
+        'imagePath': 'products/merchant-1/product-1/main.jpg',
+      });
     },
   );
 }

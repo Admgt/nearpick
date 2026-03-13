@@ -72,7 +72,37 @@ jobs:
       - name: Functions lint (if present)
         if: ${{ hashFiles('functions/package.json') != '' }}
         working-directory: ${{ env.FUNCTIONS_DIR }}
-        run: npm run lint --if-present
+        run: npm run lint
+
+      - name: Repository secret scan
+        shell: bash
+        run: bash scripts/secret_scan.sh
+
+      - name: Functions dependency audit
+        if: ${{ hashFiles('functions/package.json') != '' }}
+        working-directory: ${{ env.FUNCTIONS_DIR }}
+        shell: bash
+        run: |
+          mkdir -p reports
+          set +e
+          npm run scan:deps --json > reports/npm-audit.json
+          status=$?
+          set -e
+          test -f reports/npm-audit.json
+          if [ "$status" -ne 0 ]; then
+            echo "A functions dependency audit magas kockazatu vagy kritikus talalatot jelzett."
+            exit "$status"
+          fi
+
+      - name: Upload security artifacts
+        if: ${{ always() && (hashFiles('reports/security/*') != '' || hashFiles('functions/reports/*') != '') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-security-evidence
+          path: |
+            reports/security/*
+            functions/reports/*
+          if-no-files-found: error
 
   build:
     name: build
@@ -122,6 +152,14 @@ jobs:
         working-directory: ${{ env.FUNCTIONS_DIR }}
         run: npm run build --if-present
 
+      - name: Upload Flutter web artifact
+        if: ${{ always() && hashFiles('mobile/nearpick/build/web/**') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nearpick-web-build
+          path: mobile/nearpick/build/web
+          if-no-files-found: error
+
   test:
     name: test
     runs-on: ubuntu-latest
@@ -162,9 +200,13 @@ jobs:
           flutter test --machine | tojunit > reports/junit-flutter.xml
 
       - name: Flutter integration tests (if present)
-        if: ${{ hashFiles('mobile/nearpick/integration_test/**') != '' }}
+        if: ${{ hashFiles('mobile/nearpick/integration_test/**/*_test.dart') != '' }}
         working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
-        run: flutter test integration_test
+        shell: bash
+        run: |
+          mkdir -p reports
+          set -o pipefail
+          flutter test integration_test | tee reports/flutter-integration-test.txt
 
       - name: Setup Node (functions)
         if: ${{ hashFiles('functions/package.json') != '' }}
@@ -182,7 +224,11 @@ jobs:
       - name: Functions tests (if present)
         if: ${{ hashFiles('functions/package.json') != '' }}
         working-directory: ${{ env.FUNCTIONS_DIR }}
-        run: npm run test --if-present
+        shell: bash
+        run: |
+          mkdir -p reports
+          set -o pipefail
+          npm run test -- --test-reporter=spec | tee reports/functions-test.txt
 
       - name: Upload Flutter JUnit artifact
         if: ${{ always() && hashFiles('mobile/nearpick/reports/junit-flutter.xml') != '' }}
@@ -190,4 +236,14 @@ jobs:
         with:
           name: flutter-junit
           path: mobile/nearpick/reports/junit-flutter.xml
+          if-no-files-found: error
+
+      - name: Upload test evidence artifacts
+        if: ${{ always() && (hashFiles('mobile/nearpick/reports/*') != '' || hashFiles('functions/reports/*') != '') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-test-evidence
+          path: |
+            mobile/nearpick/reports/*
+            functions/reports/*
           if-no-files-found: error
