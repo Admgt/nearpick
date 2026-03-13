@@ -58,7 +58,10 @@ void main() {
       expect(createdProduct['name'], 'Sajtos pogacsa');
       expect(createdProduct['category'], 'Pekseg');
       expect(createdProduct['hasImage'], true);
-      expect(createdProduct['imagePath'], 'products/merchant-1/product-1/main.jpg');
+      expect(
+        createdProduct['imagePath'],
+        'products/merchant-1/product-1/main.jpg',
+      );
 
       merchantSession.currentUserId = 'consumer-1';
       await productWorkflow.markInterest(productId: productId);
@@ -69,7 +72,10 @@ void main() {
       final reservationSession = FakeReservationSessionGateway()
         ..currentUserId = 'consumer-1';
       final reservationProducts = InMemoryReservationProductGateway()
-        ..products[productId] = reservationProductFromMap(productId, createdProduct);
+        ..products[productId] = reservationProductFromMap(
+          productId,
+          createdProduct,
+        );
       final reservationStore = InMemoryReservationStore();
       final merchantStats = InMemoryMerchantStatsGateway();
       final reservationWorkflow = ReservationWorkflow(
@@ -87,13 +93,18 @@ void main() {
 
       expect(reservationId, 'reservation-1');
       expect(reservationProducts.products[productId]?.quantityAvailable, 1);
-      expect(reservationStore.reservations[reservationId]?.buyerId, 'consumer-1');
+      expect(
+        reservationStore.reservations[reservationId]?.buyerId,
+        'consumer-1',
+      );
       expect(
         reservationStore.reservations[reservationId]?.productSnapshot['name'],
         'Sajtos pogacsa',
       );
       expect(
-        reservationStore.reservations[reservationId]?.productSnapshot['category'],
+        reservationStore
+            .reservations[reservationId]
+            ?.productSnapshot['category'],
         'Pekseg',
       );
     },
