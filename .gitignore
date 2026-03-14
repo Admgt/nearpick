@@ -9,5 +9,6 @@ __pycache__/
 get-pip.py
 firebase-debug.log
 firebase-debug.*.log
+.tmp/
 functions/node_modules/
 mobile/nearpick/reports/
