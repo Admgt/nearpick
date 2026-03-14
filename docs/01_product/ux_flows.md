@@ -35,6 +35,11 @@ A felhasználó tudjon új fiókot létrehozni, majd szerepkörének megfelelőe
 - Új felhasználónak még nincs meglévő profiladata vagy preferenciája.
 - A regisztrációs képernyő első megnyitásakor minden mező üres.
 
+### Screenshot evidence
+
+- A bejelentkezési képernyő alapállapota: `login.png`
+- A regisztrációs képernyő szerepkör-választással: `register.png`
+
 ### Akadálymentességi megfontolások
 
 - A beviteli mezők címkével rendelkeznek.
@@ -45,6 +50,8 @@ A felhasználó tudjon új fiókot létrehozni, majd szerepkörének megfelelőe
 
 ![Consumer feed](../assets/ux/consumer_feed.png)
 ![Product detail](../assets/ux/product_detail.png)
+![Consumer empty state](../assets/ux/consumer_empty_state.png)
+![Reservation detail](../assets/ux/reservation_detail.png)
 
 ### Cél
 
@@ -76,6 +83,13 @@ A fogyasztó gyorsan találjon releváns ajánlatokat, tudja szűrni a listát, 
 - Nincs elérhető ajánlat a kiválasztott kategóriában.
 - A felhasználónak még nincs kedvenc kategóriája vagy implicit preferenciája.
 
+### Screenshot evidence
+
+- A lista normál betöltött állapota: `consumer_feed.png`
+- Üres kategóriaállapot felhasználói szöveges visszajelzéssel: `consumer_empty_state.png`
+- A termék részletoldal foglalási CTA-val: `product_detail.png`
+- A sikeres foglalás utáni részletképernyő pickup kóddal és státusszal: `reservation_detail.png`
+
 ### Akadálymentességi megfontolások
 
 - A listaelemek szöveges információt is tartalmaznak, nem csak képet.
@@ -86,6 +100,7 @@ A fogyasztó gyorsan találjon releváns ajánlatokat, tudja szűrni a listát, 
 
 ![Merchant home](../assets/ux/merchant_home.png)
 ![New product form](../assets/ux/new_product_form.png)
+![New product validation error](../assets/ux/new_product_validation_error.png)
 
 ### Cél
 
@@ -117,6 +132,12 @@ A kereskedő gyorsan tudjon új terméket közzétenni a kötelező üzleti adat
 
 - Az első belépő kereskedő listája üres, ezért a rendszer szövegesen jelzi, hogy még nincs feltöltött termék.
 - A képfeltöltés opcionális, ezért üres képterületből is indulhat a folyamat.
+
+### Screenshot evidence
+
+- A kereskedői lista aktív termékekkel: `merchant_home.png`
+- A kitöltött termékfeltöltő űrlap: `new_product_form.png`
+- Validációs hiba kötelező mező hiányánál: `new_product_validation_error.png`
 
 ### Akadálymentességi megfontolások
 

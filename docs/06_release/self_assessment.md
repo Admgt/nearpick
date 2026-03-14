@@ -15,7 +15,7 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 - [x] A tesztek futtatása dokumentált.
 - [ ] A main/default branch legutóbbi zöld CI futásának konkrét linkje nincs bemásolva ebbe a dokumentumba.
 - [x] A secret hygiene dokumentált (`.env.example`, secret scan, gitignore).
-- [ ] A UX screenshot/video evidence még hiányzik, ezért a demó fallbackje jelenleg főleg dokumentációs és teszt evidence.
+- [x] A UX screenshot evidence a `docs/assets/ux/` alatt elérhető.
 
 ## 6.2 Kapu checklist
 
@@ -29,25 +29,25 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 
 ## 6.3 100 pontos készültségi scorecard
 
-### A) Product és scope - 8/12
+### A) Product és scope - 9/12
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
 | 2 | Vision kész és konkrét | 1.0 | [`vision.md`](../01_product/vision.md) |
 | 2 | Scope Contract: MVP story-k + elfogadási kritériumok + scope fegyelem | 1.0 | [`scope_contract.md`](../01_product/scope_contract.md) |
 | 2 | Capability Map kitöltve 6+ képességgel, státusszal és evidence linkekkel | 0.5 | [`capability_map.md`](../01_product/capability_map.md) |
-| 2 | UX flow-k dokumentáltak: 2-3 fő flow + error/empty state | 0.5 | [`ux_flows.md`](../01_product/ux_flows.md) |
+| 2 | UX flow-k dokumentáltak: 2-3 fő flow + error/empty state | 1.0 | [`ux_flows.md`](../01_product/ux_flows.md), [`../assets/ux`](../assets/ux) |
 | 2 | Mérőszámok/metrics: mit mérnél és miért | 1.0 | [`metrics.md`](../01_product/metrics.md) |
 | 2 | Ismert korlátok + roadmap/tech debt | 1.0 | [`scope_contract.md`](../01_product/scope_contract.md), [`test_backlog.md`](../04_quality/test_backlog.md) |
 
-### B) Képesség-szélesség - 7/10
+### B) Képesség-szélesség - 8/10
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
 | 2 | Legalább 6 capability, ebből minimum 3 termékesítő | 1.0 | [`capability_map.md`](../01_product/capability_map.md) |
 | 2 | Minden Done capability-hez van konkrét evidence link | 0.5 | [`capability_map.md`](../01_product/capability_map.md) |
 | 2 | Minden Done capability-hez van kapcsolt teszt vagy teszt bizonyíték | 0.5 | [`capability_map.md`](../01_product/capability_map.md), [`test_report.md`](../04_quality/test_report.md) |
-| 2 | Edge case-ek és hibák capability szinten kezeltek | 0.5 | [`ux_flows.md`](../01_product/ux_flows.md), [`error_handling.md`](../03_design/error_handling.md) |
+| 2 | Edge case-ek és hibák capability szinten kezeltek | 1.0 | [`ux_flows.md`](../01_product/ux_flows.md), [`error_handling.md`](../03_design/error_handling.md) |
 | 2 | A Planned/Partial elemek őszintén jelöltek | 1.0 | [`capability_map.md`](../01_product/capability_map.md) |
 
 ### C) Architektúra és döntések - 12/13
@@ -115,8 +115,8 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 
 ## Összesítés
 
-- A) Product és scope: `8/12`
-- B) Képesség-szélesség: `7/10`
+- A) Product és scope: `9/12`
+- B) Képesség-szélesség: `8/10`
 - C) Architektúra és döntések: `12/13`
 - D) Engineering minőség: `9/15`
 - E) Tesztelés és minőségi kapuk: `9/15`
@@ -124,12 +124,12 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 - G) Security, privacy, licenc: `8/10`
 - H) AI engineering érettség: `3/10`
 
-Összpontszám: `68/100`
+Összpontszám: `70/100`
 
 ## Következő legnagyobb pontnyereségek
 
 1. Valódi `integration_test` alapú UI/E2E vagy contract suite hozzáadása.
-2. UX screenshot/video evidence feltöltése a `docs/assets/ux/` alá.
-3. AI prompt log és verification log kibővítése a minimum elvárt mélységre.
-4. Teljesítmény baseline és legalább egy konkrét mérés/javítás dokumentálása.
-5. Végleges `LICENSE` és publikációs policy rögzítése.
+2. AI prompt log és verification log kibővítése a minimum elvárt mélységre.
+3. Teljesítmény baseline és legalább egy konkrét mérés/javítás dokumentálása.
+4. Végleges `LICENSE` és publikációs policy rögzítése.
+5. CI main/default branch zöld futásának konkrét evidence linkelése.

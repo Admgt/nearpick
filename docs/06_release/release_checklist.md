@@ -31,7 +31,7 @@ Kapcsolódó kitöltött önértékelés: [`self_assessment.md`](self_assessment
 - [x] A fő felhasználói folyamatok leírása elkészült.
 - [x] A demóscript a bemutatási sorrendet és fallback lépéseket is tartalmazza.
 - [x] A UX evidence asset könyvtár struktúrája elő van készítve.
-- [ ] A végleges képernyőképek vagy videós evidence assetek be vannak illesztve.
+- [x] A végleges képernyőképek evidence assetként be vannak illesztve.
 
 ## AI dokumentáció teljessége
 
