@@ -8,6 +8,8 @@ Közeli, kedvezményes termékek gyors felfedezésére és lefoglalására kész
 
 A NearPick arra a problémára ad választ, hogy a nap végén megmaradó, időérzékeny termékek ne vesszenek kárba, hanem a közelben lévő vásárlók gyorsan megtalálhassák és lefoglalhassák őket. A megoldás egy kétoldalú piactér: a kereskedő feltölti az ajánlatot, a fogyasztó kategória, hely és érdeklődés alapján böngészi, majd lefoglalja a kiválasztott terméket.
 
+Kapcsolódó dokumentációs belépési pont: [`docs/00_index.md`](docs/00_index.md)
+
 ## Fő funkciók
 
 - Email/jelszó alapú regisztráció és bejelentkezés fogyasztói vagy kereskedői szereppel.
@@ -46,6 +48,24 @@ A jelenlegi repository nem tartalmaz beépített Flutter oldali Firebase Emulato
 - `Node.js 22` és `npm`
 - opcionálisan `firebase-tools`, ha a Functions emulátort is el akarod indítani
 
+### Konfigurációs áttekintés
+
+A repo nem tartalmaz futásidejű secretet. A szükséges konfigurációs változók és minták:
+
+- környezeti változók mintája: [`.env.example`](.env.example)
+- FlutterFire minta: [`mobile/nearpick/lib/firebase_options.example.dart`](mobile/nearpick/lib/firebase_options.example.dart)
+- Android minta: [`mobile/nearpick/android/app/google-services.example.json`](mobile/nearpick/android/app/google-services.example.json)
+- web push minta: [`mobile/nearpick/web/firebase-messaging-sw.example.js`](mobile/nearpick/web/firebase-messaging-sw.example.js)
+
+Az [`.env.example`](.env.example) a bírálói és fejlesztői konfigurációhoz szükséges fő Firebase azonosítókat sorolja fel:
+
+- `FIREBASE_PROJECT_ID`: a külön demo Firebase projekt azonosítója
+- `FIREBASE_WEB_API_KEY`: webes Flutter futtatáshoz használt API kulcs
+- `FIREBASE_ANDROID_API_KEY`: Android klienshez tartozó API kulcs
+- `FIREBASE_IOS_API_KEY`: iOS klienshez tartozó API kulcs
+
+Fontos: az app futás közben nem `.env` fájlból olvas, hanem a lokálisan előállított FlutterFire/Firebase config fájlokból. Az `.env.example` a reviewer számára azt dokumentálja, milyen értékeket kell előkészíteni a lokális mintafájlok kitöltéséhez.
+
 ### Klónozás
 
 ```bash
@@ -65,6 +85,16 @@ cd 1-sprint-Admgt
 cd mobile/nearpick
 flutter pub get
 ```
+
+### Minimális seed / demo adat
+
+A reviewer gyors kipróbálásához a demo Firebase projektben legyen előkészítve:
+
+- a két demo felhasználó
+- legalább 3 aktív termék több kategóriában
+- legalább 1 korábbi foglalás a foglalási részlet képernyőhöz
+
+Részletes seed és demóelvárások: [`docs/06_release/demo_environment.md`](docs/06_release/demo_environment.md)
 
 ### Emulátor indítása
 
@@ -116,6 +146,14 @@ Részletes környezeti elvárások: [`docs/06_release/demo_environment.md`](docs
 6. A fogyasztói feedben szűrj kategóriára, nyisd meg a termékrészletet, majd foglald le a terméket.
 7. Nyisd meg a foglalás részleteit, és ellenőrizd, hogy a státusz és az átvételi információk láthatók.
 
+1 perces első kipróbálási útvonal:
+
+1. Indítsd el az appot weben.
+2. Jelentkezz be a `demo.merchant@nearpick.local` felhasználóval.
+3. Hozz létre egy egyszerű terméket.
+4. Jelentkezz át a `demo.user@nearpick.local` felhasználóra.
+5. Nyisd meg a listát, majd foglalj le egy tételt.
+
 ## Projektstruktúra áttekintés
 
 - `mobile/nearpick/`: Flutter kliensalkalmazás és tesztek.
@@ -154,10 +192,23 @@ További evidence:
 - Tesztriport: [`docs/04_quality/test_report.md`](docs/04_quality/test_report.md)
 - Release checklist: [`docs/06_release/release_checklist.md`](docs/06_release/release_checklist.md)
 
+## Hibakeresési gyorslista
+
+- Hiányzó `firebase_options.dart`
+  - Hozd létre a `mobile/nearpick/lib/firebase_options.example.dart` alapján.
+- Webes auth hiba vagy nem engedélyezett localhost/domain
+  - Ellenőrizd, hogy a demo Firebase projektben a használt lokális domain és port engedélyezett.
+- Android `google-services` hiba
+  - Ellenőrizd, hogy a `mobile/nearpick/android/app/google-services.json` létezik.
+- Push vagy token perzisztálási hiba
+  - Ellenőrizd a `users/{uid}/fcmTokens` alkollekciót és a Cloud Functions logokat.
+- Functions emulátor nem indul
+  - Ellenőrizd, hogy a `functions/` mappában lefut-e az `npm ci`.
+
 ## CI badge
 
 Az aktuális workflow badge fent látható. Ha a repository URL vagy workflow útvonal változik, ezt a badge hivatkozást kell frissíteni.
 
 ## Licenc
 
-Licenc placeholder: a szakdolgozati értékelési csomaghoz a végleges nyílt vagy zárt licenc még kijelölendő.
+A végleges LICENSE fájl még nincs rögzítve a repositoryban, ezért a publikációs/licencelési döntést a leadás előtt külön véglegesíteni kell. A harmadik féltől származó fő komponensek és függőségek áttekintése itt található: [`docs/05_security_ops/privacy_licensing.md`](docs/05_security_ops/privacy_licensing.md).

@@ -1,6 +1,6 @@
 const admin = require("firebase-admin");
 const {onDocumentCreated} = require("firebase-functions/v2/firestore");
-const {onCall, HttpsError} = require("firebase-functions/v2/https");
+const {onCall, onRequest, HttpsError} = require("firebase-functions/v2/https");
 const {
   assertArchivableProduct,
   assertCompletableReservation,
@@ -8,50 +8,104 @@ const {
   generatePickupCode,
   getSafeArchiveImagePath,
 } = require("./security_helpers");
+const {
+  buildHealthPayload,
+  createContextId,
+  logError,
+  logInfo,
+  logWarn,
+} = require("./observability");
 
 admin.initializeApp();
 
-function asHttpsError(error) {
+function asHttpsError(error, contextId) {
+  const details = {contextId};
   switch (error.message) {
     case "not-found":
-      return new HttpsError("not-found", "A keresett eroforras nem talalhato.");
+      return new HttpsError(
+          "not-found",
+          "A keresett eroforras nem talalhato.",
+          details,
+      );
     case "sold-out":
-      return new HttpsError("failed-precondition", "Elfogyott.");
+      return new HttpsError("failed-precondition", "Elfogyott.", details);
     case "unavailable":
       return new HttpsError(
           "failed-precondition",
           "A termek mar nem erheto el.",
+          details,
       );
     case "invalid-owner":
       return new HttpsError(
           "failed-precondition",
           "A termekhez nem tartozik ervenyes kereskedo.",
+          details,
       );
     case "self-reservation":
       return new HttpsError(
           "failed-precondition",
           "A kereskedo nem foglalhatja a sajat termeket.",
+          details,
       );
     case "invalid-status":
       return new HttpsError(
           "failed-precondition",
           "A foglalas allapota nem engedi a muveletet.",
+          details,
       );
     case "permission-denied":
-      return new HttpsError("permission-denied", "Nincs jogosultsag.");
+      return new HttpsError("permission-denied", "Nincs jogosultsag.", details);
     default:
-      return new HttpsError("internal", "Varatlan szerverhiba.");
+      return new HttpsError("internal", "Varatlan szerverhiba.", details);
   }
 }
 
+exports.healthcheck = onRequest(async (request, response) => {
+  const contextId = createContextId(request);
+  const startedAt = Date.now();
+  let firestoreStatus = "ok";
+  let status = "ok";
+  let httpStatus = 200;
+
+  try {
+    await admin.firestore().collection("_healthcheck").limit(1).get();
+  } catch (error) {
+    firestoreStatus = "error";
+    status = "degraded";
+    httpStatus = 503;
+    logError("healthcheck.firestore_unavailable", {
+      component: "firestore",
+      contextId,
+    }, error);
+  }
+
+  const payload = buildHealthPayload({
+    contextId,
+    firestoreStatus,
+    latencyMs: Date.now() - startedAt,
+    status,
+  });
+  logInfo("healthcheck.completed", payload);
+  response.status(httpStatus).json(payload);
+});
+
 exports.reserveProduct = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("reservation.reserve.started", {contextId});
+
   if (!request.auth) {
-    throw new HttpsError("unauthenticated", "Bejelentkezes szukseges.");
+    logWarn("reservation.reserve.unauthenticated", {contextId});
+    throw new HttpsError("unauthenticated", "Bejelentkezes szukseges.", {
+      contextId,
+    });
   }
 
   const productId = request.data?.productId;
   if (typeof productId !== "string" || productId.trim().length === 0) {
-    throw new HttpsError("invalid-argument", "Ervenytelen productId.");
+    logWarn("reservation.reserve.invalid_argument", {contextId});
+    throw new HttpsError("invalid-argument", "Ervenytelen productId.", {
+      contextId,
+    });
   }
 
   const db = admin.firestore();
@@ -118,22 +172,43 @@ exports.reserveProduct = onCall(async (request) => {
       tx.set(statsRef, statsUpdate, {merge: true});
     });
   } catch (error) {
-    throw asHttpsError(error);
+    logError("reservation.reserve.failed", {
+      contextId,
+      productId: trimmedProductId,
+      userId: buyerId,
+    }, error);
+    throw asHttpsError(error, contextId);
   }
 
+  logInfo("reservation.reserve.completed", {
+    contextId,
+    productId: trimmedProductId,
+    reservationId: reservationRef.id,
+    userId: buyerId,
+  });
   return {
+    contextId,
     reservationId: reservationRef.id,
   };
 });
 
 exports.completeReservation = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("reservation.complete.started", {contextId});
+
   if (!request.auth) {
-    throw new HttpsError("unauthenticated", "Bejelentkezes szukseges.");
+    logWarn("reservation.complete.unauthenticated", {contextId});
+    throw new HttpsError("unauthenticated", "Bejelentkezes szukseges.", {
+      contextId,
+    });
   }
 
   const reservationId = request.data?.reservationId;
   if (typeof reservationId !== "string" || reservationId.trim().length === 0) {
-    throw new HttpsError("invalid-argument", "Ervenytelen reservationId.");
+    logWarn("reservation.complete.invalid_argument", {contextId});
+    throw new HttpsError("invalid-argument", "Ervenytelen reservationId.", {
+      contextId,
+    });
   }
 
   const db = admin.firestore();
@@ -156,25 +231,45 @@ exports.completeReservation = onCall(async (request) => {
       tx.set(statsRef, {
         completedCount: admin.firestore.FieldValue.increment(1),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }, {merge: true});
+       }, {merge: true});
     });
   } catch (error) {
-    throw asHttpsError(error);
+    logError("reservation.complete.failed", {
+      contextId,
+      reservationId: reservationId.trim(),
+      userId: merchantId,
+    }, error);
+    throw asHttpsError(error, contextId);
   }
 
+  logInfo("reservation.complete.completed", {
+    contextId,
+    reservationId: reservationId.trim(),
+    userId: merchantId,
+  });
   return {
     completed: true,
+    contextId,
   };
 });
 
 exports.archiveProduct = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("product.archive.started", {contextId});
+
   if (!request.auth) {
-    throw new HttpsError("unauthenticated", "Bejelentkezes szukseges.");
+    logWarn("product.archive.unauthenticated", {contextId});
+    throw new HttpsError("unauthenticated", "Bejelentkezes szukseges.", {
+      contextId,
+    });
   }
 
   const productId = request.data?.productId;
   if (typeof productId !== "string" || productId.trim().length === 0) {
-    throw new HttpsError("invalid-argument", "Ervenytelen productId.");
+    logWarn("product.archive.invalid_argument", {contextId});
+    throw new HttpsError("invalid-argument", "Ervenytelen productId.", {
+      contextId,
+    });
   }
 
   const db = admin.firestore();
@@ -206,19 +301,34 @@ exports.archiveProduct = onCall(async (request) => {
       await admin.storage().bucket().file(imagePath).delete({ignoreNotFound: true});
     }
   } catch (error) {
-    throw asHttpsError(error);
+    logError("product.archive.failed", {
+      contextId,
+      productId: trimmedProductId,
+      userId: uid,
+    }, error);
+    throw asHttpsError(error, contextId);
   }
 
+  logInfo("product.archive.completed", {
+    contextId,
+    productId: trimmedProductId,
+    userId: uid,
+  });
   return {
     archived: true,
+    contextId,
   };
 });
 
 exports.notifyOnNewProduct = onDocumentCreated(
     "products/{productId}",
     async (event) => {
+      const contextId = createContextId(event);
       const snap = event.data;
-      if (!snap) return;
+      if (!snap) {
+        logWarn("notification.product_created.missing_snapshot", {contextId});
+        return;
+      }
 
       const product = snap.data();
       const productId = event.params.productId;
@@ -234,7 +344,12 @@ exports.notifyOnNewProduct = onDocumentCreated(
           .get();
 
       if (usersSnap.empty) {
-        console.log("Nincs relevans user.");
+        logInfo("notification.product_created.no_recipients", {
+          category,
+          contextId,
+          ownerId,
+          productId,
+        });
         return;
       }
 
@@ -257,7 +372,13 @@ exports.notifyOnNewProduct = onDocumentCreated(
       }
 
       if (tokens.length === 0) {
-        console.log("Nincs FCM token.");
+        logInfo("notification.product_created.no_tokens", {
+          category,
+          contextId,
+          ownerId,
+          productId,
+          recipientCount: usersSnap.docs.length,
+        });
         return;
       }
 
@@ -281,9 +402,22 @@ exports.notifyOnNewProduct = onDocumentCreated(
         });
 
         const failed = res.responses.filter((r) => !r.success).length;
-        console.log(`Kuldes: ${chunk.length} token, failed: ${failed}`);
+        logInfo("notification.product_created.chunk_sent", {
+          category,
+          chunkSize: chunk.length,
+          contextId,
+          failedCount: failed,
+          ownerId,
+          productId,
+        });
       }
 
-      console.log(`Push elkuldve osszesen ${tokens.length} tokenre.`);
+      logInfo("notification.product_created.completed", {
+        category,
+        contextId,
+        ownerId,
+        productId,
+        tokenCount: tokens.length,
+      });
     },
 );

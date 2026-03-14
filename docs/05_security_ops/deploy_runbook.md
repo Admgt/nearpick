@@ -25,6 +25,9 @@ Hivatkozások:
 4. Telepítsd a webes artifactot vagy a cél hosting csatornát.
 - A Flutter web build kimenetére és a hosting beállításra építve.
 
+5. Validáld a healthcheck endpointot.
+- A deploy után ellenőrizd, hogy a `healthcheck` HTTP function `200` vagy várt degradált státusszal válaszol, és a `checks.firestore` mező értelmes.
+
 ## Konfiguráció és secretek
 
 - Futásidejű konfigurációs sablonok:
@@ -39,7 +42,7 @@ Hivatkozások:
 
 1. Állítsd le a további rolloutot és azonosítsd az utolsó ismerten jó commitot/taget.
 2. Telepítsd újra az utolsó ismerten jó rules/functions/build artifact verziót.
-3. Validáld a fő flow-kat (login, terméklista, foglalási útvonal).
+3. Validáld a `healthcheck` endpointot és a fő flow-kat (login, terméklista, foglalási útvonal).
 4. Rögzítsd az incidenst és a követő javítási feladatot.
 
 ## Release verziózás

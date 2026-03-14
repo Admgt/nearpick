@@ -21,7 +21,8 @@
 - [x] Firestore és Storage szabályfájlok verziókezeltek.
 - [x] Létezik fenyegetésmodell dokumentum.
 - [x] Létezik adatvédelmi és licensing dokumentum.
-- [ ] Automatizált dependency audit lépés be van kötve a CI-ba.
+- [x] Automatizált dependency audit lépés be van kötve a CI-ba a `functions` csomagra.
+- [ ] Flutter oldali dependency-vulnerability audit külön még nincs bevezetve.
 
 ## UX dokumentáció
 
@@ -42,7 +43,7 @@
 - [x] Létezik megfigyelhetőségi baseline dokumentum.
 - [x] A hibakeresési útmutató dokumentált.
 - [x] Minimum metrikakészlet meg van nevezve.
-- [ ] Dedikált healthcheck endpoint elérhető.
+- [x] Dedikált healthcheck endpoint elérhető.
 
 ## Deployment readiness
 
