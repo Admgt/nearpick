@@ -1,5 +1,7 @@
 # Release checklist és scorecard
 
+Kapcsolódó kitöltött önértékelés: [`self_assessment.md`](self_assessment.md)
+
 ## Build reprodukálhatóság
 
 - [x] A gyökér `README.md` legfeljebb 15 perces reviewer quickstartot tartalmaz.

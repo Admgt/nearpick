@@ -46,6 +46,7 @@ A projekt indításához és futtatási parancsaihoz használd a [`../README.md`
 - Demóscript: [`06_release/demo_script.md`](06_release/demo_script.md)
 - Demo környezet: [`06_release/demo_environment.md`](06_release/demo_environment.md)
 - Release checklist: [`06_release/release_checklist.md`](06_release/release_checklist.md)
+- Önértékelés és scorecard: [`06_release/self_assessment.md`](06_release/self_assessment.md)
 - Changelog: [`../CHANGELOG.md`](../CHANGELOG.md)
 
 ## AI engineering
