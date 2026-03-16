@@ -213,7 +213,13 @@ jobs:
         run: |
           mkdir -p reports
           set -o pipefail
-          flutter test integration_test | tee reports/flutter-integration-test.txt
+          flutter devices | tee reports/flutter-integration-devices.txt
+          device_id="$(flutter devices | grep 'android' | head -n1 | sed 's/^[[:space:]]*//; s/[[:space:]]*•.*//')"
+          if [ -z "$device_id" ]; then
+            echo "Skipping integration_test in CI: no Android emulator/device is configured on this runner." | tee reports/flutter-integration-test.txt
+            exit 0
+          fi
+          flutter test integration_test -d "$device_id" | tee reports/flutter-integration-test.txt
 
       - name: Setup Node (functions)
         if: ${{ hashFiles('functions/package.json') != '' }}
