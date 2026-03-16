@@ -1,6 +1,6 @@
 # Önértékelés és készültségi scorecard
 
-Dátum: `2026-03-14`
+Dátum: `2026-03-16`
 
 Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő melléklet. Az állapotok jelentése:
 
@@ -71,15 +71,15 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 | 2 | Statikus minőségi kapuk CI-ban | 1.0 | [`quality_gates_summary.md`](../04_quality/quality_gates_summary.md), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) |
 | 2 | Platform-specifikus minőség | 0.5 | [`ux_flows.md`](../01_product/ux_flows.md), [`mobile/nearpick/README.md`](../../mobile/nearpick/README.md) |
 
-### E) Tesztelés és minőségi kapuk - 9/15
+### E) Tesztelés és minőségi kapuk - 12/15
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
 | 2 | Teszt stratégia és teszt riport kitöltve | 1.0 | [`test_strategy.md`](../04_quality/test_strategy.md), [`test_report.md`](../04_quality/test_report.md) |
-| 4 | 30+ automata teszt értelmes mixben | 0.5 | [`test_report.md`](../04_quality/test_report.md), [`test_strategy.md`](../04_quality/test_strategy.md) |
+| 4 | 30+ automata teszt értelmes mixben | 1.0 | [`test_report.md`](../04_quality/test_report.md), [`test_strategy.md`](../04_quality/test_strategy.md) |
 | 3 | CI gating: tesztek kötelezően futnak | 1.0 | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) |
-| 2 | Integrációs tesztek valós függőségekkel | 0.0 | [`integration_test/README.md`](../../mobile/nearpick/integration_test/README.md) |
-| 2 | E2E/contract jellegű teszt a core flow-ra | 0.0 | [`integration_test/README.md`](../../mobile/nearpick/integration_test/README.md), [`test_backlog.md`](../04_quality/test_backlog.md) |
+| 2 | Integrációs tesztek valós függőségekkel | 0.5 | [`integration_test/README.md`](../../mobile/nearpick/integration_test/README.md), [`auth_and_product_flow_test.dart`](../../mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart) |
+| 2 | E2E/contract jellegű teszt a core flow-ra | 1.0 | [`auth_and_product_flow_test.dart`](../../mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart), [`test_report.md`](../04_quality/test_report.md) |
 | 2 | Plusz minőségi teszt | 1.0 | [`functions/test/firestore_rules_policy.test.js`](../../functions/test/firestore_rules_policy.test.js), [`functions/test/observability.test.js`](../../functions/test/observability.test.js) |
 
 ### F) DevOps és üzemeltetés - 12/15
@@ -119,17 +119,17 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 - B) Képesség-szélesség: `8/10`
 - C) Architektúra és döntések: `12/13`
 - D) Engineering minőség: `9/15`
-- E) Tesztelés és minőségi kapuk: `9/15`
+- E) Tesztelés és minőségi kapuk: `12/15`
 - F) DevOps és üzemeltetés: `12/15`
 - G) Security, privacy, licenc: `8/10`
 - H) AI engineering érettség: `3/10`
 
-Összpontszám: `70/100`
+Összpontszám: `73/100`
 
 ## Következő legnagyobb pontnyereségek
 
-1. Valódi `integration_test` alapú UI/E2E vagy contract suite hozzáadása.
-2. AI prompt log és verification log kibővítése a minimum elvárt mélységre.
-3. Teljesítmény baseline és legalább egy konkrét mérés/javítás dokumentálása.
-4. Végleges `LICENSE` és publikációs policy rögzítése.
-5. CI main/default branch zöld futásának konkrét evidence linkelése.
+1. AI prompt log és verification log kibővítése a minimum elvárt mélységre.
+2. Teljesítmény baseline és legalább egy konkrét mérés/javítás dokumentálása.
+3. Végleges `LICENSE` és publikációs policy rögzítése.
+4. CI main/default branch zöld futásának konkrét evidence linkelése.
+5. További `integration_test` flow-k hozzáadása reservation és completion utakra.

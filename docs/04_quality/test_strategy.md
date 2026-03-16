@@ -16,17 +16,21 @@ Az aktuális stratégia a meglévő repo-struktúrára épít:
 | Flutter unit | 36 | `mobile/nearpick/test/widget_test.dart`, `mobile/nearpick/test/unit/**` | igen |
 | Flutter widget | 6 | `mobile/nearpick/test/widget/**` | igen |
 | Flutter integration/workflow | 10 | `mobile/nearpick/test/integration/**` | igen |
+| Flutter integration_test UI/E2E | 1 | `mobile/nearpick/integration_test/**` | igen |
 | Functions és rules | 21 | `functions/test/**` | igen |
 | Manuális acceptance leírás | 2 feature | `sprints/02/tests/acceptance/**` | nem |
 
-Összes automata teszt jelenleg: `73`.
+Összes automata teszt jelenleg: `74+`.
 
 ### Flutter stratégia
 - Unit: ajánlási logika, geó számítás, modellek, validáció, dashboard, szűrés, pickup kód, auth hibaüzenet-mapping.
 - Widget: login, register és új termék képernyő validációs viselkedés.
 - Integration/workflow: regisztráció, login, terméklétrehozás, browse/detail adatok, érdeklődés, foglalás és completion flow.
+- Integration_test UI/E2E: regisztráció -> login -> új termék mentés valódi Flutter képernyőkön, Android emulátoron futtatva.
 
-Az integration szint ebben a repo-ban workflow/adaptor szintű automatizálás. Nem valódi `integration_test` alapú mobil UI-E2E, de gyors, determinisztikus és külső szolgáltatás nélkül futtatható.
+Az integration szint ebben a repo-ban két részre vált:
+- `test/integration/**`: workflow/adaptor szintű automatizálás, gyors és determinisztikus, in-memory fake gateway-ekkel
+- `integration_test/**`: valódi UI/E2E jellegű Flutter futás, jelenleg egy stabil core flow-val
 
 ### Firestore és Functions stratégia
 - Firestore rules szerződésvizsgálat: [firestore.rules](/d:/Szakdoga/1-sprint-Admgt/firestore.rules) kulcskorlátainak ellenőrzése.
@@ -44,6 +48,7 @@ Lefedett rules esetek:
 ### Automatizált és manuális scope
 Automatizált:
 - Flutter unit, widget és workflow integration tesztek
+- legalább egy valódi `integration_test` alapú mobil UI flow
 - Functions és rules tesztek
 - Flutter format és analyze
 - functions lint
@@ -52,7 +57,6 @@ Automatizált:
 - web build és artifact publikálás
 
 Manuális vagy részben manuális:
-- `mobile/nearpick/integration_test/**/*_test.dart` alapú valódi UI/E2E suite
 - acceptance feature-k automata futtatása
 - teljes Firebase Emulator alapú rules allow/deny végponti ellenőrzés
 
@@ -64,6 +68,7 @@ dart format --set-exit-if-changed .
 flutter analyze
 flutter test
 flutter test test/integration
+flutter test integration_test
 
 cd ../../functions
 npm ci
@@ -73,7 +78,7 @@ npm run scan:deps
 ```
 
 ### Ismert rések
-- Jelenleg nincs futtatható `mobile/nearpick/integration_test/**/*_test.dart` UI/E2E suite.
+- A `mobile/nearpick/integration_test/**/*_test.dart` réteg még csak egy core flow-t fed le, nem teljes E2E suite.
 - A Firestore rules ellenőrzése még nem emulatoros allow/deny futás, hanem szerződés + viselkedésmodell.
 - A manuális acceptance feature-k még nem kapcsolódnak automata runnerhez.
 

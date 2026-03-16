@@ -293,12 +293,14 @@ class _NewProductScreenState extends State<NewProductScreen> {
                   ),
                 const SizedBox(height: 16),
                 TextFormField(
+                  key: const ValueKey('new_product_name_field'),
                   controller: _nameCtrl,
                   decoration: const InputDecoration(labelText: 'Termek neve'),
                   validator: validateRequiredName,
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  key: const ValueKey('new_product_category_field'),
                   initialValue: _selectedCategory,
                   items: _categories
                       .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -312,6 +314,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
+                  key: const ValueKey('new_product_original_price_field'),
                   controller: _originalPriceCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Eredeti ar (Ft)',
@@ -321,6 +324,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
+                  key: const ValueKey('new_product_discounted_price_field'),
                   controller: _discountedPriceCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Akcios ar (Ft)',
@@ -330,6 +334,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
+                  key: const ValueKey('new_product_quantity_field'),
                   controller: _quantityCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Mennyiseg (db)',
@@ -357,6 +362,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                   children: [
                     Expanded(
                       child: TextFormField(
+                        key: const ValueKey('new_product_latitude_field'),
                         controller: _latCtrl,
                         decoration: const InputDecoration(
                           labelText: 'Bolt latitude',
@@ -371,6 +377,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextFormField(
+                        key: const ValueKey('new_product_longitude_field'),
                         controller: _lngCtrl,
                         decoration: const InputDecoration(
                           labelText: 'Bolt longitude',
@@ -395,6 +402,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                       ),
                     ),
                     TextButton(
+                      key: const ValueKey('new_product_pick_expiry_button'),
                       onPressed: _pickExpiryDate,
                       child: const Text('Lejarati datum'),
                     ),
@@ -405,6 +413,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                   Text(_error!, style: const TextStyle(color: Colors.red)),
                 const SizedBox(height: 8),
                 ElevatedButton(
+                  key: const ValueKey('new_product_save_button'),
                   onPressed: _loading ? null : _save,
                   child: _loading
                       ? const CircularProgressIndicator()

@@ -25,13 +25,13 @@
   - [scripts/secret_scan.sh](/d:/Szakdoga/1-sprint-Admgt/scripts/secret_scan.sh)
 
 ## Jelenlegi maradó kockázatok
-- A mobil UI/E2E réteghez még nincs tényleges `integration_test/**/*_test.dart` suite.
+- A mobil UI/E2E rétegben már van tényleges `integration_test/**/*_test.dart` suite, de még csak egy core flow-val.
 - A Firestore rules ellenőrzése reprezentatív és hasznos, de nem teljes emulatoros allow/deny bizonyítás.
 - A secret scan mintaalapú, ezért nem helyettesít teljes SAST vagy fejlett DLP eszközt.
 - A dependency audit jelenleg a `functions` csomagra koncentrál; a Flutter dependency-vulnerability ellenőrzés külön még nincs bevezetve.
 
 ## Következő ajánlott lépések
 - Firebase Emulator alapú rules teszt bootstrap bevezetése a legkritikusabb kollekciókra.
-- Legalább egy valódi `integration_test` UI-flow hozzáadása stabil demo/emulator backendre.
+- További `integration_test` UI-flow-k hozzáadása a reservation és completion utakra.
 - Flutter dependency audit vagy SBOM alapú ellenőrzés hozzáadása.
 - Acceptance feature-k automata összekötése smoke vagy BDD runnerrel.

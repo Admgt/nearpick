@@ -10,11 +10,12 @@ A repository jelenlegi, fájlokból számolt automata tesztleltára:
 | Flutter unit | 36 | `mobile/nearpick/test/widget_test.dart`, `mobile/nearpick/test/unit/**` |
 | Flutter widget | 6 | `mobile/nearpick/test/widget/**` |
 | Flutter integration/workflow | 10 | `mobile/nearpick/test/integration/**` |
+| Flutter integration_test UI/E2E | 1 | `mobile/nearpick/integration_test/**` |
 | Functions és Firestore/rules | 21 | `functions/test/**` |
-| Összes automata teszt | 73 | Flutter + functions |
+| Összes automata teszt | 74+ | Flutter + functions |
 
-Automatizált, de külön nem futó E2E UI suite:
-- `mobile/nearpick/integration_test/**` jelenleg csak README scaffoldot tartalmaz
+Automatizált, külön futó E2E UI suite:
+- `mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart`
 
 Manuális teszt artefaktum:
 - `sprints/02/tests/acceptance/create_product.feature`
@@ -26,6 +27,7 @@ Flutter:
 - terméklétrehozás, böngészéshez szükséges adatok és érdeklődés jelölése
 - foglalás, készletcsökkentés és completion workflow
 - UI űrlapvalidációk és hibamegjelenítés
+- valódi UI flow Android emulátoron: regisztráció -> login -> új termék mentés
 - ajánlási, szűrési, dashboard és modell logika
 
 Functions és security:
@@ -52,6 +54,7 @@ A jelenlegi változtatási körben a következő ellenőrzések futtatása van b
 ```bash
 cd mobile/nearpick
 flutter test
+flutter test integration_test/flows/auth_and_product_flow_test.dart -d <android-emulator-device-id>
 
 cd ../../functions
 npm test
@@ -61,7 +64,7 @@ npm run lint
 Ha valamelyik parancs környezeti okból nem futtatható, azt az összegzés külön jelzi.
 
 ### Ismert korlátok
-- A `test/integration/**` suite workflow-szintű integráció, nem valódi device/emulator UI-E2E futás.
+- A `test/integration/**` suite workflow-szintű integráció; ettől külön már van egy valódi `integration_test` UI flow is.
 - A Firestore rules verifikáció továbbra sem teljes emulatoros allow/deny tesztkészlet.
 - A manuális acceptance feature-k nincsenek automata runnerhez kötve.
 
@@ -87,6 +90,7 @@ Primer evidence:
 ```bash
 cd mobile/nearpick
 flutter test --reporter expanded
+flutter test integration_test/flows/auth_and_product_flow_test.dart -d <android-emulator-device-id>
 ```
 
 ## Suite lista
@@ -95,6 +99,7 @@ flutter test --reporter expanded
 | Root + unit tesztek | 33 | Passed | [docs/assets/logs/flutter_test_latest.log](../assets/logs/flutter_test_latest.log) |
 | Integration workflow tesztek | 6 | Passed | [docs/assets/logs/flutter_test_latest.log](../assets/logs/flutter_test_latest.log) |
 | Widget tesztek | 6 | Passed | [docs/assets/logs/flutter_test_latest.log](../assets/logs/flutter_test_latest.log) |
+| Integration_test UI flow | 1 | Passed | [`auth_and_product_flow_test.dart`](../../mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart) |
 
 Részletező fájlok:
 - [mobile/nearpick/test/widget_test.dart](../../mobile/nearpick/test/widget_test.dart)
@@ -112,6 +117,7 @@ Részletező fájlok:
 - [mobile/nearpick/test/widget/auth/login_screen_test.dart](../../mobile/nearpick/test/widget/auth/login_screen_test.dart)
 - [mobile/nearpick/test/widget/auth/register_screen_test.dart](../../mobile/nearpick/test/widget/auth/register_screen_test.dart)
 - [mobile/nearpick/test/widget/merchant/new_product_screen_test.dart](../../mobile/nearpick/test/widget/merchant/new_product_screen_test.dart)
+- [mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart](../../mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart)
 
 ## Utolsó futás
 - dátum: `2026-03-06`
@@ -130,4 +136,4 @@ Ez a dokumentációs célra elegendő, mert:
 ## Nyitott korlátok
 - A jelenlegi integration szint in-memory workflow/adaptor alapú, nem Firebase emulátor alapú.
 - Külön JUnit XML most nincs generálva a repo aktuális quality evidence csomagjában.
-- `integration_test/` alapú mobil E2E suite továbbra sincs bevezetve; a követelményhez szükséges widgetteszt minimum viszont teljesült.
+- Az `integration_test/` réteg még nem teljes suite, jelenleg egy validált core flow áll rendelkezésre.

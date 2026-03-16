@@ -35,3 +35,8 @@ Futtatás:
 cd mobile/nearpick
 flutter test test/integration
 ```
+# Frissites 2026-03-16
+
+- A `test/integration/**` suite tovabbra is workflow-szintu, fake gateway-es integracios reteget ad.
+- Emellett mar van kulon, futtathato `integration_test/**` UI/E2E reteg is.
+- Elso flow: `../../integration_test/flows/auth_and_product_flow_test.dart`

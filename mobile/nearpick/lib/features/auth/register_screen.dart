@@ -39,14 +39,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             children: [
               TextField(
+                key: const ValueKey('register_name_field'),
                 controller: _nameCtrl,
                 decoration: const InputDecoration(labelText: 'Név'),
               ),
               TextField(
+                key: const ValueKey('register_email_field'),
                 controller: _emailCtrl,
                 decoration: const InputDecoration(labelText: 'Email'),
               ),
               TextField(
+                key: const ValueKey('register_password_field'),
                 controller: _passwordCtrl,
                 decoration: const InputDecoration(labelText: 'Jelszó'),
                 obscureText: true,
@@ -69,6 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               if (_error != null)
                 Text(_error!, style: const TextStyle(color: Colors.red)),
               ElevatedButton(
+                key: const ValueKey('register_submit_button'),
                 onPressed: _loading
                     ? null
                     : () async {

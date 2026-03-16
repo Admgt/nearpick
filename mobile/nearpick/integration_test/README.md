@@ -35,3 +35,9 @@ flutter test integration_test
 Javasolt szerkezet:
 - `integration_test/flows/**` - user flow tesztek
 - `integration_test/contracts/**` - firestore/storage contract tesztek
+# Frissites 2026-03-16
+
+- Ebben a mappaban mar van tenyleges, futtathato `integration_test` suite.
+- Elso megvalositott flow: `flows/auth_and_product_flow_test.dart`
+- Validalt futasi mod: Android emulator, `flutter test integration_test/flows/auth_and_product_flow_test.dart -d <android-emulator-device-id>`
+- A file alatti korabbi scaffold leiras mar csak archiv referencia.

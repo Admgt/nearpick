@@ -16,7 +16,7 @@ Kapcsolódó kitöltött önértékelés: [`self_assessment.md`](self_assessment
 - [x] Létezik tesztriport dokumentum összesített eredménnyel.
 - [x] A repository tartalmaz unit, widget és workflow-szintű teszteket.
 - [x] A CI JUnit artifactot generál Flutter tesztekhez.
-- [ ] Teljes `integration_test/` alapú mobil E2E demóflow evidence rendelkezésre áll.
+- [x] Legalább egy `integration_test/` alapú mobil E2E demóflow evidence rendelkezésre áll.
 
 ## Biztonsági evidence
 

@@ -4,11 +4,13 @@ import '../../services/auth_service.dart';
 import 'register_screen.dart';
 
 typedef LoginAction = Future<void> Function(String email, String password);
+typedef RegisterScreenBuilder = Widget Function(BuildContext context);
 
 class LoginScreen extends StatefulWidget {
   final LoginAction? onLogin;
+  final RegisterScreenBuilder? registerScreenBuilder;
 
-  const LoginScreen({super.key, this.onLogin});
+  const LoginScreen({super.key, this.onLogin, this.registerScreenBuilder});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -29,10 +31,12 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           children: [
             TextField(
+              key: const ValueKey('login_email_field'),
               controller: _emailCtrl,
               decoration: const InputDecoration(labelText: 'Email'),
             ),
             TextField(
+              key: const ValueKey('login_password_field'),
               controller: _passwordCtrl,
               decoration: const InputDecoration(labelText: 'Jelszó'),
               obscureText: true,
@@ -41,6 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
             if (_error != null)
               Text(_error!, style: const TextStyle(color: Colors.red)),
             ElevatedButton(
+              key: const ValueKey('login_submit_button'),
               onPressed: _loading
                   ? null
                   : () async {
@@ -74,10 +79,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   : const Text('Belépés'),
             ),
             TextButton(
+              key: const ValueKey('open_register_button'),
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                );
+                final registerScreen =
+                    widget.registerScreenBuilder?.call(context) ??
+                    const RegisterScreen();
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => registerScreen));
               },
               child: const Text('Nincs fiókod? Regisztráció'),
             ),
