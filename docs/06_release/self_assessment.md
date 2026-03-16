@@ -103,14 +103,14 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 | 2 | Dependency vulnerability ellenőrzés + kezelési terv | 0.5 | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`quality_gates_summary.md`](../04_quality/quality_gates_summary.md) |
 | 1 | Privacy + licensing | 1.0 | [`privacy_licensing.md`](../05_security_ops/privacy_licensing.md) |
 
-### H) AI engineering érettség - 3/10
+### H) AI engineering érettség - 9/10
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
-| 2 | AI manifest: eszközök és használati területek | 0.5 | [`ai_manifest.md`](../07_ai/ai_manifest.md) |
-| 2 | Prompt log: 10-20 kulcsprompt | 0.0 | [`prompt_log.md`](../07_ai/prompt_log.md) |
-| 3 | Verification log: legalább 10 verifikáció | 0.5 | [`verification_log.md`](../07_ai/verification_log.md) |
-| 2 | AI output integráció: teszt + review checklist | 0.0 | [`ai_manifest.md`](../07_ai/ai_manifest.md) |
+| 2 | AI manifest: eszközök és használati területek | 1.0 | [`ai_manifest.md`](../07_ai/ai_manifest.md) |
+| 2 | Prompt log: 10-20 kulcsprompt | 1.0 | [`prompt_log.md`](../07_ai/prompt_log.md) |
+| 3 | Verification log: legalább 10 verifikáció | 1.0 | [`verification_log.md`](../07_ai/verification_log.md) |
+| 2 | AI output integráció: teszt + review checklist | 0.5 | [`ai_manifest.md`](../07_ai/ai_manifest.md), [`review_checklist.md`](../07_ai/review_checklist.md) |
 | 1 | Tanulságok és guardrail-ek dokumentálva | 1.0 | [`ai_manifest.md`](../07_ai/ai_manifest.md), [`verification_log.md`](../07_ai/verification_log.md) |
 
 ## Összesítés
@@ -122,14 +122,14 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 - E) Tesztelés és minőségi kapuk: `12/15`
 - F) DevOps és üzemeltetés: `12/15`
 - G) Security, privacy, licenc: `8/10`
-- H) AI engineering érettség: `3/10`
+- H) AI engineering érettség: `9/10`
 
-Összpontszám: `73/100`
+Összpontszám: `79/100`
 
 ## Következő legnagyobb pontnyereségek
 
-1. AI prompt log és verification log kibővítése a minimum elvárt mélységre.
-2. Teljesítmény baseline és legalább egy konkrét mérés/javítás dokumentálása.
-3. Végleges `LICENSE` és publikációs policy rögzítése.
-4. CI main/default branch zöld futásának konkrét evidence linkelése.
-5. További `integration_test` flow-k hozzáadása reservation és completion utakra.
+1. Teljesítmény baseline és legalább egy konkrét mérés/javítás dokumentálása.
+2. Végleges `LICENSE` és publikációs policy rögzítése.
+3. CI main/default branch zöld futásának konkrét evidence linkelése.
+4. További `integration_test` flow-k hozzáadása reservation és completion utakra.
+5. Flutter oldali dependency-vulnerability audit hozzáadása.

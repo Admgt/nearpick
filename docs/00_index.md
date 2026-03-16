@@ -54,6 +54,7 @@ A projekt indításához és futtatási parancsaihoz használd a [`../README.md`
 - AI manifest: [`07_ai/ai_manifest.md`](07_ai/ai_manifest.md)
 - Promptnapló: [`07_ai/prompt_log.md`](07_ai/prompt_log.md)
 - Verifikációs napló: [`07_ai/verification_log.md`](07_ai/verification_log.md)
+- AI review checklist: [`07_ai/review_checklist.md`](07_ai/review_checklist.md)
 
 ## Állapot
 

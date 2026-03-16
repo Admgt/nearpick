@@ -37,6 +37,7 @@ Kapcsolódó kitöltött önértékelés: [`self_assessment.md`](self_assessment
 
 - [x] Létezik AI manifest.
 - [x] Létezik promptnapló.
+- [x] Létezik AI review checklist.
 - [x] Létezik verifikációs napló.
 - [x] Az AI használat korlátai és emberi döntési pontjai dokumentáltak.
 

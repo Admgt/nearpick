@@ -1,29 +1,16 @@
 # `integration_test` állapot
 
-Ez a mappa a Flutter `integration_test` csomaggal futó, valódi UI/E2E tesztek helye. A repository jelenlegi állapotában itt még nincs futtatható `*_test.dart` fájl, csak ez a dokumentációs scaffold.
+Ez a mappa a Flutter `integration_test` csomaggal futó, valódi UI/E2E tesztek helye.
 
-Miért maradt scaffold:
-- a jelenlegi thesis-scope quality gate a `test/integration/**` alatti workflow-szintű lefedettségre épül
-- a repo-ban nincs olyan stabil emulator/device bootstrap, amely mellett a teljes mobil UI-E2E futás most megbízhatóan hozzáadható lenne mellékhatás nélkül
+Jelenlegi állapot:
+- már van futtatható `integration_test` suite
+- az első validált flow: `flows/auth_and_product_flow_test.dart`
+- a réteg még nem teljes; jelenleg egy core user flow van lefedve
 
 CI viselkedés:
 - a GitHub Actions csak akkor futtatja ezt a szintet, ha tényleges `mobile/nearpick/integration_test/**/*_test.dart` fájl létezik
-- egy önmagában jelen lévő README vagy helper fájl nem aktiválja ezt a lépést
-
-Ha később valódi E2E teszt kerül ide, a futtatás:
-
-```bash
-cd mobile/nearpick
-flutter test integration_test
-```
-
-## Archivált korábbi leírás
-
-Ez a mappa a Flutter `integration_test` csomaggal futó UI/E2E/contract tesztek helye.
-
-CI viselkedés:
-- A workflow csak akkor futtatja ezt a szintet, ha van fájl a `mobile/nearpick/integration_test/**` alatt.
-- CI lépés: `Flutter integration tests (if present)`.
+- a workflow lépés neve: `Flutter integration tests (if present)`
+- a jelenlegi CI runneren a lépés Android eszköz hiányában átugorható, ezért ez még nem kemény quality gate
 
 Futtatás:
 
@@ -32,12 +19,18 @@ cd mobile/nearpick
 flutter test integration_test
 ```
 
+Jelenleg validált, célzott futtatás:
+
+```bash
+cd mobile/nearpick
+flutter test integration_test/flows/auth_and_product_flow_test.dart -d <android-emulator-device-id>
+```
+
 Javasolt szerkezet:
 - `integration_test/flows/**` - user flow tesztek
 - `integration_test/contracts/**` - firestore/storage contract tesztek
-# Frissites 2026-03-16
 
-- Ebben a mappaban mar van tenyleges, futtathato `integration_test` suite.
-- Elso megvalositott flow: `flows/auth_and_product_flow_test.dart`
-- Validalt futasi mod: Android emulator, `flutter test integration_test/flows/auth_and_product_flow_test.dart -d <android-emulator-device-id>`
-- A file alatti korabbi scaffold leiras mar csak archiv referencia.
+## Megjegyzés
+
+- A `test/integration/**` továbbra is külön, workflow-szintű, fake gateway-es integrációs réteg.
+- Az `integration_test/**` ehhez képest valódi UI/E2E réteg, de még nem teljes suite.

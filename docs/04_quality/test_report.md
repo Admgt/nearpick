@@ -3,7 +3,7 @@
 ## Aktuális állapot 2026-03-12
 
 ### Jelenlegi repo-állapot
-A repository jelenlegi, fájlokból számolt automata tesztleltára:
+A repository jelenlegi, fájlokból számolt automata tesztleltára. Ez leltár, nem azonos egyetlen konkrét futás eredményével:
 
 | Kategória | Darab | Hely |
 |---|---:|---|
@@ -12,7 +12,7 @@ A repository jelenlegi, fájlokból számolt automata tesztleltára:
 | Flutter integration/workflow | 10 | `mobile/nearpick/test/integration/**` |
 | Flutter integration_test UI/E2E | 1 | `mobile/nearpick/integration_test/**` |
 | Functions és Firestore/rules | 21 | `functions/test/**` |
-| Összes automata teszt | 74+ | Flutter + functions |
+| Összes automata teszt | 74+ | Flutter + functions, repo-szintű leltár |
 
 Automatizált, külön futó E2E UI suite:
 - `mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart`
@@ -71,9 +71,9 @@ Ha valamelyik parancs környezeti okból nem futtatható, azt az összegzés kü
 ## Archivált korábbi tartalom
 
 ## Összegzés
-A Flutter projekt automata tesztkészlete aktuálisan teljesíti a minimum követelményeket.
+A Flutter projekt automata tesztkészlete aktuálisan teljesíti a minimum követelményeket, és a repository szintjén ehhez functions/rules tesztek is társulnak.
 
-Utolsó ellenőrzött eredmény:
+Utolsó ellenőrzött Flutter-futás eredménye:
 - összes teszt: `45`
 - sikeres: `45`
 - sikertelen: `0`
@@ -121,7 +121,7 @@ Részletező fájlok:
 
 ## Utolsó futás
 - dátum: `2026-03-06`
-- futási mód: lokális terminál futás
+- futási mód: lokális terminál futás, Flutter suite
 - parancs: `flutter test --reporter expanded`
 - eredmény: `All tests passed!`
 
@@ -135,5 +135,5 @@ Ez a dokumentációs célra elegendő, mert:
 
 ## Nyitott korlátok
 - A jelenlegi integration szint in-memory workflow/adaptor alapú, nem Firebase emulátor alapú.
-- Külön JUnit XML most nincs generálva a repo aktuális quality evidence csomagjában.
+- A CI generál JUnit XML-t (`reports/junit-flutter.xml`), de a lokális dokumentációs evidence itt jelenleg elsősorban a normalizált logfájlra támaszkodik.
 - Az `integration_test/` réteg még nem teljes suite, jelenleg egy validált core flow áll rendelkezésre.

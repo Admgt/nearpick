@@ -11,6 +11,9 @@
 Evidence forrás:
 - [`../../sprints/01/ai/usage_plan.yaml`](../../sprints/01/ai/usage_plan.yaml)
 - [`../../sprints/01/ai/ai_log.jsonl`](../../sprints/01/ai/ai_log.jsonl)
+- [`prompt_log.md`](prompt_log.md)
+- [`verification_log.md`](verification_log.md)
+- [`review_checklist.md`](review_checklist.md)
 
 ## Felhasználási területek
 
@@ -24,6 +27,19 @@ Evidence forrás:
 - Nincs secret a promptokban.
 - Nincs közvetlen személyes adat a promptokban.
 - A generált tartalmak merge előtt manuális review-n mennek át.
+
+## AI output integrációs szabály
+
+Minden AI-val támogatott kód- vagy dokumentumváltozásnál a minimum folyamat:
+
+1. Az AI eredetét vagy a promptcsaládot rögzíteni kell a [`prompt_log.md`](prompt_log.md) fájlban.
+2. A kritikus állításokat vagy döntéseket rögzíteni kell a [`verification_log.md`](verification_log.md) fájlban.
+3. Merge előtt végig kell menni a [`review_checklist.md`](review_checklist.md) ellenőrzőlistán.
+4. Kód esetén legalább a releváns lokális vagy CI quality gate-nek zöldnek kell lennie.
+
+Megjegyzés:
+- a promptnapló nem nyers prompt export, hanem auditálható, rövid összefoglaló
+- ahol csak verziózott artefaktumból rekonstruálható a prompt, azt explicit módon jelölni kell
 
 ## Emberi tulajdonú kritikus döntések
 

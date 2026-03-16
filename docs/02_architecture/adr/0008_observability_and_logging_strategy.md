@@ -27,8 +27,7 @@ Pozitív következmények:
 
 Negatív vagy vállalt tradeoffok:
 
-- nincs dedikált healthcheck endpoint
-- nincs teljes dashboard és riasztási rendszer
+- nincs külön dashboard és automatikus riasztási réteg
 - a logolás egy része még fejlesztői célú debug szintű megoldás
 
 ## Alternatívák
