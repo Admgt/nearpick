@@ -211,4 +211,6 @@ Az aktuális workflow badge fent látható. Ha a repository URL vagy workflow ú
 
 ## Licenc
 
-A végleges LICENSE fájl még nincs rögzítve a repositoryban, ezért a publikációs/licencelési döntést a leadás előtt külön véglegesíteni kell. A harmadik féltől származó fő komponensek és függőségek áttekintése itt található: [`docs/05_security_ops/privacy_licensing.md`](docs/05_security_ops/privacy_licensing.md).
+Ez a repository a saját forráskódra és dokumentációra vonatkozóan MIT licenc alatt érhető el: [`LICENSE`](LICENSE).
+
+A publikálható és kizárt tartalom szabályai itt vannak rögzítve: [`docs/06_release/publication_policy.md`](docs/06_release/publication_policy.md). A harmadik féltől származó fő komponensek és függőségek áttekintése itt található: [`docs/05_security_ops/privacy_licensing.md`](docs/05_security_ops/privacy_licensing.md).

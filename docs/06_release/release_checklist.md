@@ -53,4 +53,4 @@ Kapcsolódó kitöltött önértékelés: [`self_assessment.md`](self_assessment
 - [x] Létezik deploy runbook.
 - [x] A CI külön lint, build és test szakaszokra bontott.
 - [x] A release csomag tartalmaz changelogot.
-- [ ] Végleges licencfájl és publikációs policy rögzítve van.
+- [x] Végleges licencfájl és publikációs policy rögzítve van.

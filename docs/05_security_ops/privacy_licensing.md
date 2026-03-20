@@ -1,5 +1,11 @@
 # Adatvédelem és licencek
 
+## Repository licenc és publikációs határ
+
+- A repository saját forráskódja és dokumentációja MIT licenc alatt érhető el: [`../../LICENSE`](../../LICENSE).
+- A nyilvános publikáció hatókörét és a kizárt tartalmakat a [`../06_release/publication_policy.md`](../06_release/publication_policy.md) rögzíti.
+- A harmadik féltől származó függőségek, szolgáltatások és márkanevek továbbra is a saját licenceik és feltételeik alatt maradnak.
+
 ## Adatkategóriák
 
 1. Fiók-/profiladatok
@@ -45,7 +51,7 @@
 - Az AI-val támogatott artefaktokat merge előtt validálni kell.
 - A jelenlegi AI használati megjegyzések forrása: [`../../sprints/01/ai/usage_plan.yaml`](../../sprints/01/ai/usage_plan.yaml)
 
-## Harmadik féltől származó függőségek és licencek (baseline)
+## Harmadik féltől származó függőségek és licencek
 
 - A Flutter oldali fő függőségek itt vannak felsorolva:
   - [`../../mobile/nearpick/pubspec.yaml`](../../mobile/nearpick/pubspec.yaml)
@@ -56,3 +62,4 @@
 Jelenlegi szabály:
 - A függőségek maradjanak lockfile-okkal rögzítve.
 - Audit/scan evidence hozzáadása a CI-ban a következő megerősítési lépésként.
+- A repository MIT licence nem terjed ki automatikusan a függőségekre; azok saját licencfeltételeit külön kell figyelembe venni.

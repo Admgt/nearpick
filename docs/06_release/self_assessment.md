@@ -60,14 +60,14 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 | 2 | Quality attributes + legalább 2 quality scenario | 1.0 | [`quality_attributes.md`](../02_architecture/quality_attributes.md) |
 | 2 | Deployment view dokumentált | 0.5 | [`c4_context_container.md`](../02_architecture/c4_context_container.md), [`deploy_runbook.md`](../05_security_ops/deploy_runbook.md) |
 
-### D) Engineering minőség - 9/15
+### D) Engineering minőség - 10.5/15
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
 | 3 | Kódszerkezet és moduláris felépítés | 1.0 | [`c4_component.md`](../02_architecture/c4_component.md), [`mobile/nearpick/lib`](../../mobile/nearpick/lib) |
 | 3 | Egységes hibakezelés + input validáció + konzisztens hibamodel | 0.5 | [`error_handling.md`](../03_design/error_handling.md), [`api.md`](../03_design/api.md) |
 | 2 | Konfiguráció és környezetek | 0.5 | [`README.md`](../../README.md), [`demo_environment.md`](demo_environment.md) |
-| 3 | Teljesítmény baseline + 1 szűk keresztmetszet mérése és javítása | 0.0 | [`quality_attributes.md`](../02_architecture/quality_attributes.md) |
+| 3 | Teljesítmény baseline + 1 szűk keresztmetszet mérése és javítása | 0.5 | [`performance.md`](../04_quality/performance.md), [`quality_attributes.md`](../02_architecture/quality_attributes.md) |
 | 2 | Statikus minőségi kapuk CI-ban | 1.0 | [`quality_gates_summary.md`](../04_quality/quality_gates_summary.md), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) |
 | 2 | Platform-specifikus minőség | 0.5 | [`ux_flows.md`](../01_product/ux_flows.md), [`mobile/nearpick/README.md`](../../mobile/nearpick/README.md) |
 
@@ -101,7 +101,7 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 | 2 | Secret hygiene rendben | 1.0 | [`.env.example`](../../.env.example), [`scripts/secret_scan.sh`](../../scripts/secret_scan.sh), [`.gitignore`](../../.gitignore) |
 | 2 | AuthN/AuthZ modell dokumentált és tesztelt | 0.5 | [`api.md`](../03_design/api.md), [`firestore.rules`](../../firestore.rules), [`functions/test/firestore_rules_policy.test.js`](../../functions/test/firestore_rules_policy.test.js) |
 | 2 | Dependency vulnerability ellenőrzés + kezelési terv | 0.5 | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`quality_gates_summary.md`](../04_quality/quality_gates_summary.md) |
-| 1 | Privacy + licensing | 1.0 | [`privacy_licensing.md`](../05_security_ops/privacy_licensing.md) |
+| 1 | Privacy + licensing | 1.0 | [`privacy_licensing.md`](../05_security_ops/privacy_licensing.md), [`publication_policy.md`](publication_policy.md), [`../../LICENSE`](../../LICENSE) |
 
 ### H) AI engineering érettség - 9/10
 
@@ -118,18 +118,17 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 - A) Product és scope: `9/12`
 - B) Képesség-szélesség: `8/10`
 - C) Architektúra és döntések: `12/13`
-- D) Engineering minőség: `9/15`
+- D) Engineering minőség: `10.5/15`
 - E) Tesztelés és minőségi kapuk: `12/15`
 - F) DevOps és üzemeltetés: `12/15`
 - G) Security, privacy, licenc: `8/10`
 - H) AI engineering érettség: `9/10`
 
-Összpontszám: `79/100`
+Összpontszám: `80.5/100`
 
 ## Következő legnagyobb pontnyereségek
 
-1. Teljesítmény baseline és legalább egy konkrét mérés/javítás dokumentálása.
-2. Végleges `LICENSE` és publikációs policy rögzítése.
-3. CI main/default branch zöld futásának konkrét evidence linkelése.
-4. További `integration_test` flow-k hozzáadása reservation és completion utakra.
-5. Flutter oldali dependency-vulnerability audit hozzáadása.
+1. A performance benchmark optimalizálás utáni újrafuttatása és az eredmény rögzítése.
+2. CI main/default branch zöld futásának konkrét evidence linkelése.
+3. További `integration_test` flow-k hozzáadása reservation és completion utakra.
+4. Flutter oldali dependency-vulnerability audit hozzáadása.

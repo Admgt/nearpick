@@ -33,6 +33,7 @@ A projekt indításához és futtatási parancsaihoz használd a [`../README.md`
 - Tesztstratégia: [`04_quality/test_strategy.md`](04_quality/test_strategy.md)
 - Tesztriport: [`04_quality/test_report.md`](04_quality/test_report.md)
 - Test backlog: [`04_quality/test_backlog.md`](04_quality/test_backlog.md)
+- Performance baseline: [`04_quality/performance.md`](04_quality/performance.md)
 
 ## Biztonság és üzemeltetés
 
@@ -45,6 +46,7 @@ A projekt indításához és futtatási parancsaihoz használd a [`../README.md`
 
 - Demóscript: [`06_release/demo_script.md`](06_release/demo_script.md)
 - Demo környezet: [`06_release/demo_environment.md`](06_release/demo_environment.md)
+- Publikációs policy: [`06_release/publication_policy.md`](06_release/publication_policy.md)
 - Release checklist: [`06_release/release_checklist.md`](06_release/release_checklist.md)
 - Önértékelés és scorecard: [`06_release/self_assessment.md`](06_release/self_assessment.md)
 - Changelog: [`../CHANGELOG.md`](../CHANGELOG.md)

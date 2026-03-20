@@ -48,4 +48,4 @@
 - Környezet: normál csúcsidő.
 - Artefakt: aktív terméklekérdezés + ajánlási pontozási pipeline.
 - Válasz: a feed görgethető marad, a rangsorolás pedig nem blokkolja a UI-t.
-- Mérőszám: a baseline mérés később formalizálható quality/performance artefaktban.
+- Mérőszám: a baseline mérés első formalizált artefaktja itt található: [`../04_quality/performance.md`](../04_quality/performance.md)

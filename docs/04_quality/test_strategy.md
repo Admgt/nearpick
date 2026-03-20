@@ -50,6 +50,7 @@ Automatizált:
 - Flutter unit, widget és workflow integration tesztek
 - legalább egy valódi `integration_test` alapú mobil UI flow
 - Functions és rules tesztek
+- külön performance smoke benchmark a recommendation distance helperre
 - Flutter format és analyze
 - functions lint
 - secret scan
@@ -59,6 +60,7 @@ Automatizált:
 Manuális vagy részben manuális:
 - acceptance feature-k automata futtatása
 - teljes Firebase Emulator alapú rules allow/deny végponti ellenőrzés
+- a performance benchmark optimalizálás utáni, gépazonos újramérése
 
 ### Lokális futtatás
 
