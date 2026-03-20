@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:nearpick/utils/geo_utils.dart';
@@ -44,7 +45,7 @@ BenchmarkResult runBenchmark({
 }
 
 void printResult(BenchmarkResult result) {
-  print(
+  stdout.writeln(
     '${result.name}: '
     '${result.elapsedMicroseconds} us total, '
     '${result.perCallMicroseconds.toStringAsFixed(4)} us/call, '
@@ -53,8 +54,8 @@ void printResult(BenchmarkResult result) {
 }
 
 void main() {
-  print('Geo distance performance smoke benchmark');
-  print('Scenario focus: recommendation distance scoring helper');
+  stdout.writeln('Geo distance performance smoke benchmark');
+  stdout.writeln('Scenario focus: recommendation distance scoring helper');
 
   final identical = runBenchmark(
     name: 'identical_points',
