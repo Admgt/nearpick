@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../ui/app_chrome.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -59,49 +61,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profil – Kedvenc kategóriák')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Milyen termékek érdekelnek leginkább?',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-
-            Expanded(
-              child: ListView(
-                children: _allCategories.map((category) {
-                  final selected = _selectedCategories.contains(category);
-                  return CheckboxListTile(
-                    title: Text(category),
-                    value: selected,
-                    onChanged: (value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedCategories.add(category);
-                        } else {
-                          _selectedCategories.remove(category);
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
+      body: NearPickBackground(
+        maxWidth: 720,
+        child: SurfaceCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Milyen termékek érdekelnek leginkább?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-            ),
+              const SizedBox(height: 12),
 
-            if (_message != null)
-              Text(_message!, style: const TextStyle(color: Colors.green)),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _save,
-                child: const Text('Mentés'),
+              Expanded(
+                child: ListView(
+                  children: _allCategories.map((category) {
+                    final selected = _selectedCategories.contains(category);
+                    return CheckboxListTile(
+                      title: Text(category),
+                      value: selected,
+                      onChanged: (value) {
+                        setState(() {
+                          if (value == true) {
+                            _selectedCategories.add(category);
+                          } else {
+                            _selectedCategories.remove(category);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
               ),
-            ),
-          ],
+
+              if (_message != null)
+                Text(_message!, style: const TextStyle(color: Colors.green)),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _save,
+                  child: const Text('Mentés'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

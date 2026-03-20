@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/reservation.dart';
+import '../../ui/app_chrome.dart';
 import 'reservation_detail_screen.dart';
 
 class MyReservationsScreen extends StatelessWidget {
@@ -43,83 +44,86 @@ class MyReservationsScreen extends StatelessWidget {
             return const Center(child: Text('Nincs meg foglalasod.'));
           }
 
-          return ListView.separated(
-            itemCount: docs.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final reservation = Reservation.fromDoc(docs[index]);
-              final snapshotData = reservation.productSnapshot;
-              final imageUrl = snapshotData['imageUrl'] as String?;
-              final name =
-                  snapshotData['name'] as String? ?? 'Ismeretlen termek';
-              final discounted = snapshotData['discountedPrice'] as int? ?? 0;
-              final original = snapshotData['originalPrice'] as int? ?? 0;
-              final expiresAt = reservation.expiresAt;
-              String expiresText = 'Ismeretlen lejarat';
-              if (expiresAt != null) {
-                expiresText =
-                    '${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')} '
-                    '${expiresAt.hour.toString().padLeft(2, '0')}:${expiresAt.minute.toString().padLeft(2, '0')}';
-              }
+          return NearPickBackground(
+            child: ListView.separated(
+              padding: const EdgeInsets.only(bottom: 24),
+              itemCount: docs.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final reservation = Reservation.fromDoc(docs[index]);
+                final snapshotData = reservation.productSnapshot;
+                final imageUrl = snapshotData['imageUrl'] as String?;
+                final name =
+                    snapshotData['name'] as String? ?? 'Ismeretlen termek';
+                final discounted = snapshotData['discountedPrice'] as int? ?? 0;
+                final original = snapshotData['originalPrice'] as int? ?? 0;
+                final expiresAt = reservation.expiresAt;
+                String expiresText = 'Ismeretlen lejarat';
+                if (expiresAt != null) {
+                  expiresText =
+                      '${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')} '
+                      '${expiresAt.hour.toString().padLeft(2, '0')}:${expiresAt.minute.toString().padLeft(2, '0')}';
+                }
 
-              return ListTile(
-                leading: imageUrl != null && imageUrl.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          imageUrl,
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
+                return ListTile(
+                  leading: imageUrl != null && imageUrl.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            imageUrl,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            width: 56,
+                            height: 56,
+                            color: Theme.of(context).colorScheme.surfaceVariant,
+                            child: const Icon(Icons.photo_outlined),
+                          ),
                         ),
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          width: 56,
-                          height: 56,
-                          color: Theme.of(context).colorScheme.surfaceVariant,
-                          child: const Icon(Icons.photo_outlined),
-                        ),
-                      ),
-                title: Text(name),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Kod: ${reservation.pickupCode}'),
-                    Text('Lejar: $expiresText'),
-                    Text('Status: ${reservation.status}'),
-                  ],
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '$discounted Ft',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    if (original > discounted)
+                  title: Text(name),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Kod: ${reservation.pickupCode}'),
+                      Text('Lejar: $expiresText'),
+                      Text('Status: ${reservation.status}'),
+                    ],
+                  ),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
                       Text(
-                        '$original Ft',
-                        style: const TextStyle(
-                          decoration: TextDecoration.lineThrough,
-                          fontSize: 12,
+                        '$discounted Ft',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      if (original > discounted)
+                        Text(
+                          '$original Ft',
+                          style: const TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            fontSize: 12,
+                          ),
+                        ),
+                    ],
+                  ),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ReservationDetailScreen(
+                          reservationId: reservation.id,
                         ),
                       ),
-                  ],
-                ),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ReservationDetailScreen(
-                        reservationId: reservation.id,
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+                    );
+                  },
+                );
+              },
+            ),
           );
         },
       ),

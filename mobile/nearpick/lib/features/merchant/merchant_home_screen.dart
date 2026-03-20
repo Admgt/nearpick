@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/product.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
+import '../../ui/app_chrome.dart';
 import '../../widgets/product_list_tile.dart';
 import 'new_product_screen.dart';
 import 'merchant_dashboard_screen.dart';
@@ -78,77 +79,82 @@ class MerchantHomeScreen extends StatelessWidget {
             );
           }
 
-          return ListView.separated(
-            itemCount: products.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final product = products[index];
+          return NearPickBackground(
+            child: ListView.separated(
+              padding: const EdgeInsets.only(bottom: 88),
+              itemCount: products.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final product = products[index];
 
-              Future<void> archiveProduct() async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Biztosan torlod ezt a termeket?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Megse'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Igen'),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (confirmed != true) return;
-                try {
-                  await productService.archiveProduct(productId: product.id);
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Termek archivalt.')),
+                Future<void> archiveProduct() async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Biztosan torlod ezt a termeket?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Megse'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text('Igen'),
+                        ),
+                      ],
+                    ),
                   );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Hiba: $e')));
+
+                  if (confirmed != true) return;
+                  try {
+                    await productService.archiveProduct(productId: product.id);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Termek archivalt.')),
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Hiba: $e')));
+                  }
                 }
-              }
 
-              final user = FirebaseAuth.instance.currentUser;
-              final reservationStream = user == null
-                  ? const Stream<QuerySnapshot<Map<String, dynamic>>>.empty()
-                  : FirebaseFirestore.instance
-                        .collection('reservations')
-                        .where('merchantId', isEqualTo: user.uid)
-                        .where('productId', isEqualTo: product.id)
-                        .where('status', isEqualTo: 'reserved')
-                        .snapshots();
+                final user = FirebaseAuth.instance.currentUser;
+                final reservationStream = user == null
+                    ? const Stream<QuerySnapshot<Map<String, dynamic>>>.empty()
+                    : FirebaseFirestore.instance
+                          .collection('reservations')
+                          .where('merchantId', isEqualTo: user.uid)
+                          .where('productId', isEqualTo: product.id)
+                          .where('status', isEqualTo: 'reserved')
+                          .snapshots();
 
-              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: reservationStream,
-                builder: (context, reservationSnap) {
-                  final reservedCount = reservationSnap.data?.docs.length ?? 0;
-                  return ProductListTile(
-                    product: product,
-                    reservedCount: reservedCount,
-                    onArchive: archiveProduct,
-                  );
-                },
-              );
-            },
+                return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: reservationStream,
+                  builder: (context, reservationSnap) {
+                    final reservedCount =
+                        reservationSnap.data?.docs.length ?? 0;
+                    return ProductListTile(
+                      product: product,
+                      reservedCount: reservedCount,
+                      onArchive: archiveProduct,
+                    );
+                  },
+                );
+              },
+            ),
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (_) => const NewProductScreen()));
         },
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Uj termek'),
       ),
     );
   }

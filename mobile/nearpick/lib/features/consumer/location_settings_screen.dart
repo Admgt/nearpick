@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/location_service.dart';
+import '../../ui/app_chrome.dart';
 
 class LocationSettingsScreen extends StatefulWidget {
   const LocationSettingsScreen({super.key});
@@ -127,80 +128,82 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Hely beallitasa')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _fetchingLocation ? null : _fetchLocation,
-                  icon: _fetchingLocation
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.my_location),
-                  label: const Text('Aktualis hely meghatarozasa'),
+      body: NearPickBackground(
+        maxWidth: 720,
+        child: SurfaceCard(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _fetchingLocation ? null : _fetchLocation,
+                    icon: _fetchingLocation
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.my_location),
+                    label: const Text('Aktualis hely meghatarozasa'),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _latCtrl,
-                decoration: const InputDecoration(labelText: 'Latitude'),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _latCtrl,
+                  decoration: const InputDecoration(labelText: 'Latitude'),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: true,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Kotelezo mezo';
+                    }
+                    final parsed = double.tryParse(value.trim());
+                    if (parsed == null || parsed < -90 || parsed > 90) {
+                      return 'Adj meg -90 es 90 kozotti erteket';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Kotelezo mezo';
-                  }
-                  final parsed = double.tryParse(value.trim());
-                  if (parsed == null || parsed < -90 || parsed > 90) {
-                    return 'Adj meg -90 es 90 kozotti erteket';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _lngCtrl,
-                decoration: const InputDecoration(labelText: 'Longitude'),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _lngCtrl,
+                  decoration: const InputDecoration(labelText: 'Longitude'),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: true,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Kotelezo mezo';
+                    }
+                    final parsed = double.tryParse(value.trim());
+                    if (parsed == null || parsed < -180 || parsed > 180) {
+                      return 'Adj meg -180 es 180 kozotti erteket';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Kotelezo mezo';
-                  }
-                  final parsed = double.tryParse(value.trim());
-                  if (parsed == null || parsed < -180 || parsed > 180) {
-                    return 'Adj meg -180 es 180 kozotti erteket';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              if (_error != null)
-                Text(_error!, style: const TextStyle(color: Colors.red)),
-              if (_message != null)
-                Text(_message!, style: const TextStyle(color: Colors.green)),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _loading ? null : _save,
-                  child: _loading
-                      ? const CircularProgressIndicator()
-                      : const Text('Mentes'),
+                const SizedBox(height: 16),
+                if (_error != null)
+                  Text(_error!, style: const TextStyle(color: Colors.red)),
+                if (_message != null)
+                  Text(_message!, style: const TextStyle(color: Colors.green)),
+                const Spacer(),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _loading ? null : _save,
+                    child: _loading
+                        ? const CircularProgressIndicator()
+                        : const Text('Mentes'),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

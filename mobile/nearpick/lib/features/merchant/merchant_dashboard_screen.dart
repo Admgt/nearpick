@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../ui/app_chrome.dart';
+
 class MerchantDashboardScreen extends StatelessWidget {
   const MerchantDashboardScreen({super.key});
 
@@ -141,109 +143,124 @@ class MerchantDashboardScreen extends StatelessWidget {
                 ..sort((a, b) => b.value.views.compareTo(a.value.views));
               final topProducts = topEntries.take(5).toList();
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.6,
-                      children: [
-                        _KpiCard(
-                          label: 'Mai megtekintesek',
-                          value: viewsToday.toString(),
-                        ),
-                        _KpiCard(
-                          label: '7 nap megtekintesek',
-                          value: views7d.toString(),
-                        ),
-                        _KpiCard(
-                          label: 'Mai erdeklodesek',
-                          value: interestsToday.toString(),
-                        ),
-                        _KpiCard(
-                          label: 'CTR 7 nap',
-                          value: '${ctr7d.toStringAsFixed(1)}%',
-                        ),
-                      ],
+              return NearPickBackground(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                    SurfaceCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Uzleti attekintes',
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Top termekek (7 nap)',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    if (topProducts.isEmpty)
-                      const Text('Nincs elegendo adat az utolso 7 napbol.')
-                    else
-                      ListView.separated(
+                      const SizedBox(height: 16),
+                      GridView.count(
+                        crossAxisCount: 2,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: topProducts.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final entry = topProducts[index];
-                          final productId = entry.key;
-                          final stats = entry.value;
-                          final product = productById[productId] ?? {};
-                          final name =
-                              product['name'] as String? ?? 'Ismeretlen termek';
-                          final discounted =
-                              product['discountedPrice'] as int? ?? 0;
-                          final ctr = stats.views == 0
-                              ? 0.0
-                              : (stats.interests / stats.views) * 100.0;
-
-                          return ListTile(
-                            title: Text(name),
-                            subtitle: Text(
-                              'Views: ${stats.views} • Interests: ${stats.interests} • CTR: ${ctr.toStringAsFixed(1)}%',
-                            ),
-                            trailing: Text('$discounted Ft'),
-                          );
-                        },
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.6,
+                        children: [
+                          _KpiCard(
+                            label: 'Mai megtekintesek',
+                            value: viewsToday.toString(),
+                          ),
+                          _KpiCard(
+                            label: '7 nap megtekintesek',
+                            value: views7d.toString(),
+                          ),
+                          _KpiCard(
+                            label: 'Mai erdeklodesek',
+                            value: interestsToday.toString(),
+                          ),
+                          _KpiCard(
+                            label: 'CTR 7 nap',
+                            value: '${ctr7d.toStringAsFixed(1)}%',
+                          ),
+                        ],
                       ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Allapot osszegzes',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatusChip(
-                            label: 'Active',
-                            value: activeOffers,
-                          ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Top termekek (7 nap)',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      if (topProducts.isEmpty)
+                        const Text('Nincs elegendo adat az utolso 7 napbol.')
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: topProducts.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final entry = topProducts[index];
+                            final productId = entry.key;
+                            final stats = entry.value;
+                            final product = productById[productId] ?? {};
+                            final name =
+                                product['name'] as String? ??
+                                'Ismeretlen termek';
+                            final discounted =
+                                product['discountedPrice'] as int? ?? 0;
+                            final ctr = stats.views == 0
+                                ? 0.0
+                                : (stats.interests / stats.views) * 100.0;
+
+                            return ListTile(
+                              title: Text(name),
+                              subtitle: Text(
+                                'Views: ${stats.views} • Interests: ${stats.interests} • CTR: ${ctr.toStringAsFixed(1)}%',
+                              ),
+                              trailing: Text('$discounted Ft'),
+                            );
+                          },
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _StatusChip(
-                            label: 'Expired',
-                            value: expiredOffers,
+                      const SizedBox(height: 20),
+                      Text(
+                        'Allapot osszegzes',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _StatusChip(
+                              label: 'Active',
+                              value: activeOffers,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _StatusChip(
-                            label: 'Sold out',
-                            value: soldOutOffers,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _StatusChip(
+                              label: 'Expired',
+                              value: expiredOffers,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'A megtekintes a termek reszleteinek megnyitasat jelenti, '
-                      'az erdeklodes a kedvencekbe jelolest.',
-                    ),
-                  ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _StatusChip(
+                              label: 'Sold out',
+                              value: soldOutOffers,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'A megtekintes a termek reszleteinek megnyitasat jelenti, '
+                        'az erdeklodes a kedvencekbe jelolest.',
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -267,12 +284,9 @@ class _KpiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return SurfaceCard(
+      radius: 22,
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -299,12 +313,9 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(10),
-      ),
+    return SurfaceCard(
+      radius: 20,
+      padding: const EdgeInsets.symmetric(vertical: 14),
       child: Column(
         children: [
           Text(label, style: Theme.of(context).textTheme.bodySmall),

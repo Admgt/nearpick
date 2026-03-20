@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../services/location_service.dart';
 import '../../services/product_service.dart';
+import '../../ui/app_chrome.dart';
 import 'new_product_form_logic.dart';
 
 typedef SaveProductAction = Future<void> Function(NewProductCommand command);
@@ -238,188 +239,198 @@ class _NewProductScreenState extends State<NewProductScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Uj termek hozzaadasa')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                GestureDetector(
-                  onTap: _showImagePickerSheet,
-                  child: Container(
-                    width: double.infinity,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(12),
+      body: NearPickBackground(
+        maxWidth: 760,
+        child: Center(
+          child: SingleChildScrollView(
+            child: SurfaceCard(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: _showImagePickerSheet,
+                      child: Container(
+                        width: double.infinity,
+                        height: 180,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceVariant,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: _selectedImageBytes == null
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(Icons.camera_alt_outlined, size: 36),
+                                  SizedBox(height: 8),
+                                  Text('Kep hozzaadasa'),
+                                ],
+                              )
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.memory(
+                                  _selectedImageBytes!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: 180,
+                                ),
+                              ),
+                      ),
                     ),
-                    child: _selectedImageBytes == null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.camera_alt_outlined, size: 36),
-                              SizedBox(height: 8),
-                              Text('Kep hozzaadasa'),
-                            ],
+                    if (_imageLoading)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: LinearProgressIndicator(),
+                      ),
+                    if (_selectedImage != null)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () => setState(() {
+                            _selectedImage = null;
+                            _selectedImageBytes = null;
+                          }),
+                          icon: const Icon(Icons.delete_outline),
+                          label: const Text('Kep torlese'),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      key: const ValueKey('new_product_name_field'),
+                      controller: _nameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Termek neve',
+                      ),
+                      validator: validateRequiredName,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      key: const ValueKey('new_product_category_field'),
+                      initialValue: _selectedCategory,
+                      items: _categories
+                          .map(
+                            (c) => DropdownMenuItem(value: c, child: Text(c)),
                           )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.memory(
-                              _selectedImageBytes!,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: 180,
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedCategory = value);
+                        }
+                      },
+                      decoration: const InputDecoration(labelText: 'Kategoria'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      key: const ValueKey('new_product_original_price_field'),
+                      controller: _originalPriceCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Eredeti ar (Ft)',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: validateIntegerField,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      key: const ValueKey('new_product_discounted_price_field'),
+                      controller: _discountedPriceCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Akcios ar (Ft)',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: validateIntegerField,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      key: const ValueKey('new_product_quantity_field'),
+                      controller: _quantityCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Mennyiseg (db)',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: validatePositiveQuantity,
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _fetchingLocation ? null : _fetchLocation,
+                        icon: _fetchingLocation
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.my_location),
+                        label: const Text('Aktualis hely meghatarozasa'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            key: const ValueKey('new_product_latitude_field'),
+                            controller: _latCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Bolt latitude',
                             ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
+                            validator: validateLatitude,
                           ),
-                  ),
-                ),
-                if (_imageLoading)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: LinearProgressIndicator(),
-                  ),
-                if (_selectedImage != null)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: () => setState(() {
-                        _selectedImage = null;
-                        _selectedImageBytes = null;
-                      }),
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Kep torlese'),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            key: const ValueKey('new_product_longitude_field'),
+                            controller: _lngCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Bolt longitude',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
+                            validator: validateLongitude,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  key: const ValueKey('new_product_name_field'),
-                  controller: _nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Termek neve'),
-                  validator: validateRequiredName,
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  key: const ValueKey('new_product_category_field'),
-                  initialValue: _selectedCategory,
-                  items: _categories
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _selectedCategory = value);
-                    }
-                  },
-                  decoration: const InputDecoration(labelText: 'Kategoria'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  key: const ValueKey('new_product_original_price_field'),
-                  controller: _originalPriceCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Eredeti ar (Ft)',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: validateIntegerField,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  key: const ValueKey('new_product_discounted_price_field'),
-                  controller: _discountedPriceCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Akcios ar (Ft)',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: validateIntegerField,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  key: const ValueKey('new_product_quantity_field'),
-                  controller: _quantityCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Mennyiseg (db)',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: validatePositiveQuantity,
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _fetchingLocation ? null : _fetchLocation,
-                    icon: _fetchingLocation
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.my_location),
-                    label: const Text('Aktualis hely meghatarozasa'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        key: const ValueKey('new_product_latitude_field'),
-                        controller: _latCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Bolt latitude',
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _selectedExpiry == null
+                                ? 'Nincs kivalasztva lejarati datum'
+                                : 'Lejarat: ${_selectedExpiry!.year}.${_selectedExpiry!.month.toString().padLeft(2, '0')}.${_selectedExpiry!.day.toString().padLeft(2, '0')}',
+                          ),
                         ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                          signed: true,
+                        TextButton(
+                          key: const ValueKey('new_product_pick_expiry_button'),
+                          onPressed: _pickExpiryDate,
+                          child: const Text('Lejarati datum'),
                         ),
-                        validator: validateLatitude,
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        key: const ValueKey('new_product_longitude_field'),
-                        controller: _lngCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Bolt longitude',
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                          signed: true,
-                        ),
-                        validator: validateLongitude,
-                      ),
+                    const SizedBox(height: 16),
+                    if (_error != null)
+                      Text(_error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      key: const ValueKey('new_product_save_button'),
+                      onPressed: _loading ? null : _save,
+                      child: _loading
+                          ? const CircularProgressIndicator()
+                          : const Text('Mentes'),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _selectedExpiry == null
-                            ? 'Nincs kivalasztva lejarati datum'
-                            : 'Lejarat: ${_selectedExpiry!.year}.${_selectedExpiry!.month.toString().padLeft(2, '0')}.${_selectedExpiry!.day.toString().padLeft(2, '0')}',
-                      ),
-                    ),
-                    TextButton(
-                      key: const ValueKey('new_product_pick_expiry_button'),
-                      onPressed: _pickExpiryDate,
-                      child: const Text('Lejarati datum'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                if (_error != null)
-                  Text(_error!, style: const TextStyle(color: Colors.red)),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  key: const ValueKey('new_product_save_button'),
-                  onPressed: _loading ? null : _save,
-                  child: _loading
-                      ? const CircularProgressIndicator()
-                      : const Text('Mentes'),
-                ),
-              ],
+              ),
             ),
           ),
         ),

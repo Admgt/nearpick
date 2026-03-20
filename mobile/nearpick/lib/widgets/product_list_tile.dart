@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/product.dart';
+import '../ui/app_chrome.dart';
 import 'storage_image.dart';
 
 class ProductListTile extends StatelessWidget {
@@ -19,6 +20,7 @@ class ProductListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final expiresAt = product.expiresAt;
     String expiresText = 'Ismeretlen lejarat';
     if (expiresAt != null) {
@@ -27,70 +29,145 @@ class ProductListTile extends StatelessWidget {
     }
 
     final imagePath = product.imagePath;
-
-    return ListTile(
-      leading: product.hasImage && imagePath != null && imagePath.isNotEmpty
-          ? StorageImage(
-              imagePath: imagePath,
-              width: 56,
-              height: 56,
-              borderRadius: 8,
-              maxSizeBytes: 256 * 1024,
-            )
-          : ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                width: 56,
-                height: 56,
-                color: Theme.of(context).colorScheme.surfaceVariant,
-                child: const Icon(Icons.photo_outlined),
-              ),
-            ),
-      title: Row(
+    return SurfaceCard(
+      radius: 24,
+      padding: const EdgeInsets.all(18),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: Text(product.name)),
-          if (reservedCount > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text('Foglalas: $reservedCount'),
-            ),
-        ],
-      ),
-      subtitle: Text(
-        '${product.category}\n$expiresText - Mennyiseg: ${product.quantityAvailable} db - Status: ${product.status}',
-      ),
-      isThreeLine: true,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${product.discountedPrice} Ft',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              if (product.originalPrice > product.discountedPrice)
-                Text(
-                  '${product.originalPrice} Ft',
-                  style: const TextStyle(
-                    decoration: TextDecoration.lineThrough,
-                    fontSize: 12,
+          product.hasImage && imagePath != null && imagePath.isNotEmpty
+              ? StorageImage(
+                  imagePath: imagePath,
+                  width: 78,
+                  height: 78,
+                  borderRadius: 18,
+                  maxSizeBytes: 256 * 1024,
+                )
+              : ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    width: 78,
+                    height: 78,
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    child: const Icon(Icons.photo_outlined),
                   ),
                 ),
-            ],
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        product.name,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ),
+                    if (reservedCount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.secondary.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'Foglalas $reservedCount',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.secondary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _MetaChip(label: product.category),
+                    _MetaChip(
+                      label: expiresText,
+                      icon: Icons.schedule_outlined,
+                    ),
+                    _MetaChip(
+                      label: 'Mennyiseg ${product.quantityAvailable} db',
+                      icon: Icons.inventory_2_outlined,
+                    ),
+                    _MetaChip(
+                      label: 'Status ${product.status}',
+                      icon: Icons.flag_outlined,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${product.discountedPrice} Ft',
+                          style: theme.textTheme.titleLarge,
+                        ),
+                        if (product.originalPrice > product.discountedPrice)
+                          Text(
+                            '${product.originalPrice} Ft',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              decoration: TextDecoration.lineThrough,
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.6,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Torles',
+                      onPressed: onArchive,
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(width: 6),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'Torles',
-            onPressed: onArchive,
-          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+
+  const _MetaChip({required this.label, this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.75),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: theme.colorScheme.primary),
+            const SizedBox(width: 6),
+          ],
+          Text(label, style: theme.textTheme.bodySmall),
         ],
       ),
     );
