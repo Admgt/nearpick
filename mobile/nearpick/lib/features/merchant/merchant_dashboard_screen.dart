@@ -149,17 +149,17 @@ class MerchantDashboardScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                    SurfaceCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Uzleti attekintes',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                        ],
+                      SurfaceCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Uzleti attekintes',
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                       const SizedBox(height: 16),
                       GridView.count(
                         crossAxisCount: 2,
