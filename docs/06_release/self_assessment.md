@@ -23,7 +23,7 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 |---|---|---|---|
 | Futtathatóság: Quickstart alapján indul | Igen | [`README.md`](../../README.md), [`demo_environment.md`](demo_environment.md) | Demo Firebase projekt alapú reviewer útvonal dokumentálva |
 | CI zöld a main/default branch-en | Részben | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | Workflow megvan, de az utolsó zöld run konkrét linkje nincs rögzítve |
-| Nincs secret a repo-ban | Igen | [`.env.example`](../../.env.example), [`scripts/secret_scan.sh`](../../scripts/secret_scan.sh), [`.gitignore`](../../.gitignore) | Secret scan és gitignore szabályok megvannak |
+| Nincs secret a repo-ban | Igen | [`.env.example`](../../.env.example), [`scripts/secret_scan.sh`](../../scripts/secret_scan.sh), [`scripts/secret_scan.ps1`](../../scripts/secret_scan.ps1), [`.gitignore`](../../.gitignore) | Secret scan és gitignore szabályok megvannak |
 | Minimum tesztmix: 30+ automata teszt | Igen | [`test_strategy.md`](../04_quality/test_strategy.md), [`test_report.md`](../04_quality/test_report.md) | 73 automata teszt dokumentálva |
 | AI átláthatóság: manifest + prompt + verification | Igen | [`ai_manifest.md`](../07_ai/ai_manifest.md), [`prompt_log.md`](../07_ai/prompt_log.md), [`verification_log.md`](../07_ai/verification_log.md) | Megvannak, de mélységben még nem véglegesek |
 
@@ -98,7 +98,7 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
 | 3 | Threat model 6+ tétellel + konkrét mitigációk | 1.0 | [`threat_model.md`](../05_security_ops/threat_model.md) |
-| 2 | Secret hygiene rendben | 1.0 | [`.env.example`](../../.env.example), [`scripts/secret_scan.sh`](../../scripts/secret_scan.sh), [`.gitignore`](../../.gitignore) |
+| 2 | Secret hygiene rendben | 1.0 | [`.env.example`](../../.env.example), [`scripts/secret_scan.sh`](../../scripts/secret_scan.sh), [`scripts/secret_scan.ps1`](../../scripts/secret_scan.ps1), [`.gitignore`](../../.gitignore) |
 | 2 | AuthN/AuthZ modell dokumentált és tesztelt | 0.5 | [`api.md`](../03_design/api.md), [`firestore.rules`](../../firestore.rules), [`functions/test/firestore_rules_policy.test.js`](../../functions/test/firestore_rules_policy.test.js) |
 | 2 | Dependency vulnerability ellenőrzés + kezelési terv | 0.5 | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`quality_gates_summary.md`](../04_quality/quality_gates_summary.md) |
 | 1 | Privacy + licensing | 1.0 | [`privacy_licensing.md`](../05_security_ops/privacy_licensing.md), [`publication_policy.md`](publication_policy.md), [`../../LICENSE`](../../LICENSE) |

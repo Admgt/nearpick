@@ -122,6 +122,12 @@ Repo gyökérből teljes quality gate:
 bash scripts/test_all.sh
 ```
 
+Windows PowerShell környezetben:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/test_all.ps1
+```
+
 ## Fontos megjegyzések a generált config fájlokról
 
 - `lib/firebase_options.dart`: szükséges a `Firebase.initializeApp(...)` híváshoz.

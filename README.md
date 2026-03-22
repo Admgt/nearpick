@@ -194,6 +194,12 @@ Repo szintű quality gate:
 bash scripts/test_all.sh
 ```
 
+Windows PowerShell környezetben:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/test_all.ps1
+```
+
 További evidence:
 
 - Tesztstratégia: [`docs/04_quality/test_strategy.md`](docs/04_quality/test_strategy.md)

@@ -8,7 +8,7 @@
 - Functions JavaScript quality gate: `npm run lint`
 - Functions tesztek: `npm test`
 - Dependency sebezhetőségi ellenőrzés: `npm run scan:deps`
-- Repo szintű secret scan: `bash scripts/secret_scan.sh`
+- Repo szintű secret scan: `bash scripts/secret_scan.sh` vagy Windows alatt `powershell -ExecutionPolicy Bypass -File scripts/secret_scan.ps1`
 - Build artifact mentés: Flutter web build
 - Evidence artifact mentés: teszt- és security riportok
 
@@ -23,6 +23,7 @@
   - [firestore.rules](../../firestore.rules)
   - [functions/package.json](../../functions/package.json)
   - [scripts/secret_scan.sh](../../scripts/secret_scan.sh)
+  - [scripts/secret_scan.ps1](../../scripts/secret_scan.ps1)
 
 ## Jelenlegi maradó kockázatok
 - A mobil UI/E2E rétegben már van tényleges `integration_test/**/*_test.dart` suite, de még csak egy core flow-val.

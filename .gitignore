@@ -12,3 +12,4 @@ firebase-debug.*.log
 .tmp/
 functions/node_modules/
 mobile/nearpick/reports/
+reports/

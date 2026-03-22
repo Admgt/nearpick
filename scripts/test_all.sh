@@ -16,15 +16,19 @@ dart format --set-exit-if-changed .
 echo "==> flutter analyze"
 flutter analyze
 
-echo "==> junitreport telepites (tojunit)"
-dart pub global activate junitreport
-
 if [ -d "$HOME/.pub-cache/bin" ]; then
   export PATH="$PATH:$HOME/.pub-cache/bin"
 fi
 
 if [ -n "${LOCALAPPDATA:-}" ] && [ -d "${LOCALAPPDATA}/Pub/Cache/bin" ]; then
   export PATH="$PATH:${LOCALAPPDATA}/Pub/Cache/bin"
+fi
+
+if ! command -v tojunit >/dev/null 2>&1; then
+  echo "==> junitreport telepites (tojunit)"
+  dart pub global activate junitreport
+else
+  echo "==> tojunit mar telepitve"
 fi
 
 echo "==> unit/widget tesztek + junit"
