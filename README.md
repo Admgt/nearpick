@@ -188,6 +188,17 @@ flutter test test/widget
 flutter test test/integration
 ```
 
+Flutter dependency audit:
+
+```bash
+cd mobile/nearpick
+dart run tool/audit_pub_dependencies.dart --report-dir=reports
+```
+
+Megjegyzés:
+
+- Ez a lépés internetkapcsolatot igényel, mert az OSV advisory feedet kérdezi le.
+
 Repo szintű quality gate:
 
 ```bash

@@ -22,11 +22,11 @@
 ## Maradó kockázatok
 
 - Egyes tranzakciós megerősítések még mindig kliensoldaliak, és meg vannak jelölve lehetséges function-oldali migrációra.
-- A CI jelenleg a `functions` függőségeire futtat automatizált dependency auditot; külön Flutter dependency-vulnerability ellenőrzés még nincs.
+- A Flutter dependency audit be van kötve, de OSV advisory feedtől és hálózati elérhetőségtől függ.
 - A health/ops telemetria még mindig csak alap szintű.
 
 ## Verifikációs terv
 
 - Dedikált rules allow/deny tesztek hozzáadása a products/reservations/users útvonalakra.
 - Biztonságfókuszú negatív tesztek hozzáadása a test backlogból.
-- Flutter dependency audit vagy SBOM alapú ellenőrzés hozzáadása a meglévő functions audit mellé.
+- SBOM alapú vagy fejlettebb SCA ellenőrzés hozzáadása a meglévő Flutter + functions audit mellé.

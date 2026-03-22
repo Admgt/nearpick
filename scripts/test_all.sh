@@ -10,6 +10,9 @@ cd "$APP_DIR"
 echo "==> flutter pub get"
 flutter pub get
 
+echo "==> Flutter dependency audit"
+dart run tool/audit_pub_dependencies.dart --report-dir=reports
+
 echo "==> dart format gate"
 dart format --set-exit-if-changed .
 

@@ -12,6 +12,10 @@ try {
     & flutter pub get
     if ($LASTEXITCODE -ne 0) { throw "flutter pub get failed" }
 
+    Write-Host "==> Flutter dependency audit"
+    & dart run tool/audit_pub_dependencies.dart --report-dir=reports
+    if ($LASTEXITCODE -ne 0) { throw "Flutter dependency audit failed" }
+
     Write-Host "==> dart format gate"
     & dart format --output=none --set-exit-if-changed .
     if ($LASTEXITCODE -ne 0) { throw "dart format failed" }

@@ -45,7 +45,7 @@ A GitHub Actions [ci.yml](../../.github/workflows/ci.yml) a következő artefakt
 Ezek forrásai:
 - Flutter `reports/junit-flutter.xml`
 - Flutter és functions tesztlogok a `reports/` könyvtárakból
-- secret scan és `npm audit` riportok
+- secret scan, Flutter OSV audit és `npm audit` riportok
 - a Flutter web build kimenete
 
 ### Ellenőrzés ebben a módosítási körben
@@ -53,6 +53,7 @@ A jelenlegi változtatási körben a következő ellenőrzések futtatása van b
 
 ```bash
 cd mobile/nearpick
+dart run tool/audit_pub_dependencies.dart --report-dir=reports
 flutter test
 flutter test integration_test/flows/auth_and_product_flow_test.dart -d <android-emulator-device-id>
 

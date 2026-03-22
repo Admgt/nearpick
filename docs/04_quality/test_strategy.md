@@ -52,6 +52,7 @@ Automatizált:
 - Functions és rules tesztek
 - külön performance smoke benchmark a recommendation distance helperre
 - Flutter format és analyze
+- Flutter dependency audit
 - functions lint
 - secret scan
 - functions dependency audit
@@ -66,6 +67,7 @@ Manuális vagy részben manuális:
 
 ```bash
 cd mobile/nearpick
+dart run tool/audit_pub_dependencies.dart --report-dir=reports
 dart format --set-exit-if-changed .
 flutter analyze
 flutter test
@@ -83,6 +85,7 @@ npm run scan:deps
 - A `mobile/nearpick/integration_test/**/*_test.dart` réteg még csak egy core flow-t fed le, nem teljes E2E suite.
 - A Firestore rules ellenőrzése még nem emulatoros allow/deny futás, hanem szerződés + viselkedésmodell.
 - A manuális acceptance feature-k még nem kapcsolódnak automata runnerhez.
+- A Flutter dependency audit advisory feed-alapú, ezért hálózati elérhetőséget igényel.
 
 ## Archivált korábbi tartalom
 

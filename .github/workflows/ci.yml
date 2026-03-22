@@ -48,6 +48,12 @@ jobs:
         working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
         run: flutter pub get
 
+      - name: Flutter dependency audit
+        working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
+        run: |
+          mkdir -p reports
+          dart run tool/audit_pub_dependencies.dart --report-dir=reports
+
       - name: Flutter format gate
         working-directory: ${{ env.FLUTTER_PROJECT_DIR }}
         run: dart format --set-exit-if-changed .
@@ -102,13 +108,14 @@ jobs:
           fi
 
       - name: Upload security artifacts
-        if: ${{ always() && (hashFiles('reports/security/*') != '' || hashFiles('functions/reports/*') != '') }}
+        if: ${{ always() && (hashFiles('reports/security/*') != '' || hashFiles('functions/reports/*') != '' || hashFiles('mobile/nearpick/reports/pub-audit*') != '') }}
         uses: actions/upload-artifact@v4
         with:
           name: quality-security-evidence
           path: |
             reports/security/*
             functions/reports/*
+            mobile/nearpick/reports/pub-audit*
           if-no-files-found: error
 
   build:

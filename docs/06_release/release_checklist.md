@@ -1,6 +1,7 @@
 # Release checklist és scorecard
 
 Kapcsolódó kitöltött önértékelés: [`self_assessment.md`](self_assessment.md)
+Kapcsolódó CI evidence hely: [`ci_evidence.md`](ci_evidence.md)
 
 ## Build reprodukálhatóság
 
@@ -24,7 +25,7 @@ Kapcsolódó kitöltött önértékelés: [`self_assessment.md`](self_assessment
 - [x] Létezik fenyegetésmodell dokumentum.
 - [x] Létezik adatvédelmi és licensing dokumentum.
 - [x] Automatizált dependency audit lépés be van kötve a CI-ba a `functions` csomagra.
-- [ ] Flutter oldali dependency-vulnerability audit külön még nincs bevezetve.
+- [x] Flutter oldali dependency-vulnerability audit külön is be van vezetve.
 
 ## UX dokumentáció
 
@@ -54,3 +55,9 @@ Kapcsolódó kitöltött önértékelés: [`self_assessment.md`](self_assessment
 - [x] A CI külön lint, build és test szakaszokra bontott.
 - [x] A release csomag tartalmaz changelogot.
 - [x] Végleges licencfájl és publikációs policy rögzítve van.
+
+## CI evidence rögzítés
+
+- [x] Van külön hely előkészítve a konkrét GitHub Actions run link rögzítésére.
+- [x] A legutóbbi main/default branch zöld run URL-je ténylegesen be van írva a [`ci_evidence.md`](ci_evidence.md) fájlba.
+- [x] A kapcsolódó commit SHA és futási dátum is rögzítve van.

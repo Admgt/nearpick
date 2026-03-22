@@ -13,7 +13,7 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 
 - [x] A repo klónozás után a `README` quickstart alapján elindítható demóútvonalat ír le.
 - [x] A tesztek futtatása dokumentált.
-- [ ] A main/default branch legutóbbi zöld CI futásának konkrét linkje nincs bemásolva ebbe a dokumentumba.
+- [x] A main/default branch legutóbbi zöld CI futásának konkrét linkje rögzítve van a [`ci_evidence.md`](ci_evidence.md) fájlban.
 - [x] A secret hygiene dokumentált (`.env.example`, secret scan, gitignore).
 - [x] A UX screenshot evidence a `docs/assets/ux/` alatt elérhető.
 
@@ -22,7 +22,7 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 | Kapu feltétel | Státusz | Evidence / link | Megjegyzés |
 |---|---|---|---|
 | Futtathatóság: Quickstart alapján indul | Igen | [`README.md`](../../README.md), [`demo_environment.md`](demo_environment.md) | Demo Firebase projekt alapú reviewer útvonal dokumentálva |
-| CI zöld a main/default branch-en | Részben | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | Workflow megvan, de az utolsó zöld run konkrét linkje nincs rögzítve |
+| CI zöld a main/default branch-en | Igen | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`ci_evidence.md`](ci_evidence.md) | Workflow és a konkrét zöld run evidence is rögzítve |
 | Nincs secret a repo-ban | Igen | [`.env.example`](../../.env.example), [`scripts/secret_scan.sh`](../../scripts/secret_scan.sh), [`scripts/secret_scan.ps1`](../../scripts/secret_scan.ps1), [`.gitignore`](../../.gitignore) | Secret scan és gitignore szabályok megvannak |
 | Minimum tesztmix: 30+ automata teszt | Igen | [`test_strategy.md`](../04_quality/test_strategy.md), [`test_report.md`](../04_quality/test_report.md) | 73 automata teszt dokumentálva |
 | AI átláthatóság: manifest + prompt + verification | Igen | [`ai_manifest.md`](../07_ai/ai_manifest.md), [`prompt_log.md`](../07_ai/prompt_log.md), [`verification_log.md`](../07_ai/verification_log.md) | Megvannak, de mélységben még nem véglegesek |
@@ -93,14 +93,14 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 | 3 | Observability baseline: log + healthcheck + 3 metrika | 1.0 | [`observability.md`](../05_security_ops/observability.md), [`functions/index.js`](../../functions/index.js) |
 | 2 | Runbook: 2 incident scenario + teendők | 1.0 | [`deploy_runbook.md`](../05_security_ops/deploy_runbook.md) |
 
-### G) Security, privacy, licenc - 8/10
+### G) Security, privacy, licenc - 9/10
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
 | 3 | Threat model 6+ tétellel + konkrét mitigációk | 1.0 | [`threat_model.md`](../05_security_ops/threat_model.md) |
 | 2 | Secret hygiene rendben | 1.0 | [`.env.example`](../../.env.example), [`scripts/secret_scan.sh`](../../scripts/secret_scan.sh), [`scripts/secret_scan.ps1`](../../scripts/secret_scan.ps1), [`.gitignore`](../../.gitignore) |
 | 2 | AuthN/AuthZ modell dokumentált és tesztelt | 0.5 | [`api.md`](../03_design/api.md), [`firestore.rules`](../../firestore.rules), [`functions/test/firestore_rules_policy.test.js`](../../functions/test/firestore_rules_policy.test.js) |
-| 2 | Dependency vulnerability ellenőrzés + kezelési terv | 0.5 | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`quality_gates_summary.md`](../04_quality/quality_gates_summary.md) |
+| 2 | Dependency vulnerability ellenőrzés + kezelési terv | 1.0 | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`quality_gates_summary.md`](../04_quality/quality_gates_summary.md), [`audit_pub_dependencies.dart`](../../mobile/nearpick/tool/audit_pub_dependencies.dart) |
 | 1 | Privacy + licensing | 1.0 | [`privacy_licensing.md`](../05_security_ops/privacy_licensing.md), [`publication_policy.md`](publication_policy.md), [`../../LICENSE`](../../LICENSE) |
 
 ### H) AI engineering érettség - 9/10
@@ -121,14 +121,14 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 - D) Engineering minőség: `10.5/15`
 - E) Tesztelés és minőségi kapuk: `12/15`
 - F) DevOps és üzemeltetés: `12/15`
-- G) Security, privacy, licenc: `8/10`
+- G) Security, privacy, licenc: `9/10`
 - H) AI engineering érettség: `9/10`
 
-Összpontszám: `80.5/100`
+Összpontszám: `81.5/100`
 
 ## Következő legnagyobb pontnyereségek
 
 1. A performance benchmark optimalizálás utáni újrafuttatása és az eredmény rögzítése.
-2. CI main/default branch zöld futásának konkrét evidence linkelése.
+2. A következő sikeres push után a [`ci_evidence.md`](ci_evidence.md) kitöltése a konkrét GitHub Actions run linkkel.
 3. További `integration_test` flow-k hozzáadása reservation és completion utakra.
-4. Flutter oldali dependency-vulnerability audit hozzáadása.
+4. Egységesebb error-handling és konfigurációs baseline lezárása.
