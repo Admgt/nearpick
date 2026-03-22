@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class NotificationService {
@@ -8,6 +9,8 @@ class NotificationService {
   final _auth = FirebaseAuth.instance;
 
   Future<void> initAndSaveToken({String? vapidKey}) async {
+    final normalizedVapidKey = vapidKey?.trim();
+
     try {
       final settings = await _messaging.requestPermission();
       final status = settings.authorizationStatus;
@@ -25,7 +28,11 @@ class NotificationService {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    final token = await _messaging.getToken(vapidKey: vapidKey);
+    if (kIsWeb && (normalizedVapidKey == null || normalizedVapidKey.isEmpty)) {
+      return;
+    }
+
+    final token = await _messaging.getToken(vapidKey: normalizedVapidKey);
     if (token == null) return;
 
     await _db

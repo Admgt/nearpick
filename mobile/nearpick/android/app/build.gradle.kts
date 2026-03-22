@@ -23,10 +23,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Keep the demo/reviewer package id aligned with the checked-in Firebase example files.
         applicationId = "com.example.nearpick"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -35,8 +33,8 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // The repository stays runnable without shipping private keystores.
+            // Production/store signing must be injected from the local environment or CI.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

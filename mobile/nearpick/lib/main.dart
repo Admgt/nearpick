@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:nearpick/services/auth_service.dart';
+import 'app_config.dart';
 import 'firebase_options.dart';
 import 'features/auth/login_screen.dart';
 import 'features/consumer/consumer_home_screen.dart';
@@ -76,8 +77,7 @@ class _RootRouterState extends State<RootRouter> {
             if (!_tokenInitDone) {
               _tokenInitDone = true;
               NotificationService().initAndSaveToken(
-                vapidKey:
-                    'BJQgYIGTpei0KVzMliZ2mqoPMiY3N2UGYCa_-PiPjnE0kXE0Rv72x6BI6TPYVdLUxf7aLioCRsRIu0pN8Vp-YVM',
+                vapidKey: AppConfig.webPushVapidKey,
               );
             }
 

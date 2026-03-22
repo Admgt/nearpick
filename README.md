@@ -63,8 +63,9 @@ Az [`.env.example`](.env.example) a bírálói és fejlesztői konfigurációhoz
 - `FIREBASE_WEB_API_KEY`: webes Flutter futtatáshoz használt API kulcs
 - `FIREBASE_ANDROID_API_KEY`: Android klienshez tartozó API kulcs
 - `FIREBASE_IOS_API_KEY`: iOS klienshez tartozó API kulcs
+- `FIREBASE_WEB_VAPID_KEY`: opcionális web push public key, amelyet futtatáskor `--dart-define` formában kell átadni
 
-Fontos: az app futás közben nem `.env` fájlból olvas, hanem a lokálisan előállított FlutterFire/Firebase config fájlokból. Az `.env.example` a reviewer számára azt dokumentálja, milyen értékeket kell előkészíteni a lokális mintafájlok kitöltéséhez.
+Fontos: az app futás közben nem `.env` fájlból olvas, hanem a lokálisan előállított FlutterFire/Firebase config fájlokból, illetve opcionálisan `--dart-define` paraméterből. Az `.env.example` a reviewer számára azt dokumentálja, milyen értékeket kell előkészíteni a lokális mintafájlok kitöltéséhez.
 
 ### Klónozás
 
@@ -113,6 +114,13 @@ Ajánlott, leggyorsabb bírálói útvonal webes Flutter device-on:
 ```bash
 cd mobile/nearpick
 flutter run -d edge --web-port 49904
+```
+
+Ha web push értesítést is tesztelnél, add át a VAPID public key-t is:
+
+```bash
+cd mobile/nearpick
+flutter run -d edge --web-port 49904 --dart-define=FIREBASE_WEB_VAPID_KEY=<your-web-push-vapid-public-key>
 ```
 
 Android alternatíva:

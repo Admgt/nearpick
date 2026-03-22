@@ -51,11 +51,12 @@ Javasolt repo-alapú lokális setup:
 2. Cseréld ki a `<FIREBASE_API_KEY>` placeholdereket a saját Firebase projekted adataira.
 3. Ha Androidon futtatod az appot, másold le `android/app/google-services.example.json` tartalmát `android/app/google-services.json` néven, és töltsd ki a placeholder API key-t.
 4. Ha web push értesítést is tesztelnél, másold le `web/firebase-messaging-sw.example.js` tartalmát `web/firebase-messaging-sw.js` néven, és töltsd ki a webes API key-t.
+5. Web push tokenregisztrációhoz indításkor add át a VAPID public key-t `--dart-define=FIREBASE_WEB_VAPID_KEY=<your-web-push-vapid-public-key>` formában.
 
 Fontos:
 
 - Ezek a valódi config fájlok gitignore-olva vannak.
-- Az app nem `.env` fájlból olvas futásidőben; a Firebase konfigurációt a fenti generált/lokális fájlokból veszi.
+- Az app nem `.env` fájlból olvas futásidőben; a Firebase konfigurációt a fenti generált/lokális fájlokból veszi, a web push VAPID kulcsot pedig opcionálisan `--dart-define` paraméterből.
 - A verziókezelt `firebase.json` ebben a mappában FlutterFire metaadat, nem helyettesíti a lokális `firebase_options.dart` fájlt.
 - A mellékelt példa `firebase_options` jelenleg web, Android és iOS platformra tartalmaz beállítást; macOS, Windows és Linux nincs hozzá konfigurálva.
 
@@ -67,6 +68,12 @@ Megjegyzés:
 
 ```bash
 flutter run -d edge --web-port 49904
+```
+
+Web push teszthez:
+
+```bash
+flutter run -d edge --web-port 49904 --dart-define=FIREBASE_WEB_VAPID_KEY=<your-web-push-vapid-public-key>
 ```
 
 Megjegyzés:
