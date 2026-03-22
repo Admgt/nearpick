@@ -156,8 +156,8 @@ List<LockedPubPackage> parseHostedPackages(String lockfileContent) {
 
     packages.add(
       LockedPubPackage(
-        name: currentPackageName!,
-        version: version!,
+        name: currentPackageName,
+        version: version,
         dependencyType: dependencyType ?? 'unknown',
         source: source!,
         registryUrl: registryUrl,
