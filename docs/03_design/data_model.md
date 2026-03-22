@@ -88,7 +88,10 @@ Integritási mechanizmusok:
 
 A jelenlegi lekérdezési minták az alábbi indexeket indokolják:
 - `products.status + expiresAt`
-- `products.ownerId + expiresAt`
-- `interests.userId`
+- `products.isDeleted + ownerId + status + expiresAt`
+- `reservations.buyerId + createdAt`
+- `reservations.merchantId + status + createdAt`
+- `userInteractions.ownerId + createdAt`
+- `interests.userId` (single-field, automatikus index elegendo)
 
-Az indexkészletet összhangban kell tartani az aktív lekérdezési mintákkal és a CI/deploy folyamattal.
+Az indexkészlet verziokezelve van a repo-ban a [`../../firestore.indexes.json`](../../firestore.indexes.json) fajlban, es azt osszhangban kell tartani az aktiv lekerdezesi mintakkal es a CI/deploy folyamattal.

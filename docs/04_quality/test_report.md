@@ -36,7 +36,7 @@ Functions és security:
 - Firestore rules reprezentatív allow/deny viselkedési modelljei
 
 ### CI evidence
-A GitHub Actions [ci.yml](/d:/Szakdoga/1-sprint-Admgt/.github/workflows/ci.yml) a következő artefaktumokat teszi elérhetővé:
+A GitHub Actions [ci.yml](../../.github/workflows/ci.yml) a következő artefaktumokat teszi elérhetővé:
 - `flutter-junit`
 - `quality-test-evidence`
 - `quality-security-evidence`

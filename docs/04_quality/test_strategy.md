@@ -7,7 +7,7 @@ A NearPick tesztstratégiájának célja, hogy a kritikus üzleti logikát, a f�
 
 Az aktuális stratégia a meglévő repo-struktúrára épít:
 - a Flutter tesztek továbbra is a `mobile/nearpick/test/**` alatt futnak
-- a GitHub Actions a meglévő [ci.yml](/d:/Szakdoga/1-sprint-Admgt/.github/workflows/ci.yml) workflow-ban maradt
+- a GitHub Actions a meglévő [ci.yml](../../.github/workflows/ci.yml) workflow-ban maradt
 - a Firestore rules ellenőrzése jelenleg szerződés- és viselkedésmodell-szintű, nem teljes emulatoros allow/deny suite
 
 ### Aktuális tesztkategóriák
@@ -33,8 +33,8 @@ Az integration szint ebben a repo-ban két részre vált:
 - `integration_test/**`: valódi UI/E2E jellegű Flutter futás, jelenleg egy stabil core flow-val
 
 ### Firestore és Functions stratégia
-- Firestore rules szerződésvizsgálat: [firestore.rules](/d:/Szakdoga/1-sprint-Admgt/firestore.rules) kulcskorlátainak ellenőrzése.
-- Firestore rules viselkedésmodell: reprezentatív allow/deny esetek a [functions/test/firestore_rules_policy.test.js](/d:/Szakdoga/1-sprint-Admgt/functions/test/firestore_rules_policy.test.js) alatt.
+- Firestore rules szerződésvizsgálat: [firestore.rules](../../firestore.rules) kulcskorlátainak ellenőrzése.
+- Firestore rules viselkedésmodell: reprezentatív allow/deny esetek a [functions/test/firestore_rules_policy.test.js](../../functions/test/firestore_rules_policy.test.js) alatt.
 - Functions quality gate: `npm run lint`, `npm test`, `npm run scan:deps`.
 
 Lefedett rules esetek:

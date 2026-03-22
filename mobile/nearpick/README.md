@@ -59,7 +59,7 @@ Fontos:
 - A verziókezelt `firebase.json` ebben a mappában FlutterFire metaadat, nem helyettesíti a lokális `firebase_options.dart` fájlt.
 - A mellékelt példa `firebase_options` jelenleg web, Android és iOS platformra tartalmaz beállítást; macOS, Windows és Linux nincs hozzá konfigurálva.
 
-Assumption / TODO:
+Megjegyzés:
 
 - A repo nem dokumentál külön csapat-standard FlutterFire regenerálási parancsot. A biztos, auditálható út az example fájlokból való lokális előállítás.
 
@@ -88,7 +88,7 @@ Futtatás előtt ellenőrizd:
 
 ## Futtatás iOS-en
 
-Assumption / TODO:
+Korlát:
 
 - A projektben van iOS target, de nincs verziókezelt `GoogleService-Info.plist.example`.
 - Emiatt az iOS futtatáshoz egy projekt-specifikus Firebase plist fájlt kell kézzel hozzáadni az `ios/Runner/` környezethez.

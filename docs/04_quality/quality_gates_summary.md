@@ -19,10 +19,10 @@
   - `quality-security-evidence`
   - `nearpick-web-build`
 - Forrásfájlok és konfiguráció:
-  - [ci.yml](/d:/Szakdoga/1-sprint-Admgt/.github/workflows/ci.yml)
-  - [firestore.rules](/d:/Szakdoga/1-sprint-Admgt/firestore.rules)
-  - [functions/package.json](/d:/Szakdoga/1-sprint-Admgt/functions/package.json)
-  - [scripts/secret_scan.sh](/d:/Szakdoga/1-sprint-Admgt/scripts/secret_scan.sh)
+  - [ci.yml](../../.github/workflows/ci.yml)
+  - [firestore.rules](../../firestore.rules)
+  - [functions/package.json](../../functions/package.json)
+  - [scripts/secret_scan.sh](../../scripts/secret_scan.sh)
 
 ## Jelenlegi maradó kockázatok
 - A mobil UI/E2E rétegben már van tényleges `integration_test/**/*_test.dart` suite, de még csak egy core flow-val.
