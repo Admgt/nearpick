@@ -90,22 +90,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p reports
-          rm -rf .tmp-audit
-          mkdir -p .tmp-audit
-          cp package.json package-lock.json .tmp-audit/
-          pushd .tmp-audit >/dev/null
-          npm ci --omit=dev
-          set +e
-          npm audit --omit=dev --audit-level=high --json > ../reports/npm-audit.json 2> ../reports/npm-audit.stderr.log
-          status=$?
-          set -e
-          popd >/dev/null
-          rm -rf .tmp-audit
-          test -f reports/npm-audit.json
-          if [ "$status" -ne 0 ]; then
-            node -e "const fs=require('fs'); const path='reports/npm-audit.json'; try { const report=JSON.parse(fs.readFileSync(path,'utf8')); const vulnerabilities=Object.entries(report.vulnerabilities||{}).filter(([, details]) => details && ['high','critical'].includes(details.severity)); if (vulnerabilities.length > 0) { console.error('A functions dependency audit magas kockazatu vagy kritikus talalatot jelzett:'); for (const [name, details] of vulnerabilities) { const via=(details.via||[]).map((item)=>typeof item === 'string' ? item : item.name).join(', '); console.error('- ' + name + ' [' + details.severity + ']' + (via ? ' via ' + via : '')); } } else { console.error('A functions dependency audit hibaval tert vissza, de a report nem tartalmaz high/critical serulekenyseget.'); if (fs.existsSync('reports/npm-audit.stderr.log')) { const stderr=fs.readFileSync('reports/npm-audit.stderr.log','utf8').trim(); if (stderr) { console.error(stderr); } } } } catch (error) { console.error('A functions dependency audit report nem feldolgozhato JSON.'); if (fs.existsSync(path)) { console.error(fs.readFileSync(path,'utf8')); } if (fs.existsSync('reports/npm-audit.stderr.log')) { const stderr=fs.readFileSync('reports/npm-audit.stderr.log','utf8').trim(); if (stderr) { console.error(stderr); } } }"
-            exit "$status"
-          fi
+          npm run scan:deps -- --report-file=reports/npm-audit.json
 
       - name: Upload security artifacts
         if: ${{ always() && (hashFiles('reports/security/*') != '' || hashFiles('functions/reports/*') != '' || hashFiles('mobile/nearpick/reports/pub-audit*') != '') }}

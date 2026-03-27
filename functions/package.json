@@ -9,7 +9,7 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "test": "node --test --experimental-test-isolation=none",
-    "scan:deps": "npm audit --omit=dev --audit-level=high"
+    "scan:deps": "node scripts/audit_deps.js"
   },
   "engines": {
     "node": "22"
