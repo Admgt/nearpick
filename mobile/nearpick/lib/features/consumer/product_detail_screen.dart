@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import '../../core/error/app_error_message.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
 import '../../widgets/storage_image.dart';
@@ -77,7 +79,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Hiba: $e')));
+      ).showSnackBar(SnackBar(content: Text(appErrorMessage(e))));
     } finally {
       if (mounted) setState(() => _dismissLoading = false);
     }
@@ -97,9 +99,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      final message = e.toString().contains('Elfogyott')
-          ? 'Elfogyott'
-          : 'Hiba: $e';
+      final message = appErrorMessage(e);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
@@ -314,7 +314,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     );
                                   }
                                 } catch (e) {
-                                  setState(() => _message = 'Hiba: $e');
+                                  setState(() => _message = appErrorMessage(e));
                                 } finally {
                                   if (mounted) {
                                     setState(() => _loading = false);

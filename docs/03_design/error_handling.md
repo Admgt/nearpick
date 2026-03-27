@@ -37,7 +37,7 @@
 
 ## Backend/contract hibastruktúra
 
-A jelenlegi forma vegyes, és még nincs végponttól végpontig szabványosítva.
+A jelenlegi forma még nem teljesen egységes, de a fő UI flow-kon már közös kliensoldali error mapper normalizálja a Firebase auth/functions és az általános kivételek egy részét.
 
 Célforma:
 - `code`
@@ -53,5 +53,5 @@ Célforma:
 ## Ismert hiányok
 
 - A service réteg kivételei még mindig vegyes üzenetstílust tartalmaznak.
-- Még nincs központosított error mapper az összes képernyőre/service-re.
+- A központi kliensoldali error mapper még nem fedi le az összes képernyőt és service-t.
 - Még nincs formális correlation id továbbítás.

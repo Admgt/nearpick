@@ -5,6 +5,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+
+import '../../core/error/app_error_message.dart';
 import 'product_detail_screen.dart';
 import '../../recommendation/recommendation_engine.dart';
 import 'offer_filter.dart';
@@ -181,7 +183,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Hiba: $e')));
+      ).showSnackBar(SnackBar(content: Text(appErrorMessage(e))));
     }
   }
 
@@ -198,9 +200,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      final message = e.toString().contains('Elfogyott')
-          ? 'Elfogyott'
-          : 'Hiba: $e';
+      final message = appErrorMessage(e);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));

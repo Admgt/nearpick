@@ -28,7 +28,15 @@ Ajánlott seed adatok:
 
 ## Emulátor ajánlás
 
-A repository jelenlegi állapotában a Flutter kliens nem kapcsol automatikusan Firebase Emulator Suite-hoz, ezért a demó elsődleges útvonala a külön demo Firebase projekt használata. Ettől függetlenül fejlesztői vagy bírálói háttér-ellenőrzéshez ajánlott a Functions emulátor futtatása:
+A repository jelenlegi állapotában a leggyorsabb bírálói útvonal továbbra is a külön demo Firebase projekt használata, de a Flutter kliens már opcionálisan át tud kötni Firebase Emulator Suite-ra `--dart-define=USE_FIREBASE_EMULATORS=true` kapcsolóval. Teljes helyi útvonal:
+
+```bash
+firebase emulators:start --only auth,firestore,functions,storage,hosting
+cd mobile/nearpick
+flutter run -d edge --web-port 49904 --dart-define=USE_FIREBASE_EMULATORS=true
+```
+
+Ha csak háttérlogokra van szükség, marad a szűkebb Functions emulátor útvonal:
 
 ```bash
 cd functions
@@ -49,7 +57,6 @@ Ez a lépés hasznos akkor, ha a reviewer vagy az oktató helyi logokat akar lá
 
 ## Ismert korlátok
 
-- Teljes offline demó nem támogatott, mert a kliensben nincs beépített emulator-átkapcsolás.
-- Az iOS futtatáshoz nincs verziókezelt `GoogleService-Info.plist.example`, ezért a bírálói gyorsindítás elsődleges útvonala a webes vagy Android futtatás.
+- A teljes lokális demóhoz a reviewernek külön el kell indítania az emulátorokat; a seed adatokat ez az útvonal sem tölti be automatikusan.
 - A `functions/package.json` jelenleg csak Functions emulátort indít, nem teljes Auth/Firestore/Storage emulátorkészletet.
 - A dokumentáció seed felhasználókat és seed adatokat ír elő, de ezek fenntartása a demo Firebase projekt adminisztrációjának része.

@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/error/app_error_message.dart';
 import '../../models/reservation.dart';
 import '../../services/reservation_service.dart';
 import '../../ui/app_chrome.dart';
@@ -110,7 +111,9 @@ class _MerchantReservationsScreenState
                                   } catch (e) {
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Hiba: $e')),
+                                      SnackBar(
+                                        content: Text(appErrorMessage(e)),
+                                      ),
                                     );
                                   } finally {
                                     if (mounted) {

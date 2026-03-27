@@ -37,7 +37,12 @@ A repository központi eleme a `mobile/nearpick` Flutter kliens, amely közvetle
 
 ### Mit jelent a demo mód?
 
-A jelenlegi repository nem tartalmaz beépített Flutter oldali Firebase Emulator átkötést, ezért a leggyorsabb és reprodukálható bírálói futtatás külön demo Firebase projekttel történik. Ez nem production környezet: a bíráló csak egy elkülönített demo projektből generált konfigurációt használ.
+A jelenlegi repository két reviewer útvonalat támogat:
+
+- leggyorsabb demó: külön demo Firebase projekttel
+- teljesebb lokális ellenőrzés: opcionális Firebase Emulator Suite átkötéssel
+
+Ez továbbra sem production környezet: a bíráló vagy egy elkülönített demo projektből generált konfigurációt használ, vagy helyben indított emulátorokat.
 
 ### Előfeltételek
 
@@ -55,15 +60,21 @@ A repo nem tartalmaz futásidejű secretet. A szükséges konfigurációs válto
 - környezeti változók mintája: [`.env.example`](.env.example)
 - FlutterFire minta: [`mobile/nearpick/lib/firebase_options.example.dart`](mobile/nearpick/lib/firebase_options.example.dart)
 - Android minta: [`mobile/nearpick/android/app/google-services.example.json`](mobile/nearpick/android/app/google-services.example.json)
+- iOS minta: [`mobile/nearpick/ios/Runner/GoogleService-Info.plist.example`](mobile/nearpick/ios/Runner/GoogleService-Info.plist.example)
 - web push minta: [`mobile/nearpick/web/firebase-messaging-sw.example.js`](mobile/nearpick/web/firebase-messaging-sw.example.js)
 
 Az [`.env.example`](.env.example) a bírálói és fejlesztői konfigurációhoz szükséges fő Firebase azonosítókat sorolja fel:
 
 - `FIREBASE_PROJECT_ID`: a külön demo Firebase projekt azonosítója
+- `FIREBASE_PROJECT_NUMBER`: Firebase projekt szám
 - `FIREBASE_WEB_API_KEY`: webes Flutter futtatáshoz használt API kulcs
 - `FIREBASE_ANDROID_API_KEY`: Android klienshez tartozó API kulcs
 - `FIREBASE_IOS_API_KEY`: iOS klienshez tartozó API kulcs
+- `FIREBASE_AUTH_DOMAIN`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`: platformok közös azonosítói
+- `FIREBASE_WEB_APP_ID`, `FIREBASE_ANDROID_APP_ID`, `FIREBASE_IOS_APP_ID`: platformspecifikus app azonosítók
+- `FIREBASE_ANDROID_PACKAGE_NAME`, `FIREBASE_IOS_BUNDLE_ID`: platformazonosítók
 - `FIREBASE_WEB_VAPID_KEY`: opcionális web push public key, amelyet futtatáskor `--dart-define` formában kell átadni
+- `USE_FIREBASE_EMULATORS`, `FIREBASE_EMULATOR_HOST` és a port változók: opcionális lokális emulator módhoz
 
 Fontos: az app futás közben nem `.env` fájlból olvas, hanem a lokálisan előállított FlutterFire/Firebase config fájlokból, illetve opcionálisan `--dart-define` paraméterből. Az `.env.example` a reviewer számára azt dokumentálja, milyen értékeket kell előkészíteni a lokális mintafájlok kitöltéséhez.
 
@@ -80,7 +91,8 @@ cd 1-sprint-Admgt
 2. Másold le a `mobile/nearpick/lib/firebase_options.example.dart` fájlt `mobile/nearpick/lib/firebase_options.dart` néven, majd töltsd ki a demo Firebase projektből kapott API kulcsokat.
 3. Webes demóhoz opcionálisan másold le a `mobile/nearpick/web/firebase-messaging-sw.example.js` fájlt `mobile/nearpick/web/firebase-messaging-sw.js` néven, ha push értesítést is szeretnél kipróbálni.
 4. Android demóhoz másold le a `mobile/nearpick/android/app/google-services.example.json` fájlt `mobile/nearpick/android/app/google-services.json` néven, majd írd bele a demo projekt Android API kulcsát.
-5. Telepítsd a Flutter függőségeket:
+5. iOS demóhoz másold le a `mobile/nearpick/ios/Runner/GoogleService-Info.plist.example` fájlt `mobile/nearpick/ios/Runner/GoogleService-Info.plist` néven, majd töltsd ki a demo projekt iOS adataival.
+6. Telepítsd a Flutter függőségeket:
 
 ```bash
 cd mobile/nearpick
@@ -99,13 +111,37 @@ Részletes seed és demóelvárások: [`docs/06_release/demo_environment.md`](do
 
 ### Emulátor indítása
 
+Teljes lokális Firebase Emulator Suite útvonal a repo gyökeréből:
+
+```bash
+firebase emulators:start --only auth,firestore,functions,storage,hosting
+```
+
+Az emulátorportok a [`firebase.json`](firebase.json) fájlban vannak rögzítve.
+
+Flutter futtatás emulátor módra kötve:
+
+```bash
+cd mobile/nearpick
+flutter run -d edge --web-port 49904 --dart-define=USE_FIREBASE_EMULATORS=true
+```
+
+Android emulátoron a host automatikusan `10.0.2.2`, más platformon `127.0.0.1`. Ha ettől eltérő host kell, add át külön:
+
+```bash
+cd mobile/nearpick
+flutter run -d edge --web-port 49904 --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1
+```
+
+Ha csak a Functions logolást szeretnéd helyben látni, marad a szűkebb útvonal:
+
 ```bash
 cd functions
 npm ci
 npm run serve
 ```
 
-Ez a lépés csak a Cloud Functions emulátort indítja el, és helyi logolási segítséget ad. A Flutter kliens ettől még a demo Firebase projektre csatlakozik, ezért ez opcionális kiegészítés, nem teljes offline futtatás.
+Ez a lépés csak a Cloud Functions emulátort indítja el, és helyi logolási segítséget ad. Teljes lokális app-futtatáshoz a fenti, teljes Emulator Suite útvonalat használd.
 
 ### Mobilalkalmazás indítása
 
@@ -204,6 +240,8 @@ Repo szintű quality gate:
 ```bash
 bash scripts/test_all.sh
 ```
+
+Ez a script már a Flutter kapuk mellett a repo secret scan-t és a `functions/` lint + test + dependency audit lépéseket is futtatja.
 
 Windows PowerShell környezetben:
 

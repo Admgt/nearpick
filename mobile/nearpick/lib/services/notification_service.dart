@@ -3,12 +3,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+import '../app_config.dart';
+
 class NotificationService {
   final _messaging = FirebaseMessaging.instance;
   final _db = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
   Future<void> initAndSaveToken({String? vapidKey}) async {
+    if (AppConfig.useFirebaseEmulators) {
+      return;
+    }
+
     final normalizedVapidKey = vapidKey?.trim();
 
     try {

@@ -1,15 +1,15 @@
 {
   "project_info": {
-    "project_number": "864369516764",
-    "project_id": "nearpick-c0fea",
-    "storage_bucket": "nearpick-c0fea.firebasestorage.app"
+    "project_number": "<FIREBASE_PROJECT_NUMBER>",
+    "project_id": "<FIREBASE_PROJECT_ID>",
+    "storage_bucket": "<FIREBASE_STORAGE_BUCKET>"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:864369516764:android:7064f34230e00fe6f65419",
+        "mobilesdk_app_id": "<FIREBASE_ANDROID_APP_ID>",
         "android_client_info": {
-          "package_name": "com.example.nearpick"
+          "package_name": "<FIREBASE_ANDROID_PACKAGE_NAME>"
         }
       },
       "oauth_client": [],

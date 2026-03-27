@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/error/app_error_message.dart';
 import '../../services/location_service.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
@@ -102,7 +103,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Hiba: $e')));
+      ).showSnackBar(SnackBar(content: Text(appErrorMessage(e))));
     } finally {
       if (mounted) {
         setState(() => _imageLoading = false);
@@ -226,7 +227,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
       }
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = appErrorMessage(e);
       });
     } finally {
       if (mounted) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../core/error/app_error_message.dart';
 import '../../models/product.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
@@ -116,7 +117,7 @@ class MerchantHomeScreen extends StatelessWidget {
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(
                       context,
-                    ).showSnackBar(SnackBar(content: Text('Hiba: $e')));
+                    ).showSnackBar(SnackBar(content: Text(appErrorMessage(e))));
                   }
                 }
 

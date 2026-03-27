@@ -9,7 +9,7 @@ Kapcsolódó CI evidence hely: [`ci_evidence.md`](ci_evidence.md)
 - [x] A lokális futtatás külön demo Firebase projektre épül, nem production konfigurációra.
 - [x] A szükséges mintafájlok verziókezeltek: `firebase_options.example.dart`, `google-services.example.json`, `firebase-messaging-sw.example.js`.
 - [x] A CI tartalmaz build lépést webes artifact előállítására.
-- [ ] A Flutter kliens teljes Firebase Emulator Suite átkötése elkészült.
+- [x] A Flutter kliens teljes Firebase Emulator Suite átkötése elkészült.
 
 ## Tesztlefedettségi evidence
 

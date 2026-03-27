@@ -48,28 +48,28 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: '<FIREBASE_API_KEY>',
-    appId: '1:864369516764:web:aad02dd9ef0aeec9f65419',
-    messagingSenderId: '864369516764',
-    projectId: 'nearpick-c0fea',
-    authDomain: 'nearpick-c0fea.firebaseapp.com',
-    storageBucket: 'nearpick-c0fea.firebasestorage.app',
-    measurementId: 'G-HVVK9GP0MH',
+    appId: '<FIREBASE_WEB_APP_ID>',
+    messagingSenderId: '<FIREBASE_MESSAGING_SENDER_ID>',
+    projectId: '<FIREBASE_PROJECT_ID>',
+    authDomain: '<FIREBASE_AUTH_DOMAIN>',
+    storageBucket: '<FIREBASE_STORAGE_BUCKET>',
+    measurementId: '<FIREBASE_WEB_MEASUREMENT_ID>',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: '<FIREBASE_API_KEY>',
-    appId: '1:864369516764:android:7064f34230e00fe6f65419',
-    messagingSenderId: '864369516764',
-    projectId: 'nearpick-c0fea',
-    storageBucket: 'nearpick-c0fea.firebasestorage.app',
+    appId: '<FIREBASE_ANDROID_APP_ID>',
+    messagingSenderId: '<FIREBASE_MESSAGING_SENDER_ID>',
+    projectId: '<FIREBASE_PROJECT_ID>',
+    storageBucket: '<FIREBASE_STORAGE_BUCKET>',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: '<FIREBASE_API_KEY>',
-    appId: '1:864369516764:ios:4caa7f870e3af0bef65419',
-    messagingSenderId: '864369516764',
-    projectId: 'nearpick-c0fea',
-    storageBucket: 'nearpick-c0fea.firebasestorage.app',
-    iosBundleId: 'com.example.nearpick',
+    appId: '<FIREBASE_IOS_APP_ID>',
+    messagingSenderId: '<FIREBASE_MESSAGING_SENDER_ID>',
+    projectId: '<FIREBASE_PROJECT_ID>',
+    storageBucket: '<FIREBASE_STORAGE_BUCKET>',
+    iosBundleId: '<FIREBASE_IOS_BUNDLE_ID>',
   );
 }

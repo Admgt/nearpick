@@ -5,6 +5,7 @@
 - Flutter statikus analízis: `flutter analyze`
 - Flutter automata tesztek: unit, widget és workflow integration suite a `test/**` alatt
 - Opcionális valódi `integration_test` futás csak létező `*_test.dart` esetén
+- Repo szintű lokális quality gate script: `scripts/test_all.sh` / `scripts/test_all.ps1`
 - Flutter dependency sebezhetőségi ellenőrzés: `dart run tool/audit_pub_dependencies.dart --report-dir=reports`
 - Functions JavaScript quality gate: `npm run lint`
 - Functions tesztek: `npm test`
@@ -24,6 +25,8 @@
   - [firestore.rules](../../firestore.rules)
   - [functions/package.json](../../functions/package.json)
   - [audit_pub_dependencies.dart](../../mobile/nearpick/tool/audit_pub_dependencies.dart)
+  - [test_all.sh](../../scripts/test_all.sh)
+  - [test_all.ps1](../../scripts/test_all.ps1)
   - [scripts/secret_scan.sh](../../scripts/secret_scan.sh)
   - [scripts/secret_scan.ps1](../../scripts/secret_scan.ps1)
 

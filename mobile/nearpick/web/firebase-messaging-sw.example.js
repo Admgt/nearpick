@@ -3,11 +3,11 @@ importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-com
 
 firebase.initializeApp({
   apiKey: "<FIREBASE_WEB_API_KEY>",
-  authDomain: "nearpick-c0fea.firebaseapp.com",
-  projectId: "nearpick-c0fea",
-  storageBucket: "nearpick-c0fea.firebasestorage.app",
-  messagingSenderId: "864369516764",
-  appId: "1:864369516764:web:aad02dd9ef0aeec9f65419",
+  authDomain: "<FIREBASE_AUTH_DOMAIN>",
+  projectId: "<FIREBASE_PROJECT_ID>",
+  storageBucket: "<FIREBASE_STORAGE_BUCKET>",
+  messagingSenderId: "<FIREBASE_MESSAGING_SENDER_ID>",
+  appId: "<FIREBASE_WEB_APP_ID>",
 });
 
 const messaging = firebase.messaging();

@@ -46,4 +46,15 @@ else
   echo "Nincs integration_test fajl, integration lepes kihagyva."
 fi
 
-echo "==> Kesz. JUnit: mobile/nearpick/reports/junit-flutter.xml"
+echo "==> Repo secret scan"
+cd "$ROOT_DIR"
+bash scripts/secret_scan.sh
+
+echo "==> Functions quality gate"
+cd "$ROOT_DIR/functions"
+npm ci
+npm run lint
+npm test
+npm run scan:deps
+
+echo "==> Kesz. Flutter JUnit: mobile/nearpick/reports/junit-flutter.xml"

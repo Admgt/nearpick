@@ -62,8 +62,36 @@ try {
         Write-Host "Nincs integration_test fajl, integration lepes kihagyva."
     }
 
-    Write-Host "==> Kesz. JUnit: mobile/nearpick/reports/junit-flutter.xml"
+    Pop-Location
+
+    Write-Host "==> Repo secret scan"
+    & powershell -ExecutionPolicy Bypass -File (Join-Path $rootDir "scripts/secret_scan.ps1")
+    if ($LASTEXITCODE -ne 0) { throw "secret scan failed" }
+
+    $functionsDir = Join-Path $rootDir "functions"
+    Write-Host "==> Functions quality gate futtatasa: $functionsDir"
+    Push-Location $functionsDir
+
+    Write-Host "==> npm ci"
+    & npm ci
+    if ($LASTEXITCODE -ne 0) { throw "npm ci failed" }
+
+    Write-Host "==> npm run lint"
+    & npm run lint
+    if ($LASTEXITCODE -ne 0) { throw "npm run lint failed" }
+
+    Write-Host "==> npm test"
+    & npm test
+    if ($LASTEXITCODE -ne 0) { throw "npm test failed" }
+
+    Write-Host "==> npm run scan:deps"
+    & npm run scan:deps
+    if ($LASTEXITCODE -ne 0) { throw "npm run scan:deps failed" }
+
+    Write-Host "==> Kesz. Flutter JUnit: mobile/nearpick/reports/junit-flutter.xml"
 }
 finally {
-    Pop-Location
+    if ((Get-Location).Path -ne $rootDir) {
+        Pop-Location
+    }
 }

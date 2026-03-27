@@ -37,21 +37,24 @@ Az app indulásához legalább ez a fájl kell:
 Platformfüggő további fájlok:
 
 - Android: `android/app/google-services.json`
+- iOS: `ios/Runner/GoogleService-Info.plist`
 - Web push háttérértesítéshez: `web/firebase-messaging-sw.js`
 
 A repo-ban ezekhez van sablon:
 
 - `lib/firebase_options.example.dart`
 - `android/app/google-services.example.json`
+- `ios/Runner/GoogleService-Info.plist.example`
 - `web/firebase-messaging-sw.example.js`
 
 Javasolt repo-alapú lokális setup:
 
 1. Másold le `lib/firebase_options.example.dart` tartalmát `lib/firebase_options.dart` néven.
 2. Cseréld ki a `<FIREBASE_API_KEY>` placeholdereket a saját Firebase projekted adataira.
-3. Ha Androidon futtatod az appot, másold le `android/app/google-services.example.json` tartalmát `android/app/google-services.json` néven, és töltsd ki a placeholder API key-t.
-4. Ha web push értesítést is tesztelnél, másold le `web/firebase-messaging-sw.example.js` tartalmát `web/firebase-messaging-sw.js` néven, és töltsd ki a webes API key-t.
-5. Web push tokenregisztrációhoz indításkor add át a VAPID public key-t `--dart-define=FIREBASE_WEB_VAPID_KEY=<your-web-push-vapid-public-key>` formában.
+3. Ha Androidon futtatod az appot, másold le `android/app/google-services.example.json` tartalmát `android/app/google-services.json` néven, és töltsd ki a placeholder adatokat.
+4. Ha iOS-en futtatod az appot, másold le `ios/Runner/GoogleService-Info.plist.example` tartalmát `ios/Runner/GoogleService-Info.plist` néven, és töltsd ki a placeholder adatokat.
+5. Ha web push értesítést is tesztelnél, másold le `web/firebase-messaging-sw.example.js` tartalmát `web/firebase-messaging-sw.js` néven, és töltsd ki a webes placeholder adatokat.
+6. Web push tokenregisztrációhoz indításkor add át a VAPID public key-t `--dart-define=FIREBASE_WEB_VAPID_KEY=<your-web-push-vapid-public-key>` formában.
 
 Fontos:
 
@@ -59,6 +62,7 @@ Fontos:
 - Az app nem `.env` fájlból olvas futásidőben; a Firebase konfigurációt a fenti generált/lokális fájlokból veszi, a web push VAPID kulcsot pedig opcionálisan `--dart-define` paraméterből.
 - A verziókezelt `firebase.json` ebben a mappában FlutterFire metaadat, nem helyettesíti a lokális `firebase_options.dart` fájlt.
 - A mellékelt példa `firebase_options` jelenleg web, Android és iOS platformra tartalmaz beállítást; macOS, Windows és Linux nincs hozzá konfigurálva.
+- Opcionálisan támogatott a Firebase Emulator Suite átkötés `--dart-define=USE_FIREBASE_EMULATORS=true` kapcsolóval.
 
 Megjegyzés:
 
@@ -74,6 +78,18 @@ Web push teszthez:
 
 ```bash
 flutter run -d edge --web-port 49904 --dart-define=FIREBASE_WEB_VAPID_KEY=<your-web-push-vapid-public-key>
+```
+
+Firebase Emulator Suite mód:
+
+```bash
+flutter run -d edge --web-port 49904 --dart-define=USE_FIREBASE_EMULATORS=true
+```
+
+Ha egyedi emulator host kell:
+
+```bash
+flutter run -d edge --web-port 49904 --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1
 ```
 
 Megjegyzés:
@@ -97,8 +113,7 @@ Futtatás előtt ellenőrizd:
 
 Korlát:
 
-- A projektben van iOS target, de nincs verziókezelt `GoogleService-Info.plist.example`.
-- Emiatt az iOS futtatáshoz egy projekt-specifikus Firebase plist fájlt kell kézzel hozzáadni az `ios/Runner/` környezethez.
+- Az iOS futtatáshoz továbbra is lokálisan kitöltött `GoogleService-Info.plist` kell, de ehhez már van verziókezelt minta: `ios/Runner/GoogleService-Info.plist.example`.
 
 ## Tesztek futtatása
 
@@ -132,6 +147,8 @@ Repo gyökérből teljes quality gate:
 bash scripts/test_all.sh
 ```
 
+Ez a repo-szintű script már nem csak a Flutter részre vonatkozik: futtatja a secret scan-t és a `functions/` quality gate-eket is.
+
 Windows PowerShell környezetben:
 
 ```powershell
@@ -142,6 +159,7 @@ powershell -ExecutionPolicy Bypass -File scripts/test_all.ps1
 
 - `lib/firebase_options.dart`: szükséges a `Firebase.initializeApp(...)` híváshoz.
 - `android/app/google-services.json`: Android buildhez szükséges.
+- `ios/Runner/GoogleService-Info.plist`: iOS buildhez szükséges.
 - `web/firebase-messaging-sw.js`: webes háttérértesítésekhez szükséges.
 - Ezeket ne commitold.
 
