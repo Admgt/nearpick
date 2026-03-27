@@ -5,18 +5,33 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/error/app_error_message.dart';
+import '../../services/dynamic_pricing_service.dart';
 import '../../services/location_service.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
+import 'dynamic_pricing.dart';
 import 'new_product_form_logic.dart';
 
 typedef SaveProductAction = Future<void> Function(NewProductCommand command);
+typedef GeneratePricingRecommendationAction =
+    Future<DynamicPricingRecommendation> Function({
+      required String category,
+      required int originalPrice,
+      required int quantity,
+      required DateTime expiresAt,
+    });
 
 class NewProductScreen extends StatefulWidget {
   final SaveProductAction? onSaveProduct;
   final DateTime? initialExpiry;
+  final GeneratePricingRecommendationAction? onGeneratePricingRecommendation;
 
-  const NewProductScreen({super.key, this.onSaveProduct, this.initialExpiry});
+  const NewProductScreen({
+    super.key,
+    this.onSaveProduct,
+    this.initialExpiry,
+    this.onGeneratePricingRecommendation,
+  });
 
   @override
   State<NewProductScreen> createState() => _NewProductScreenState();
@@ -37,11 +52,14 @@ class _NewProductScreenState extends State<NewProductScreen> {
   Uint8List? _selectedImageBytes;
   bool _imageLoading = false;
   bool _fetchingLocation = false;
+  bool _pricingLoading = false;
 
   String _selectedCategory = _categories.first;
   DateTime? _selectedExpiry;
   bool _loading = false;
   String? _error;
+  DynamicPricingRecommendation? _pricingRecommendation;
+  String? _pricingError;
 
   @override
   void initState() {
@@ -122,8 +140,20 @@ class _NewProductScreenState extends State<NewProductScreen> {
     if (picked != null) {
       setState(() {
         _selectedExpiry = picked;
+        _pricingRecommendation = null;
+        _pricingError = null;
       });
     }
+  }
+
+  void _clearPricingRecommendation() {
+    if (_pricingRecommendation == null && _pricingError == null) {
+      return;
+    }
+    setState(() {
+      _pricingRecommendation = null;
+      _pricingError = null;
+    });
   }
 
   void _showSnackBar(String text) {
@@ -205,6 +235,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
           23,
           59,
         ),
+        pricingRecommendation: _pricingRecommendation,
       );
 
       if (widget.onSaveProduct != null) {
@@ -219,6 +250,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
           expiresAt: command.expiresAt,
           location: command.location,
           imageBytes: _selectedImageBytes,
+          pricingRecommendation: command.pricingRecommendation,
         );
       }
 
@@ -232,6 +264,80 @@ class _NewProductScreenState extends State<NewProductScreen> {
     } finally {
       if (mounted) {
         setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _generatePricingRecommendation() async {
+    if (_selectedExpiry == null) {
+      setState(() {
+        _pricingError = 'Elobb valassz lejarati datumot az arjavaslathoz.';
+      });
+      return;
+    }
+
+    final originalPrice = int.tryParse(_originalPriceCtrl.text.trim());
+    final quantity = int.tryParse(_quantityCtrl.text.trim());
+    if (originalPrice == null || originalPrice <= 0) {
+      setState(() {
+        _pricingError = 'Adj meg ervenyes eredeti arat az arjavaslathoz.';
+      });
+      return;
+    }
+    if (quantity == null || quantity <= 0) {
+      setState(() {
+        _pricingError = 'Adj meg ervenyes mennyiseget az arjavaslathoz.';
+      });
+      return;
+    }
+
+    setState(() {
+      _pricingLoading = true;
+      _pricingError = null;
+    });
+
+    try {
+      final builder =
+          widget.onGeneratePricingRecommendation ??
+          ({
+            required String category,
+            required int originalPrice,
+            required int quantity,
+            required DateTime expiresAt,
+          }) {
+            return DynamicPricingService().buildRecommendation(
+              category: category,
+              originalPrice: originalPrice,
+              quantity: quantity,
+              expiresAt: expiresAt,
+            );
+          };
+
+      final recommendation = await builder(
+        category: _selectedCategory,
+        originalPrice: originalPrice,
+        quantity: quantity,
+        expiresAt: DateTime(
+          _selectedExpiry!.year,
+          _selectedExpiry!.month,
+          _selectedExpiry!.day,
+          23,
+          59,
+        ),
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _pricingRecommendation = recommendation;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _pricingError = appErrorMessage(e);
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _pricingLoading = false);
       }
     }
   }
@@ -302,6 +408,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Termek neve',
                       ),
+                      onChanged: (_) => _clearPricingRecommendation(),
                       validator: validateRequiredName,
                     ),
                     const SizedBox(height: 12),
@@ -315,7 +422,11 @@ class _NewProductScreenState extends State<NewProductScreen> {
                           .toList(),
                       onChanged: (value) {
                         if (value != null) {
-                          setState(() => _selectedCategory = value);
+                          setState(() {
+                            _selectedCategory = value;
+                            _pricingRecommendation = null;
+                            _pricingError = null;
+                          });
                         }
                       },
                       decoration: const InputDecoration(labelText: 'Kategoria'),
@@ -328,6 +439,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                         labelText: 'Eredeti ar (Ft)',
                       ),
                       keyboardType: TextInputType.number,
+                      onChanged: (_) => _clearPricingRecommendation(),
                       validator: validateIntegerField,
                     ),
                     const SizedBox(height: 12),
@@ -348,6 +460,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                         labelText: 'Mennyiseg (db)',
                       ),
                       keyboardType: TextInputType.number,
+                      onChanged: (_) => _clearPricingRecommendation(),
                       validator: validatePositiveQuantity,
                     ),
                     const SizedBox(height: 12),
@@ -418,6 +531,93 @@ class _NewProductScreenState extends State<NewProductScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        key: const ValueKey('new_product_pricing_button'),
+                        onPressed: _pricingLoading
+                            ? null
+                            : _generatePricingRecommendation,
+                        icon: _pricingLoading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.auto_graph_outlined),
+                        label: const Text('Arjavaslat es keresletbecsles'),
+                      ),
+                    ),
+                    if (_pricingError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _pricingError!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ],
+                    if (_pricingRecommendation != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Arazasi javaslat',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Javasolt akcios ar: ${_pricingRecommendation!.recommendedPrice} Ft',
+                            ),
+                            Text(
+                              'Sav: ${_pricingRecommendation!.minimumSuggestedPrice}-${_pricingRecommendation!.maximumSuggestedPrice} Ft',
+                            ),
+                            Text(
+                              'Becsult kereslet: ${demandLevelLabel(_pricingRecommendation!.demandLevel)} (${(_pricingRecommendation!.demandScore * 100).round()}%)',
+                            ),
+                            Text(
+                              'Varhato foglalas 24 oran belul: ${_pricingRecommendation!.expectedReservations24h}',
+                            ),
+                            const SizedBox(height: 10),
+                            ..._pricingRecommendation!.reasons.map(
+                              (reason) => Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Text(
+                                  '- ${reason.label}: ${reason.detail}',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                key: const ValueKey(
+                                  'new_product_apply_pricing_button',
+                                ),
+                                onPressed: () {
+                                  _discountedPriceCtrl.text =
+                                      _pricingRecommendation!.recommendedPrice
+                                          .toString();
+                                },
+                                icon: const Icon(Icons.sell_outlined),
+                                label: const Text('Javasolt ar beallitasa'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     if (_error != null)
                       Text(_error!, style: const TextStyle(color: Colors.red)),

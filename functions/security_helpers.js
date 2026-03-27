@@ -87,6 +87,28 @@ function assertArchivableProduct(product, callerUid) {
   }
 }
 
+function assertRepriceableProduct(product, callerUid) {
+  assertArchivableProduct(product, callerUid);
+
+  const status = product.status ?? "active";
+  const isDeleted = product.isDeleted === true;
+  const recommendedPrice =
+    Number.isInteger(product?.pricingRecommendation?.recommendedPrice) ?
+      product.pricingRecommendation.recommendedPrice :
+      null;
+
+  if (status !== "active" || isDeleted) {
+    throw new Error("unavailable");
+  }
+  if (!recommendedPrice) {
+    throw new Error("missing-pricing-recommendation");
+  }
+
+  return {
+    recommendedPrice,
+  };
+}
+
 function getSafeArchiveImagePath(product, productId, callerUid) {
   assertArchivableProduct(product, callerUid);
 
@@ -113,6 +135,7 @@ module.exports = {
   asDate,
   assertArchivableProduct,
   assertCompletableReservation,
+  assertRepriceableProduct,
   assertReservableProduct,
   generatePickupCode,
   getSafeArchiveImagePath,

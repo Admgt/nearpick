@@ -30,6 +30,55 @@ service cloud.firestore {
           && !request.resource.data.keys().hasAny(['imagePath', 'imageUrl']);
     }
 
+    function hasValidPricingRecommendation() {
+      return !request.resource.data.keys().hasAny(['pricingRecommendation'])
+        || (
+          request.resource.data.pricingRecommendation is map
+          && request.resource.data.pricingRecommendation.keys().hasOnly([
+            'activeCategoryOffers',
+            'averageDiscountPercent',
+            'demandLevel',
+            'demandScore',
+            'discountPercent',
+            'dismissals7d',
+            'expectedReservations24h',
+            'generatedAt',
+            'interests7d',
+            'maximumSuggestedPrice',
+            'minimumSuggestedPrice',
+            'recommendedPrice',
+            'views7d',
+          ])
+          && request.resource.data.pricingRecommendation.recommendedPrice is int
+          && request.resource.data.pricingRecommendation.recommendedPrice > 0
+          && request.resource.data.pricingRecommendation.minimumSuggestedPrice is int
+          && request.resource.data.pricingRecommendation.minimumSuggestedPrice > 0
+          && request.resource.data.pricingRecommendation.maximumSuggestedPrice is int
+          && request.resource.data.pricingRecommendation.maximumSuggestedPrice > 0
+          && request.resource.data.pricingRecommendation.discountPercent is int
+          && request.resource.data.pricingRecommendation.discountPercent >= 0
+          && request.resource.data.pricingRecommendation.discountPercent <= 100
+          && request.resource.data.pricingRecommendation.demandScore is number
+          && request.resource.data.pricingRecommendation.demandScore >= 0
+          && request.resource.data.pricingRecommendation.demandScore <= 1
+          && request.resource.data.pricingRecommendation.demandLevel is string
+          && request.resource.data.pricingRecommendation.expectedReservations24h is int
+          && request.resource.data.pricingRecommendation.expectedReservations24h >= 0
+          && request.resource.data.pricingRecommendation.views7d is int
+          && request.resource.data.pricingRecommendation.views7d >= 0
+          && request.resource.data.pricingRecommendation.interests7d is int
+          && request.resource.data.pricingRecommendation.interests7d >= 0
+          && request.resource.data.pricingRecommendation.dismissals7d is int
+          && request.resource.data.pricingRecommendation.dismissals7d >= 0
+          && request.resource.data.pricingRecommendation.activeCategoryOffers is int
+          && request.resource.data.pricingRecommendation.activeCategoryOffers >= 0
+          && request.resource.data.pricingRecommendation.averageDiscountPercent is int
+          && request.resource.data.pricingRecommendation.averageDiscountPercent >= 0
+          && request.resource.data.pricingRecommendation.averageDiscountPercent <= 100
+          && request.resource.data.pricingRecommendation.generatedAt is timestamp
+        );
+    }
+
     function isValidProductCreate(productId) {
       return isSignedIn()
         && request.resource.data.keys().hasOnly([
@@ -48,6 +97,7 @@ service cloud.firestore {
           'name',
           'originalPrice',
           'ownerId',
+          'pricingRecommendation',
           'quantity',
           'quantityAvailable',
           'status',
@@ -70,7 +120,8 @@ service cloud.firestore {
         && request.resource.data.isDeleted == false
         && request.resource.data.archivedAt == null
         && request.resource.data.deletedAt == null
-        && hasValidProductImage(productId);
+        && hasValidProductImage(productId)
+        && hasValidPricingRecommendation();
     }
 
     match /products/{productId} {

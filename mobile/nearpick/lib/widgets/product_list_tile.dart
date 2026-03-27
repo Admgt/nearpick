@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../features/merchant/dynamic_pricing.dart';
 import '../models/product.dart';
 import '../ui/app_chrome.dart';
 import 'storage_image.dart';
@@ -22,6 +23,11 @@ class ProductListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final expiresAt = product.expiresAt;
+    final pricingRecommendation = product.pricingRecommendation;
+    final recommendedPrice = pricingRecommendation?['recommendedPrice'] as int?;
+    final demandLevel = pricingRecommendation?['demandLevel'] as String?;
+    final expectedReservations24h =
+        pricingRecommendation?['expectedReservations24h'] as int?;
     String expiresText = 'Ismeretlen lejarat';
     if (expiresAt != null) {
       expiresText =
@@ -103,6 +109,22 @@ class ProductListTile extends StatelessWidget {
                       label: 'Status ${product.status}',
                       icon: Icons.flag_outlined,
                     ),
+                    if (demandLevel != null)
+                      _MetaChip(
+                        label: 'Kereslet ${demandLevelLabel(demandLevel)}',
+                        icon: Icons.trending_up_outlined,
+                      ),
+                    if (recommendedPrice != null)
+                      _MetaChip(
+                        label: 'Javasolt ar $recommendedPrice Ft',
+                        icon: Icons.sell_outlined,
+                      ),
+                    if (expectedReservations24h != null)
+                      _MetaChip(
+                        label:
+                            'Varhato foglalas $expectedReservations24h / 24h',
+                        icon: Icons.query_stats_outlined,
+                      ),
                   ],
                 ),
                 const SizedBox(height: 14),

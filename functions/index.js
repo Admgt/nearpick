@@ -4,6 +4,7 @@ const {onCall, onRequest, HttpsError} = require("firebase-functions/v2/https");
 const {
   assertArchivableProduct,
   assertCompletableReservation,
+  assertRepriceableProduct,
   assertReservableProduct,
   generatePickupCode,
   getSafeArchiveImagePath,
@@ -55,6 +56,12 @@ function asHttpsError(error, contextId) {
       );
     case "permission-denied":
       return new HttpsError("permission-denied", "Nincs jogosultsag.", details);
+    case "missing-pricing-recommendation":
+      return new HttpsError(
+          "failed-precondition",
+          "Ehhez a termekhez nincs alkalmazhato arazasi javaslat.",
+          details,
+      );
     default:
       return new HttpsError("internal", "Varatlan szerverhiba.", details);
   }
@@ -317,6 +324,67 @@ exports.archiveProduct = onCall(async (request) => {
   return {
     archived: true,
     contextId,
+  };
+});
+
+exports.repriceProduct = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("product.reprice.started", {contextId});
+
+  if (!request.auth) {
+    logWarn("product.reprice.unauthenticated", {contextId});
+    throw new HttpsError("unauthenticated", "Bejelentkezes szukseges.", {
+      contextId,
+    });
+  }
+
+  const productId = request.data?.productId;
+  if (typeof productId !== "string" || productId.trim().length === 0) {
+    logWarn("product.reprice.invalid_argument", {contextId});
+    throw new HttpsError("invalid-argument", "Ervenytelen productId.", {
+      contextId,
+    });
+  }
+
+  const db = admin.firestore();
+  const uid = request.auth.uid;
+  const trimmedProductId = productId.trim();
+  let recommendedPrice = null;
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const productRef = db.collection("products").doc(trimmedProductId);
+      const productSnap = await tx.get(productRef);
+      const product = productSnap.data();
+
+      ({recommendedPrice} = assertRepriceableProduct(product, uid));
+
+      tx.update(productRef, {
+        discountedPrice: recommendedPrice,
+        "pricingRecommendation.lastAppliedAt":
+          admin.firestore.FieldValue.serverTimestamp(),
+        "pricingRecommendation.lastAppliedPrice": recommendedPrice,
+      });
+    });
+  } catch (error) {
+    logError("product.reprice.failed", {
+      contextId,
+      productId: trimmedProductId,
+      userId: uid,
+    }, error);
+    throw asHttpsError(error, contextId);
+  }
+
+  logInfo("product.reprice.completed", {
+    contextId,
+    productId: trimmedProductId,
+    recommendedPrice,
+    userId: uid,
+  });
+  return {
+    contextId,
+    discountedPrice: recommendedPrice,
+    repriced: true,
   };
 });
 

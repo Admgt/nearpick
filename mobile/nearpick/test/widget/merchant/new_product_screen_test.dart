@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nearpick/features/merchant/dynamic_pricing.dart';
 import 'package:nearpick/features/merchant/new_product_form_logic.dart';
 import 'package:nearpick/features/merchant/new_product_screen.dart';
 
@@ -55,5 +56,75 @@ void main() {
     expect(receivedCommand?.quantity, 2);
     expect(receivedCommand?.location?.latitude, 47.5);
     expect(receivedCommand?.location?.longitude, 19.0);
+  });
+
+  testWidgets('NewProductScreen can generate and apply pricing suggestion', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NewProductScreen(
+          initialExpiry: DateTime(2026, 3, 7),
+          onGeneratePricingRecommendation:
+              ({
+                required String category,
+                required int originalPrice,
+                required int quantity,
+                required DateTime expiresAt,
+              }) async {
+                return const DynamicPricingRecommendation(
+                  recommendedPrice: 650,
+                  minimumSuggestedPrice: 600,
+                  maximumSuggestedPrice: 700,
+                  discountPercent: 35,
+                  demandScore: 0.62,
+                  demandLevel: 'medium',
+                  expectedReservations24h: 3,
+                  marketSnapshot: MerchantMarketSnapshot(
+                    views7d: 12,
+                    interests7d: 4,
+                    dismissals7d: 1,
+                    activeCategoryOffers: 2,
+                    averageDiscountRatio: 0.22,
+                  ),
+                  reasons: [
+                    PricingReason(
+                      label: 'Kategoria kereslet',
+                      detail: 'Teszt jel',
+                      weight: 0.8,
+                    ),
+                  ],
+                );
+              },
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'Bagel');
+    await tester.enterText(find.byType(TextFormField).at(1), '1000');
+    await tester.enterText(find.byType(TextFormField).at(2), '500');
+    await tester.enterText(find.byType(TextFormField).at(3), '2');
+
+    final pricingButton = find.byKey(
+      const ValueKey('new_product_pricing_button'),
+    );
+    await tester.ensureVisible(pricingButton);
+    await tester.tap(pricingButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Javasolt akcios ar: 650 Ft'), findsOneWidget);
+    expect(find.textContaining('Becsult kereslet: kozepes'), findsOneWidget);
+
+    final applyButton = find.byKey(
+      const ValueKey('new_product_apply_pricing_button'),
+    );
+    await tester.ensureVisible(applyButton);
+    await tester.tap(applyButton);
+    await tester.pumpAndSettle();
+
+    final discountedPriceField = tester.widget<TextFormField>(
+      find.byKey(const ValueKey('new_product_discounted_price_field')),
+    );
+    expect(discountedPriceField.controller?.text, '650');
   });
 }

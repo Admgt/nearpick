@@ -36,6 +36,7 @@ void main() {
       imageUrl: null,
       imagePath: null,
       hasImage: false,
+      pricingRecommendation: null,
     );
 
     final map = product.toMap();

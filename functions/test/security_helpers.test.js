@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const {
   assertArchivableProduct,
   assertCompletableReservation,
+  assertRepriceableProduct,
   assertReservableProduct,
   getSafeArchiveImagePath,
 } = require("../security_helpers");
@@ -88,6 +89,28 @@ test("assertArchivableProduct rejects non-owner archive attempts", () => {
         ownerId: "merchant-1",
       }, "merchant-2"),
       /permission-denied/,
+  );
+});
+
+test("assertRepriceableProduct returns the recommended price for owned products", () => {
+  const result = assertRepriceableProduct({
+    ownerId: "merchant-1",
+    pricingRecommendation: {recommendedPrice: 650},
+    status: "active",
+  }, "merchant-1");
+
+  assert.deepEqual(result, {
+    recommendedPrice: 650,
+  });
+});
+
+test("assertRepriceableProduct rejects missing recommendations", () => {
+  assert.throws(
+      () => assertRepriceableProduct({
+        ownerId: "merchant-1",
+        status: "active",
+      }, "merchant-1"),
+      /missing-pricing-recommendation/,
   );
 });
 

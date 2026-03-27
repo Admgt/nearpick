@@ -5,6 +5,8 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
+import '../features/merchant/dynamic_pricing.dart';
+
 class ProductService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseFunctions _functions = FirebaseFunctions.instance;
@@ -42,6 +44,7 @@ class ProductService {
     required DateTime expiresAt,
     GeoPoint? location,
     Uint8List? imageBytes,
+    DynamicPricingRecommendation? pricingRecommendation,
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -68,6 +71,12 @@ class ProductService {
     };
     if (location != null) {
       data['location'] = location;
+    }
+    if (pricingRecommendation != null) {
+      data['pricingRecommendation'] = {
+        ...pricingRecommendation.toProductSnapshot(),
+        'generatedAt': FieldValue.serverTimestamp(),
+      };
     }
 
     if (imageBytes != null) {
@@ -131,6 +140,28 @@ class ProductService {
       await callable.call(<String, dynamic>{'productId': productId});
     } on FirebaseFunctionsException catch (e) {
       throw Exception(e.message ?? 'A termek archivalsa nem sikerult.');
+    }
+  }
+
+  Future<int> applyRecommendedPrice({required String productId}) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Nincs bejelentkezett felhasznalo.');
+    }
+
+    try {
+      final callable = _functions.httpsCallable('repriceProduct');
+      final response = await callable.call(<String, dynamic>{
+        'productId': productId,
+      });
+      final data = Map<String, dynamic>.from(response.data as Map);
+      final discountedPrice = data['discountedPrice'];
+      if (discountedPrice is! int || discountedPrice <= 0) {
+        throw Exception('A szerver nem adott vissza ervenyes uj arat.');
+      }
+      return discountedPrice;
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'A termek ujraarazasa nem sikerult.');
     }
   }
 

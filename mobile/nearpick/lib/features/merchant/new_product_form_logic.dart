@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'dynamic_pricing.dart';
+
 class NewProductCommand {
   final String name;
   final String category;
@@ -8,6 +10,7 @@ class NewProductCommand {
   final int quantity;
   final DateTime expiresAt;
   final GeoPoint? location;
+  final DynamicPricingRecommendation? pricingRecommendation;
 
   const NewProductCommand({
     required this.name,
@@ -17,6 +20,7 @@ class NewProductCommand {
     required this.quantity,
     required this.expiresAt,
     required this.location,
+    this.pricingRecommendation,
   });
 }
 

@@ -20,6 +20,7 @@ class Product {
   final String? imageUrl;
   final String? imagePath;
   final bool hasImage;
+  final Map<String, dynamic>? pricingRecommendation;
 
   const Product({
     required this.id,
@@ -41,6 +42,7 @@ class Product {
     required this.imageUrl,
     required this.imagePath,
     required this.hasImage,
+    required this.pricingRecommendation,
   });
 
   factory Product.fromMap(String id, Map<String, dynamic> data) {
@@ -71,6 +73,9 @@ class Product {
       imageUrl: data['imageUrl'] as String?,
       imagePath: data['imagePath'] as String?,
       hasImage: data['hasImage'] as bool? ?? false,
+      pricingRecommendation: data['pricingRecommendation'] is Map
+          ? Map<String, dynamic>.from(data['pricingRecommendation'] as Map)
+          : null,
     );
   }
 
@@ -99,6 +104,7 @@ class Product {
       'imageUrl': imageUrl,
       'imagePath': imagePath,
       'hasImage': hasImage,
+      'pricingRecommendation': pricingRecommendation,
     };
   }
 }
