@@ -49,6 +49,14 @@ function shouldSuppress(packageName, details) {
     };
   }
 
+  if (packageName === "path-to-regexp" && installedVersion &&
+      compareVersions(installedVersion, "0.1.12") >= 0) {
+    return {
+      installedVersion,
+      reason: "Az audit adatbazis elavultnak tunik: a package-lock path-to-regexp 0.1.12+ verziot rogzit.",
+    };
+  }
+
   return null;
 }
 
