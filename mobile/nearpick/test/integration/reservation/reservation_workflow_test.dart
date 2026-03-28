@@ -67,7 +67,11 @@ void main() {
           status: 'reserved',
           createdAt: DateTime(2026, 3, 6, 12),
           expiresAt: DateTime(2026, 3, 6, 12, 30),
+          completedAt: null,
+          cancelledAt: null,
+          expiredAt: null,
           pickupCode: 'ABC123',
+          pickupToken: 'NEARPICK:reservation-1:ABC123',
           productSnapshot: const {'name': 'Bagel'},
         );
       final merchantStats = InMemoryMerchantStatsGateway();
@@ -107,7 +111,11 @@ void main() {
           status: 'reserved',
           createdAt: DateTime(2026, 3, 6, 12),
           expiresAt: DateTime(2026, 3, 6, 12, 30),
+          completedAt: null,
+          cancelledAt: null,
+          expiredAt: null,
           pickupCode: 'ABC123',
+          pickupToken: 'NEARPICK:reservation-1:ABC123',
           productSnapshot: const {'name': 'Bagel'},
         );
       final merchantStats = InMemoryMerchantStatsGateway();
@@ -120,13 +128,74 @@ void main() {
         now: () => DateTime(2026, 3, 6, 12),
       );
 
-      await workflow.completeReservation(reservationId: 'reservation-1');
+      await workflow.completeReservationByPickup(
+        reservationId: 'reservation-1',
+        pickupInput: 'ABC123',
+      );
 
       expect(
         reservationStore.reservations['reservation-1']?.status,
         'completed',
       );
       expect(merchantStats.stats['merchant-1']?['completedCount'], 1);
+    },
+  );
+
+  test(
+    'ReservationWorkflow.cancelReservation restores stock for the buyer',
+    () async {
+      final session = FakeReservationSessionGateway()
+        ..currentUserId = 'buyer-1';
+      final productGateway = InMemoryReservationProductGateway()
+        ..products['product-1'] = const ReservationProductRecord(
+          id: 'product-1',
+          ownerId: 'merchant-1',
+          name: 'Bagel',
+          category: 'Pekseg',
+          originalPrice: 1000,
+          discountedPrice: 500,
+          quantity: 0,
+          quantityAvailable: 0,
+          status: 'sold_out',
+          isDeleted: false,
+          expiresAt: null,
+          imageUrl: null,
+        );
+      final reservationStore = InMemoryReservationStore()
+        ..reservations['reservation-1'] = ReservationRecord(
+          id: 'reservation-1',
+          productId: 'product-1',
+          merchantId: 'merchant-1',
+          buyerId: 'buyer-1',
+          qty: 1,
+          status: 'reserved',
+          createdAt: DateTime(2026, 3, 6, 12),
+          expiresAt: DateTime(2026, 3, 6, 12, 30),
+          completedAt: null,
+          cancelledAt: null,
+          expiredAt: null,
+          pickupCode: 'ABC123',
+          pickupToken: 'NEARPICK:reservation-1:ABC123',
+          productSnapshot: const {'name': 'Bagel'},
+        );
+      final merchantStats = InMemoryMerchantStatsGateway();
+      final workflow = ReservationWorkflow(
+        sessionGateway: session,
+        productGateway: productGateway,
+        reservationStore: reservationStore,
+        merchantStatsGateway: merchantStats,
+        pickupCodeGenerator: const FixedPickupCodeGenerator('ABC123'),
+        now: () => DateTime(2026, 3, 6, 12),
+      );
+
+      await workflow.cancelReservation(reservationId: 'reservation-1');
+
+      expect(
+        reservationStore.reservations['reservation-1']?.status,
+        'cancelled',
+      );
+      expect(productGateway.products['product-1']?.quantityAvailable, 1);
+      expect(productGateway.products['product-1']?.status, 'active');
     },
   );
 }

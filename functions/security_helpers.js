@@ -7,6 +7,34 @@ function generatePickupCode(length = 6) {
   return result;
 }
 
+function buildPickupToken(reservationId, pickupCode) {
+  return `NEARPICK:${reservationId}:${pickupCode}`;
+}
+
+function parsePickupInput(rawInput) {
+  const value = typeof rawInput === "string" ? rawInput.trim() : "";
+  if (!value) {
+    throw new Error("invalid-pickup-code");
+  }
+
+  if (!value.startsWith("NEARPICK:")) {
+    return {
+      pickupCode: value,
+      reservationId: null,
+    };
+  }
+
+  const parts = value.split(":");
+  if (parts.length !== 3 || !parts[1] || !parts[2]) {
+    throw new Error("invalid-pickup-code");
+  }
+
+  return {
+    pickupCode: parts[2],
+    reservationId: parts[1],
+  };
+}
+
 function asDate(value) {
   if (!value) {
     return null;
@@ -63,7 +91,7 @@ function assertReservableProduct(product, callerUid) {
   };
 }
 
-function assertCompletableReservation(reservation, callerUid) {
+function assertCompletableReservation(reservation, callerUid, pickupInput) {
   if (!reservation) {
     throw new Error("not-found");
   }
@@ -74,6 +102,52 @@ function assertCompletableReservation(reservation, callerUid) {
 
   if (reservation.status !== "reserved") {
     throw new Error("invalid-status");
+  }
+
+  const expiresAt = asDate(reservation.expiresAt);
+  if (expiresAt && expiresAt.getTime() <= Date.now()) {
+    throw new Error("expired-reservation");
+  }
+
+  const parsed = parsePickupInput(pickupInput);
+  if (parsed.reservationId && parsed.reservationId !== reservation.id) {
+    throw new Error("invalid-pickup-code");
+  }
+  if (reservation.pickupCode !== parsed.pickupCode) {
+    throw new Error("invalid-pickup-code");
+  }
+}
+
+function assertCancelableReservation(reservation, callerUid) {
+  if (!reservation) {
+    throw new Error("not-found");
+  }
+
+  if (!callerUid || reservation.buyerId !== callerUid) {
+    throw new Error("permission-denied");
+  }
+
+  if (reservation.status !== "reserved") {
+    throw new Error("invalid-status");
+  }
+
+  const expiresAt = asDate(reservation.expiresAt);
+  if (expiresAt && expiresAt.getTime() <= Date.now()) {
+    throw new Error("expired-reservation");
+  }
+}
+
+function assertExpirableReservation(reservation) {
+  if (!reservation) {
+    throw new Error("not-found");
+  }
+  if (reservation.status !== "reserved") {
+    throw new Error("invalid-status");
+  }
+
+  const expiresAt = asDate(reservation.expiresAt);
+  if (!expiresAt || expiresAt.getTime() > Date.now()) {
+    throw new Error("not-expired-yet");
   }
 }
 
@@ -134,9 +208,13 @@ function getSafeArchiveImagePath(product, productId, callerUid) {
 module.exports = {
   asDate,
   assertArchivableProduct,
+  assertCancelableReservation,
   assertCompletableReservation,
+  assertExpirableReservation,
   assertRepriceableProduct,
   assertReservableProduct,
+  buildPickupToken,
   generatePickupCode,
   getSafeArchiveImagePath,
+  parsePickupInput,
 };

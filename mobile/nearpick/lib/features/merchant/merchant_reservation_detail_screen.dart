@@ -2,36 +2,72 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../core/error/app_error_message.dart';
 import '../../models/reservation.dart';
 import '../../services/reservation_service.dart';
 import '../../ui/app_chrome.dart';
+import 'merchant_qr_scanner_screen.dart';
 
-class ReservationDetailScreen extends StatefulWidget {
+class MerchantReservationDetailScreen extends StatefulWidget {
   final String reservationId;
+  final String? initialPickupInput;
 
-  const ReservationDetailScreen({super.key, required this.reservationId});
+  const MerchantReservationDetailScreen({
+    super.key,
+    required this.reservationId,
+    this.initialPickupInput,
+  });
 
   @override
-  State<ReservationDetailScreen> createState() =>
-      _ReservationDetailScreenState();
+  State<MerchantReservationDetailScreen> createState() =>
+      _MerchantReservationDetailScreenState();
 }
 
-class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
-  bool _cancelling = false;
+class _MerchantReservationDetailScreenState
+    extends State<MerchantReservationDetailScreen> {
+  final TextEditingController _pickupInputController = TextEditingController();
+  bool _submitting = false;
 
-  Future<void> _cancelReservation(String reservationId) async {
-    setState(() => _cancelling = true);
+  @override
+  void initState() {
+    super.initState();
+    _pickupInputController.text = widget.initialPickupInput?.trim() ?? '';
+  }
+
+  @override
+  void dispose() {
+    _pickupInputController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openScanner() async {
+    final scanned = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const MerchantQrScannerScreen()),
+    );
+    if (!mounted || scanned == null || scanned.isEmpty) return;
+    setState(() => _pickupInputController.text = scanned);
+  }
+
+  Future<void> _completeReservation(Reservation reservation) async {
+    final pickupInput = _pickupInputController.text.trim();
+    if (pickupInput.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Adj meg QR tokent vagy atveteli kodot.')),
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
     try {
-      await ReservationService().cancelReservation(
-        reservationId: reservationId,
+      await ReservationService().completeReservation(
+        reservationId: reservation.id,
+        pickupInput: pickupInput,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Foglalas lemondva.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Atvetel sikeresen rogzitve.')),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -39,7 +75,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
       ).showSnackBar(SnackBar(content: Text(appErrorMessage(e))));
     } finally {
       if (mounted) {
-        setState(() => _cancelling = false);
+        setState(() => _submitting = false);
       }
     }
   }
@@ -69,16 +105,17 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
           final reservation = Reservation.fromDoc(snapshot.data!);
           final product = reservation.productSnapshot;
           final name = product['name'] as String? ?? 'Ismeretlen termek';
-          final imageUrl = product['imageUrl'] as String?;
+          final category = product['category'] as String? ?? '';
           final discounted = product['discountedPrice'] as int? ?? 0;
           final original = product['originalPrice'] as int? ?? 0;
-          final category = product['category'] as String? ?? '';
+          final imageUrl = product['imageUrl'] as String?;
           final expiresAt = reservation.expiresAt;
           final isPastExpiry =
               expiresAt != null &&
               !expiresAt.isAfter(DateTime.now()) &&
               reservation.isReserved;
-          final canCancel = reservation.isReserved && !isPastExpiry;
+          final canComplete = reservation.isReserved && !isPastExpiry;
+
           String expiresText = 'Ismeretlen lejarat';
           if (expiresAt != null) {
             expiresText =
@@ -117,6 +154,10 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                     if (category.isNotEmpty) Text('Kategoria: $category'),
                     const SizedBox(height: 8),
                     Text('Lejar: $expiresText'),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Status: ${_merchantReservationStatusLabel(reservation, isPastExpiry: isPastExpiry)}',
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -139,75 +180,49 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceVariant,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Foglalasi kod',
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          SelectableText(
-                            reservation.pickupCode,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                          if (reservation.pickupToken.isNotEmpty) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              'QR kod az atvetelhez',
-                              style: Theme.of(context).textTheme.labelLarge,
-                            ),
-                            const SizedBox(height: 8),
-                            Center(
-                              child: QrImageView(
-                                data: reservation.pickupToken,
-                                size: 220,
-                                backgroundColor: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            SelectableText(reservation.pickupToken),
-                          ],
-                          const SizedBox(height: 8),
-                          Text(
-                            'Status: ${_reservationStatusLabel(reservation, isPastExpiry: isPastExpiry)}',
-                          ),
-                          if (reservation.isReserved && expiresAt != null)
-                            Text('Atvetel vege: $expiresText'),
-                        ],
-                      ),
+                    Text(
+                      'Atveteli kod: ${reservation.pickupCode}',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    if (canCancel) ...[
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _cancelling
-                              ? null
-                              : () => _cancelReservation(reservation.id),
-                          icon: _cancelling
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.close_outlined),
-                          label: const Text('Foglalas lemondasa'),
-                        ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _pickupInputController,
+                      decoration: const InputDecoration(
+                        labelText: 'QR token vagy atveteli kod',
                       ),
-                    ],
+                      minLines: 1,
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _openScanner,
+                            icon: const Icon(Icons.qr_code_scanner_outlined),
+                            label: const Text('QR ujrabeolvasas'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: canComplete && !_submitting
+                                ? () => _completeReservation(reservation)
+                                : null,
+                            icon: _submitting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.task_alt_outlined),
+                            label: const Text('Atvetel rogzitese'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -219,7 +234,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
   }
 }
 
-String _reservationStatusLabel(
+String _merchantReservationStatusLabel(
   Reservation reservation, {
   bool isPastExpiry = false,
 }) {

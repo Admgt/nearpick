@@ -160,7 +160,7 @@ class InMemoryReservationStore implements ReservationStoreGateway {
   }
 
   @override
-  Future<void> saveCompletedReservation(ReservationRecord reservation) async {
+  Future<void> saveUpdatedReservation(ReservationRecord reservation) async {
     reservations[reservation.id] = reservation;
   }
 

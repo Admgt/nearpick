@@ -9,6 +9,7 @@ void main() {
     expect(reservation.productId, '');
     expect(reservation.status, 'reserved');
     expect(reservation.qty, 1);
+    expect(reservation.pickupToken, '');
     expect(reservation.productSnapshot, isEmpty);
   });
 }

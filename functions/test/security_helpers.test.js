@@ -3,10 +3,14 @@ const assert = require("node:assert/strict");
 
 const {
   assertArchivableProduct,
+  assertCancelableReservation,
   assertCompletableReservation,
+  assertExpirableReservation,
   assertRepriceableProduct,
   assertReservableProduct,
+  buildPickupToken,
   getSafeArchiveImagePath,
+  parsePickupInput,
 } = require("../security_helpers");
 
 test("assertReservableProduct rejects sold out products", () => {
@@ -59,9 +63,11 @@ test("assertReservableProduct rejects self reservation attempts", () => {
 test("assertCompletableReservation rejects foreign merchant users", () => {
   assert.throws(
       () => assertCompletableReservation({
+        id: "reservation-1",
         merchantId: "merchant-1",
+        pickupCode: "ABC123",
         status: "reserved",
-      }, "merchant-2"),
+      }, "merchant-2", "ABC123"),
       /permission-denied/,
   );
 });
@@ -69,18 +75,47 @@ test("assertCompletableReservation rejects foreign merchant users", () => {
 test("assertCompletableReservation rejects invalid status transitions", () => {
   assert.throws(
       () => assertCompletableReservation({
+        id: "reservation-1",
         merchantId: "merchant-1",
+        pickupCode: "ABC123",
         status: "completed",
-      }, "merchant-1"),
+      }, "merchant-1", "ABC123"),
       /invalid-status/,
   );
 });
 
 test("assertCompletableReservation allows reserved status for the owner", () => {
   assert.doesNotThrow(() => assertCompletableReservation({
+    id: "reservation-1",
+    expiresAt: new Date(Date.now() + 60_000),
     merchantId: "merchant-1",
+    pickupCode: "ABC123",
     status: "reserved",
-  }, "merchant-1"));
+  }, "merchant-1", "ABC123"));
+});
+
+test("assertCompletableReservation accepts a full pickup token", () => {
+  const token = buildPickupToken("reservation-1", "ABC123");
+  assert.doesNotThrow(() => assertCompletableReservation({
+    id: "reservation-1",
+    expiresAt: new Date(Date.now() + 60_000),
+    merchantId: "merchant-1",
+    pickupCode: "ABC123",
+    status: "reserved",
+  }, "merchant-1", token));
+});
+
+test("assertCompletableReservation rejects invalid pickup code", () => {
+  assert.throws(
+      () => assertCompletableReservation({
+        id: "reservation-1",
+        expiresAt: new Date(Date.now() + 60_000),
+        merchantId: "merchant-1",
+        pickupCode: "ABC123",
+        status: "reserved",
+      }, "merchant-1", "WRONG"),
+      /invalid-pickup-code/,
+  );
 });
 
 test("assertArchivableProduct rejects non-owner archive attempts", () => {
@@ -111,6 +146,51 @@ test("assertRepriceableProduct rejects missing recommendations", () => {
         status: "active",
       }, "merchant-1"),
       /missing-pricing-recommendation/,
+  );
+});
+
+test("assertCancelableReservation rejects foreign buyer users", () => {
+  assert.throws(
+      () => assertCancelableReservation({
+        buyerId: "buyer-1",
+        status: "reserved",
+      }, "buyer-2"),
+      /permission-denied/,
+  );
+});
+
+test("assertCancelableReservation rejects expired reservations", () => {
+  assert.throws(
+      () => assertCancelableReservation({
+        buyerId: "buyer-1",
+        expiresAt: new Date(Date.now() - 60_000),
+        status: "reserved",
+      }, "buyer-1"),
+      /expired-reservation/,
+  );
+});
+
+test("assertExpirableReservation rejects non-expired reservations", () => {
+  assert.throws(
+      () => assertExpirableReservation({
+        expiresAt: new Date(Date.now() + 60_000),
+        status: "reserved",
+      }),
+      /not-expired-yet/,
+  );
+});
+
+test("parsePickupInput parses plain pickup codes and tokens", () => {
+  assert.deepEqual(parsePickupInput("ABC123"), {
+    pickupCode: "ABC123",
+    reservationId: null,
+  });
+  assert.deepEqual(
+      parsePickupInput("NEARPICK:reservation-1:ABC123"),
+      {
+        pickupCode: "ABC123",
+        reservationId: "reservation-1",
+      },
   );
 });
 

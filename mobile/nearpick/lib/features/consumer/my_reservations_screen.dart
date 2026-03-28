@@ -58,6 +58,10 @@ class MyReservationsScreen extends StatelessWidget {
                 final discounted = snapshotData['discountedPrice'] as int? ?? 0;
                 final original = snapshotData['originalPrice'] as int? ?? 0;
                 final expiresAt = reservation.expiresAt;
+                final isPastExpiry =
+                    expiresAt != null &&
+                    !expiresAt.isAfter(DateTime.now()) &&
+                    reservation.isReserved;
                 String expiresText = 'Ismeretlen lejarat';
                 if (expiresAt != null) {
                   expiresText =
@@ -91,7 +95,9 @@ class MyReservationsScreen extends StatelessWidget {
                     children: [
                       Text('Kod: ${reservation.pickupCode}'),
                       Text('Lejar: $expiresText'),
-                      Text('Status: ${reservation.status}'),
+                      Text(
+                        'Status: ${_reservationStatusLabel(reservation, isPastExpiry: isPastExpiry)}',
+                      ),
                     ],
                   ),
                   trailing: Column(
@@ -128,5 +134,24 @@ class MyReservationsScreen extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+String _reservationStatusLabel(
+  Reservation reservation, {
+  bool isPastExpiry = false,
+}) {
+  if (isPastExpiry) {
+    return 'Lejart';
+  }
+  switch (reservation.status) {
+    case 'completed':
+      return 'Atadva';
+    case 'cancelled':
+      return 'Lemondva';
+    case 'expired':
+      return 'Lejart';
+    default:
+      return 'Foglalva';
   }
 }

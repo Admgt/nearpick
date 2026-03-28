@@ -20,7 +20,7 @@ String appErrorMessage(
       case 'invalid-argument':
         return 'Ervenytelen adatot adtal meg.';
       case 'failed-precondition':
-        return 'Elfogyott.';
+        return _sanitizeMessage(error.message) ?? fallback;
       case 'unavailable':
         return 'A szolgaltatas jelenleg nem erheto el. Probald ujra.';
     }

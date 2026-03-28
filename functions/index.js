@@ -1,11 +1,15 @@
 const admin = require("firebase-admin");
 const {onDocumentCreated} = require("firebase-functions/v2/firestore");
 const {onCall, onRequest, HttpsError} = require("firebase-functions/v2/https");
+const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {
   assertArchivableProduct,
+  assertCancelableReservation,
   assertCompletableReservation,
+  assertExpirableReservation,
   assertRepriceableProduct,
   assertReservableProduct,
+  buildPickupToken,
   generatePickupCode,
   getSafeArchiveImagePath,
 } = require("./security_helpers");
@@ -54,6 +58,24 @@ function asHttpsError(error, contextId) {
           "A foglalas allapota nem engedi a muveletet.",
           details,
       );
+    case "invalid-pickup-code":
+      return new HttpsError(
+          "failed-precondition",
+          "Ervenytelen atveteli kod.",
+          details,
+      );
+    case "expired-reservation":
+      return new HttpsError(
+          "failed-precondition",
+          "A foglalas mar lejart.",
+          details,
+      );
+    case "not-expired-yet":
+      return new HttpsError(
+          "failed-precondition",
+          "A foglalas meg nem jarhat le.",
+          details,
+      );
     case "permission-denied":
       return new HttpsError("permission-denied", "Nincs jogosultsag.", details);
     case "missing-pricing-recommendation":
@@ -65,6 +87,83 @@ function asHttpsError(error, contextId) {
     default:
       return new HttpsError("internal", "Varatlan szerverhiba.", details);
   }
+}
+
+async function expireDueReservations({limit = 50, contextId}) {
+  const db = admin.firestore();
+  const now = admin.firestore.Timestamp.now();
+  const query = await db
+      .collection("reservations")
+      .where("status", "==", "reserved")
+      .where("expiresAt", "<=", now)
+      .limit(limit)
+      .get();
+
+  if (query.empty) {
+    return {expiredCount: 0};
+  }
+
+  let expiredCount = 0;
+  for (const doc of query.docs) {
+    try {
+      await db.runTransaction(async (tx) => {
+        const reservationRef = doc.ref;
+        const reservationSnap = await tx.get(reservationRef);
+        const reservation = reservationSnap.data();
+        assertExpirableReservation({...reservation, id: reservationRef.id});
+
+        tx.update(reservationRef, {
+          status: "expired",
+          expiredAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        const productId = reservation.productId;
+        if (typeof productId !== "string" || productId.trim().length === 0) {
+          return;
+        }
+
+        const productRef = db.collection("products").doc(productId.trim());
+        const productSnap = await tx.get(productRef);
+        const product = productSnap.data();
+        if (!product || product.isDeleted === true) {
+          return;
+        }
+
+        const currentAvailable =
+          Number.isInteger(product.quantityAvailable) ?
+            product.quantityAvailable :
+            Number.isInteger(product.quantity) ? product.quantity : 0;
+        const incrementBy = Number.isInteger(reservation.qty) ? reservation.qty : 1;
+        const newAvailable = currentAvailable + incrementBy;
+        const productExpiresAt =
+          typeof product.expiresAt?.toDate === "function" ?
+            product.expiresAt.toDate() :
+            null;
+        const nextStatus =
+          productExpiresAt && productExpiresAt.getTime() <= Date.now() ?
+            "expired" :
+            newAvailable > 0 ? "active" : (product.status ?? "active");
+
+        tx.update(productRef, {
+          quantity: newAvailable,
+          quantityAvailable: newAvailable,
+          status: nextStatus,
+        });
+      });
+      expiredCount += 1;
+    } catch (error) {
+      logWarn("reservation.expire.skipped", {
+        contextId,
+        reservationId: doc.id,
+      }, error);
+    }
+  }
+
+  logInfo("reservation.expire.completed", {
+    contextId,
+    expiredCount,
+  });
+  return {expiredCount};
 }
 
 exports.healthcheck = onRequest(async (request, response) => {
@@ -132,6 +231,7 @@ exports.reserveProduct = onCall(async (request) => {
       const expiresAt = admin.firestore.Timestamp.fromDate(
           new Date(Date.now() + 30 * 60 * 1000),
       );
+      const pickupCode = generatePickupCode(6);
 
       const productSnapshot = {
         category: product.category ?? "",
@@ -161,7 +261,8 @@ exports.reserveProduct = onCall(async (request) => {
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         expiresAt,
         merchantId: ownerId,
-        pickupCode: generatePickupCode(6),
+        pickupCode,
+        pickupToken: buildPickupToken(reservationRef.id, pickupCode),
         productId: trimmedProductId,
         productSnapshot,
         qty: 1,
@@ -211,9 +312,16 @@ exports.completeReservation = onCall(async (request) => {
   }
 
   const reservationId = request.data?.reservationId;
+  const pickupInput = request.data?.pickupInput;
   if (typeof reservationId !== "string" || reservationId.trim().length === 0) {
     logWarn("reservation.complete.invalid_argument", {contextId});
     throw new HttpsError("invalid-argument", "Ervenytelen reservationId.", {
+      contextId,
+    });
+  }
+  if (typeof pickupInput !== "string" || pickupInput.trim().length === 0) {
+    logWarn("reservation.complete.invalid_pickup_input", {contextId});
+    throw new HttpsError("invalid-argument", "Ervenytelen atveteli kod.", {
       contextId,
     });
   }
@@ -227,7 +335,11 @@ exports.completeReservation = onCall(async (request) => {
       const reservationSnap = await tx.get(reservationRef);
       const reservation = reservationSnap.data();
 
-      assertCompletableReservation(reservation, merchantId);
+      assertCompletableReservation(
+          {...reservation, id: reservationRef.id},
+          merchantId,
+          pickupInput,
+      );
 
       tx.update(reservationRef, {
         completedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -256,6 +368,94 @@ exports.completeReservation = onCall(async (request) => {
   });
   return {
     completed: true,
+    contextId,
+  };
+});
+
+exports.cancelReservation = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("reservation.cancel.started", {contextId});
+
+  if (!request.auth) {
+    logWarn("reservation.cancel.unauthenticated", {contextId});
+    throw new HttpsError("unauthenticated", "Bejelentkezes szukseges.", {
+      contextId,
+    });
+  }
+
+  const reservationId = request.data?.reservationId;
+  if (typeof reservationId !== "string" || reservationId.trim().length === 0) {
+    logWarn("reservation.cancel.invalid_argument", {contextId});
+    throw new HttpsError("invalid-argument", "Ervenytelen reservationId.", {
+      contextId,
+    });
+  }
+
+  const db = admin.firestore();
+  const buyerId = request.auth.uid;
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const reservationRef = db.collection("reservations").doc(reservationId.trim());
+      const reservationSnap = await tx.get(reservationRef);
+      const reservation = reservationSnap.data();
+
+      assertCancelableReservation(reservation, buyerId);
+
+      tx.update(reservationRef, {
+        cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: "cancelled",
+      });
+
+      const productId = reservation.productId;
+      if (typeof productId !== "string" || productId.trim().length === 0) {
+        return;
+      }
+
+      const productRef = db.collection("products").doc(productId.trim());
+      const productSnap = await tx.get(productRef);
+      const product = productSnap.data();
+      if (!product || product.isDeleted === true) {
+        return;
+      }
+
+      const currentAvailable =
+        Number.isInteger(product.quantityAvailable) ?
+          product.quantityAvailable :
+          Number.isInteger(product.quantity) ? product.quantity : 0;
+      const incrementBy = Number.isInteger(reservation.qty) ? reservation.qty : 1;
+      const newAvailable = currentAvailable + incrementBy;
+      const productExpiresAt =
+        typeof product.expiresAt?.toDate === "function" ?
+          product.expiresAt.toDate() :
+          null;
+      const nextStatus =
+        productExpiresAt && productExpiresAt.getTime() <= Date.now() ?
+          "expired" :
+          newAvailable > 0 ? "active" : (product.status ?? "active");
+
+      tx.update(productRef, {
+        quantity: newAvailable,
+        quantityAvailable: newAvailable,
+        status: nextStatus,
+      });
+    });
+  } catch (error) {
+    logError("reservation.cancel.failed", {
+      contextId,
+      reservationId: reservationId.trim(),
+      userId: buyerId,
+    }, error);
+    throw asHttpsError(error, contextId);
+  }
+
+  logInfo("reservation.cancel.completed", {
+    contextId,
+    reservationId: reservationId.trim(),
+    userId: buyerId,
+  });
+  return {
+    cancelled: true,
     contextId,
   };
 });
@@ -386,6 +586,18 @@ exports.repriceProduct = onCall(async (request) => {
     discountedPrice: recommendedPrice,
     repriced: true,
   };
+});
+
+exports.expireReservations = onSchedule("every 5 minutes", async (event) => {
+  const contextId = createContextId(event);
+  logInfo("reservation.expire.started", {contextId});
+
+  try {
+    await expireDueReservations({contextId, limit: 50});
+  } catch (error) {
+    logError("reservation.expire.failed", {contextId}, error);
+    throw error;
+  }
 });
 
 exports.notifyOnNewProduct = onDocumentCreated(

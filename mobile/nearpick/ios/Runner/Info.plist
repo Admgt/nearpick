@@ -48,7 +48,7 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Az alkalmazas a kozeli ajanlatokhoz hasznalja a tartozkodasi helyedet.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>A termek fotozasahoz kamera hozzaferes szukseges.</string>
+	<string>A termek fotozasahoz es a foglalasi QR kod beolvasasahoz kamera hozzaferes szukseges.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>A termek kepenek feltoltesehez galeria hozzaferes szukseges.</string>
 </dict>

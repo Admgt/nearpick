@@ -5,9 +5,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/error/app_error_message.dart';
+import '../../core/reservation/pickup_token.dart';
 import '../../models/reservation.dart';
 import '../../services/reservation_service.dart';
 import '../../ui/app_chrome.dart';
+import 'merchant_reservation_detail_screen.dart';
+import 'merchant_qr_scanner_screen.dart';
 
 class MerchantReservationsScreen extends StatefulWidget {
   const MerchantReservationsScreen({super.key});
@@ -20,6 +23,119 @@ class MerchantReservationsScreen extends StatefulWidget {
 class _MerchantReservationsScreenState
     extends State<MerchantReservationsScreen> {
   final Set<String> _loadingIds = {};
+
+  Future<void> _openReservationDetail({
+    required String reservationId,
+    String? pickupInput,
+  }) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MerchantReservationDetailScreen(
+          reservationId: reservationId,
+          initialPickupInput: pickupInput,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handlePickupInput({
+    required String pickupInput,
+    required String merchantId,
+  }) async {
+    try {
+      final parsed = parsePickupToken(pickupInput);
+      final reservationId =
+          parsed.reservationId ??
+          await ReservationService().findReservationIdByPickupCode(
+            merchantId: merchantId,
+            pickupCode: parsed.pickupCode,
+          );
+      if (!mounted) return;
+      if (reservationId == null || reservationId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nem talalhato foglalas ehhez a kodhoz.'),
+          ),
+        );
+        return;
+      }
+      await _openReservationDetail(
+        reservationId: reservationId,
+        pickupInput: pickupInput,
+      );
+    } on FormatException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(appErrorMessage(e))));
+    }
+  }
+
+  Future<String?> _promptPickupInput(Reservation reservation) {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('QR vagy atveteli kod'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Add meg a vasarlo altal bemutatott QR tokent vagy az atveteli kodot.',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'QR token vagy kod',
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final scanned = await Navigator.of(dialogContext)
+                        .push<String>(
+                          MaterialPageRoute(
+                            builder: (_) => const MerchantQrScannerScreen(),
+                          ),
+                        );
+                    if (scanned == null || scanned.isEmpty) return;
+                    controller.text = scanned;
+                    setDialogState(() {});
+                  },
+                  icon: const Icon(Icons.qr_code_scanner_outlined),
+                  label: const Text('Kamera megnyitasa'),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text('Varhato kod: ${reservation.pickupCode}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Megse'),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
+              child: const Text('Ellenorzes'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,12 +150,35 @@ class _MerchantReservationsScreenState
     final reservationsStream = FirebaseFirestore.instance
         .collection('reservations')
         .where('merchantId', isEqualTo: user.uid)
-        .where('status', whereIn: ['reserved', 'completed'])
+        .where(
+          'status',
+          whereIn: ['reserved', 'completed', 'expired', 'cancelled'],
+        )
         .orderBy('createdAt', descending: true)
         .snapshots();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Foglalasok')),
+      appBar: AppBar(
+        title: const Text('Foglalasok'),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              final scanned = await Navigator.of(context).push<String>(
+                MaterialPageRoute(
+                  builder: (_) => const MerchantQrScannerScreen(),
+                ),
+              );
+              if (!mounted || scanned == null || scanned.isEmpty) return;
+              await _handlePickupInput(
+                pickupInput: scanned,
+                merchantId: user.uid,
+              );
+            },
+            icon: const Icon(Icons.qr_code_scanner_outlined),
+            tooltip: 'QR scanner',
+          ),
+        ],
+      ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: reservationsStream,
         builder: (context, snapshot) {
@@ -65,7 +204,19 @@ class _MerchantReservationsScreenState
                 final product = reservation.productSnapshot;
                 final name = product['name'] as String? ?? 'Ismeretlen termek';
                 final imageUrl = product['imageUrl'] as String?;
-                final isReserved = reservation.status == 'reserved';
+                final expiresAt = reservation.expiresAt;
+                final isPastExpiry =
+                    expiresAt != null &&
+                    !expiresAt.isAfter(DateTime.now()) &&
+                    reservation.isReserved;
+                final isReserved =
+                    reservation.status == 'reserved' && !isPastExpiry;
+                String expiresText = 'Ismeretlen lejarat';
+                if (expiresAt != null) {
+                  expiresText =
+                      '${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')} '
+                      '${expiresAt.hour.toString().padLeft(2, '0')}:${expiresAt.minute.toString().padLeft(2, '0')}';
+                }
 
                 return ListTile(
                   leading: imageUrl != null && imageUrl.isNotEmpty
@@ -92,7 +243,10 @@ class _MerchantReservationsScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Kod: ${reservation.pickupCode}'),
-                      Text('Status: ${reservation.status}'),
+                      Text('Lejar: $expiresText'),
+                      Text(
+                        'Status: ${_merchantReservationStatusLabel(reservation, isPastExpiry: isPastExpiry)}',
+                      ),
                     ],
                   ),
                   trailing: isReserved
@@ -104,10 +258,17 @@ class _MerchantReservationsScreenState
                                     () => _loadingIds.add(reservation.id),
                                   );
                                   try {
-                                    await ReservationService()
-                                        .completeReservation(
-                                          reservationId: reservation.id,
-                                        );
+                                    final pickupInput =
+                                        await _promptPickupInput(reservation);
+                                    if (!mounted ||
+                                        pickupInput == null ||
+                                        pickupInput.isEmpty) {
+                                      return;
+                                    }
+                                    await _handlePickupInput(
+                                      pickupInput: pickupInput,
+                                      merchantId: user.uid,
+                                    );
                                   } catch (e) {
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -124,9 +285,16 @@ class _MerchantReservationsScreenState
                                     }
                                   }
                                 },
-                          child: const Text('Atadva'),
+                          child: const Text('QR atvetel'),
                         )
-                      : const Text('Atadva'),
+                      : Text(
+                          _merchantReservationStatusLabel(
+                            reservation,
+                            isPastExpiry: isPastExpiry,
+                          ),
+                        ),
+                  onTap: () =>
+                      _openReservationDetail(reservationId: reservation.id),
                 );
               },
             ),
@@ -134,5 +302,24 @@ class _MerchantReservationsScreenState
         },
       ),
     );
+  }
+}
+
+String _merchantReservationStatusLabel(
+  Reservation reservation, {
+  bool isPastExpiry = false,
+}) {
+  if (isPastExpiry) {
+    return 'Lejart';
+  }
+  switch (reservation.status) {
+    case 'completed':
+      return 'Atadva';
+    case 'cancelled':
+      return 'Lemondva';
+    case 'expired':
+      return 'Lejart';
+    default:
+      return 'Foglalva';
   }
 }

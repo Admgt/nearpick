@@ -60,7 +60,11 @@ class ReservationRecord {
   final String status;
   final DateTime createdAt;
   final DateTime expiresAt;
+  final DateTime? completedAt;
+  final DateTime? cancelledAt;
+  final DateTime? expiredAt;
   final String pickupCode;
+  final String pickupToken;
   final Map<String, dynamic> productSnapshot;
 
   const ReservationRecord({
@@ -72,11 +76,20 @@ class ReservationRecord {
     required this.status,
     required this.createdAt,
     required this.expiresAt,
+    required this.completedAt,
+    required this.cancelledAt,
+    required this.expiredAt,
     required this.pickupCode,
+    required this.pickupToken,
     required this.productSnapshot,
   });
 
-  ReservationRecord copyWith({String? status}) {
+  ReservationRecord copyWith({
+    String? status,
+    DateTime? completedAt,
+    DateTime? cancelledAt,
+    DateTime? expiredAt,
+  }) {
     return ReservationRecord(
       id: id,
       productId: productId,
@@ -86,7 +99,11 @@ class ReservationRecord {
       status: status ?? this.status,
       createdAt: createdAt,
       expiresAt: expiresAt,
+      completedAt: completedAt ?? this.completedAt,
+      cancelledAt: cancelledAt ?? this.cancelledAt,
+      expiredAt: expiredAt ?? this.expiredAt,
       pickupCode: pickupCode,
+      pickupToken: pickupToken,
       productSnapshot: productSnapshot,
     );
   }
@@ -109,7 +126,7 @@ abstract class ReservationStoreGateway {
 
   ReservationRecord? getReservation(String reservationId);
 
-  Future<void> saveCompletedReservation(ReservationRecord reservation);
+  Future<void> saveUpdatedReservation(ReservationRecord reservation);
 }
 
 abstract class MerchantStatsGateway {
@@ -178,7 +195,11 @@ class ReservationWorkflow {
         status: 'reserved',
         createdAt: createdAt,
         expiresAt: expiresAt,
+        completedAt: null,
+        cancelledAt: null,
+        expiredAt: null,
         pickupCode: pickupCode,
+        pickupToken: 'NEARPICK:$reservationId:$pickupCode',
         productSnapshot: {
           'name': product.name,
           'discountedPrice': product.discountedPrice,
@@ -201,6 +222,16 @@ class ReservationWorkflow {
   }
 
   Future<void> completeReservation({required String reservationId}) async {
+    await completeReservationByPickup(
+      reservationId: reservationId,
+      pickupInput: null,
+    );
+  }
+
+  Future<void> completeReservationByPickup({
+    required String reservationId,
+    required String? pickupInput,
+  }) async {
     final userId = sessionGateway.currentUserId;
     if (userId == null || userId.isEmpty) {
       throw Exception('Nincs bejelentkezett felhasznalo.');
@@ -216,10 +247,54 @@ class ReservationWorkflow {
     if (reservation.status != 'reserved') {
       return;
     }
+    if (reservation.expiresAt.isBefore(now()) ||
+        reservation.expiresAt.isAtSameMomentAs(now())) {
+      throw Exception('A foglalas mar lejart.');
+    }
+    final normalizedInput = (pickupInput ?? '').trim();
+    if (normalizedInput.isNotEmpty &&
+        normalizedInput != reservation.pickupCode &&
+        normalizedInput != reservation.pickupToken) {
+      throw Exception('Ervenytelen atveteli kod.');
+    }
 
-    await reservationStore.saveCompletedReservation(
-      reservation.copyWith(status: 'completed'),
+    await reservationStore.saveUpdatedReservation(
+      reservation.copyWith(status: 'completed', completedAt: now()),
     );
     await merchantStatsGateway.incrementCompleted(userId);
+  }
+
+  Future<void> cancelReservation({required String reservationId}) async {
+    final userId = sessionGateway.currentUserId;
+    if (userId == null || userId.isEmpty) {
+      throw Exception('Nincs bejelentkezett felhasznalo.');
+    }
+
+    final reservation = reservationStore.getReservation(reservationId);
+    if (reservation == null) {
+      throw Exception('A foglalas nem talalhato.');
+    }
+    if (reservation.buyerId.isEmpty || reservation.buyerId != userId) {
+      throw Exception('Nincs jogosultsag a foglalashoz.');
+    }
+    if (reservation.status != 'reserved') {
+      return;
+    }
+
+    final product = productGateway.getProduct(reservation.productId);
+    if (product != null && !product.isDeleted) {
+      final newQty = product.quantityAvailable + reservation.qty;
+      await productGateway.saveProduct(
+        product.copyWith(
+          quantity: newQty,
+          quantityAvailable: newQty,
+          status: 'active',
+        ),
+      );
+    }
+
+    await reservationStore.saveUpdatedReservation(
+      reservation.copyWith(status: 'cancelled', cancelledAt: now()),
+    );
   }
 }

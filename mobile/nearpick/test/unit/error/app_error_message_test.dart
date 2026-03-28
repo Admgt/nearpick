@@ -19,6 +19,15 @@ void main() {
     expect(appErrorMessage(error), 'Elfogyott.');
   });
 
+  test('preserves detailed failed-precondition Firebase functions errors', () {
+    final error = FirebaseFunctionsException(
+      code: 'failed-precondition',
+      message: 'Ervenytelen atveteli kod.',
+    );
+
+    expect(appErrorMessage(error), 'Ervenytelen atveteli kod.');
+  });
+
   test('normalizes sign-in required messages from generic exceptions', () {
     expect(
       appErrorMessage(Exception('Nincs bejelentkezett felhasznÃ¡lÃ³.')),
