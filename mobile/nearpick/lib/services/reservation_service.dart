@@ -11,10 +11,9 @@ class ReservationService {
     FirebaseFunctions? functions,
     FirebaseAuth? auth,
     FirebaseFirestore? db,
-  })
-    : _functions = functions ?? FirebaseFunctions.instance,
-      _auth = auth ?? FirebaseAuth.instance,
-      _db = db ?? FirebaseFirestore.instance;
+  }) : _functions = functions ?? FirebaseFunctions.instance,
+       _auth = auth ?? FirebaseAuth.instance,
+       _db = db ?? FirebaseFirestore.instance;
 
   Future<String> reserveProduct({required String productId}) async {
     final user = _auth.currentUser;
