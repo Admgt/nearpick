@@ -241,11 +241,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest.withValues(
-                            alpha: 0.55,
-                          ),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
+                              .withValues(alpha: 0.55),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
