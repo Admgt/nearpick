@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../core/error/app_error_message.dart';
+import '../../models/review.dart';
 import '../reservation/reservation_support.dart';
 import '../../models/reservation.dart';
 import '../../services/reservation_service.dart';
@@ -22,6 +23,7 @@ class ReservationDetailScreen extends StatefulWidget {
 
 class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
   bool _cancelling = false;
+  bool _submittingReview = false;
 
   Future<_CancelReservationFormResult?> _showCancelReservationDialog() {
     String selectedReason = cancellationReasonOptions.first.code;
@@ -126,6 +128,202 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
         setState(() => _cancelling = false);
       }
     }
+  }
+
+  Future<_SubmitReviewFormResult?> _showReviewDialog() {
+    int selectedRating = 5;
+    String? errorText;
+    final commentController = TextEditingController();
+
+    return showDialog<_SubmitReviewFormResult>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Ertekeles kuldese'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hany csillagot adsz?',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 4,
+                  children: List.generate(5, (index) {
+                    final starValue = index + 1;
+                    final isSelected = starValue <= selectedRating;
+                    return IconButton(
+                      onPressed: () {
+                        setDialogState(() {
+                          selectedRating = starValue;
+                        });
+                      },
+                      icon: Icon(
+                        isSelected ? Icons.star_rounded : Icons.star_outline,
+                        color: Colors.amber.shade700,
+                        size: 30,
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: commentController,
+                  decoration: InputDecoration(
+                    labelText: 'Rovid megjegyzes',
+                    hintText: 'Mit tapasztaltal?',
+                    errorText: errorText,
+                  ),
+                  minLines: 3,
+                  maxLines: 5,
+                  maxLength: 280,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Megse'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final comment = commentController.text.trim();
+                if (comment.length < 3) {
+                  setDialogState(() {
+                    errorText = 'Legalabb 3 karakteres megjegyzes kell.';
+                  });
+                  return;
+                }
+
+                Navigator.of(context).pop(
+                  _SubmitReviewFormResult(
+                    rating: selectedRating,
+                    comment: comment,
+                  ),
+                );
+              },
+              child: const Text('Kuldes'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitReview(Reservation reservation) async {
+    final formResult = await _showReviewDialog();
+    if (!mounted || formResult == null) {
+      return;
+    }
+
+    setState(() => _submittingReview = true);
+    try {
+      await ReservationService().submitReview(
+        reservationId: reservation.id,
+        rating: formResult.rating,
+        comment: formResult.comment,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Koszonjuk az ertekelest.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(appErrorMessage(e))));
+    } finally {
+      if (mounted) {
+        setState(() => _submittingReview = false);
+      }
+    }
+  }
+
+  Widget _buildReviewSection(Reservation reservation) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('reviews')
+          .doc(reservation.id)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final review = snapshot.hasData && snapshot.data!.exists
+            ? Review.fromDoc(snapshot.data!)
+            : null;
+        final canReview =
+            reservation.isCompleted && !reservation.hasReview && review == null;
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceVariant,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Ertekeles', style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              if (review != null) ...[
+                Row(
+                  children: [
+                    ...List.generate(5, (index) {
+                      return Icon(
+                        index < review.rating
+                            ? Icons.star_rounded
+                            : Icons.star_outline,
+                        color: Colors.amber.shade700,
+                        size: 22,
+                      );
+                    }),
+                    const SizedBox(width: 8),
+                    Text('${review.rating}/5'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(review.comment),
+                if (review.createdAt != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Bekuldve: ${_formatDateTime(review.createdAt!)}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ] else if (canReview) ...[
+                const Text('Az atvett rendelest most tudod ertekelni.'),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _submittingReview
+                        ? null
+                        : () => _submitReview(reservation),
+                    icon: _submittingReview
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.rate_review_outlined),
+                    label: const Text('Ertekeles irasa'),
+                  ),
+                ),
+              ] else if (reservation.isCompleted) ...[
+                const Text('Az ertekeles mar rogzitve lett.'),
+              ] else ...[
+                const Text(
+                  'Ertekelest csak completed foglalas utan lehet kuldeni.',
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -306,6 +504,10 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                         ),
                       ),
                     ],
+                    if (reservation.isCompleted || reservation.hasReview) ...[
+                      const SizedBox(height: 16),
+                      _buildReviewSection(reservation),
+                    ],
                   ],
                 ),
               ),
@@ -327,6 +529,18 @@ class _CancelReservationFormResult {
     required this.reasonNote,
     required this.refundRequested,
   });
+}
+
+class _SubmitReviewFormResult {
+  final int rating;
+  final String comment;
+
+  const _SubmitReviewFormResult({required this.rating, required this.comment});
+}
+
+String _formatDateTime(DateTime value) {
+  return '${value.year}.${value.month.toString().padLeft(2, '0')}.${value.day.toString().padLeft(2, '0')} '
+      '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
 }
 
 String _reservationStatusLabel(

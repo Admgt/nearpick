@@ -13,6 +13,8 @@ void main() {
     expect(reservation.cancelReasonCode, isNull);
     expect(reservation.cancelReasonNote, '');
     expect(reservation.refundStatus, 'not_requested');
+    expect(reservation.reviewSubmittedAt, isNull);
+    expect(reservation.hasReview, isFalse);
     expect(reservation.productSnapshot, isEmpty);
   });
 }

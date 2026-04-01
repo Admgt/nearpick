@@ -155,6 +155,24 @@ function assertRefundManageableReservation(reservation, callerUid, refundStatus)
   }
 }
 
+function assertReviewableReservation(reservation, callerUid) {
+  if (!reservation) {
+    throw new Error("not-found");
+  }
+
+  if (!callerUid || reservation.buyerId !== callerUid) {
+    throw new Error("permission-denied");
+  }
+
+  if (reservation.status !== "completed") {
+    throw new Error("invalid-status");
+  }
+
+  if (reservation.reviewSubmittedAt) {
+    throw new Error("already-reviewed");
+  }
+}
+
 function assertExpirableReservation(reservation) {
   if (!reservation) {
     throw new Error("not-found");
@@ -230,6 +248,7 @@ module.exports = {
   assertCompletableReservation,
   assertExpirableReservation,
   assertRefundManageableReservation,
+  assertReviewableReservation,
   assertRepriceableProduct,
   assertReservableProduct,
   buildPickupToken,

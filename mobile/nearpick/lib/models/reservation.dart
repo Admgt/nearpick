@@ -22,6 +22,7 @@ class Reservation {
   final DateTime? refundReviewedAt;
   final DateTime? refundCompletedAt;
   final String? refundReviewedBy;
+  final DateTime? reviewSubmittedAt;
   final Map<String, dynamic> productSnapshot;
 
   const Reservation({
@@ -46,6 +47,7 @@ class Reservation {
     required this.refundReviewedAt,
     required this.refundCompletedAt,
     required this.refundReviewedBy,
+    required this.reviewSubmittedAt,
     required this.productSnapshot,
   });
 
@@ -78,6 +80,7 @@ class Reservation {
       refundReviewedAt: asDate(data['refundReviewedAt']),
       refundCompletedAt: asDate(data['refundCompletedAt']),
       refundReviewedBy: data['refundReviewedBy'] as String?,
+      reviewSubmittedAt: asDate(data['reviewSubmittedAt']),
       productSnapshot: Map<String, dynamic>.from(
         data['productSnapshot'] as Map? ?? {},
       ),
@@ -99,4 +102,6 @@ class Reservation {
 
   bool get hasRefundRequest =>
       refundStatus != 'not_requested' && refundStatus != 'not_required';
+
+  bool get hasReview => reviewSubmittedAt != null;
 }

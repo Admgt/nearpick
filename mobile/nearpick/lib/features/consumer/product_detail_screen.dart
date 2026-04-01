@@ -161,6 +161,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final quantityAvailable =
         data['quantityAvailable'] as int? ?? data['quantity'] as int? ?? 0;
     final expiresAt = (data['expiresAt'] as Timestamp?)?.toDate();
+    final ownerId = (data['ownerId'] as String?)?.trim() ?? '';
 
     String expiresText = 'Ismeretlen lejárat';
     if (expiresAt != null) {
@@ -222,6 +223,69 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                   ],
                 ),
+                if (ownerId.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                    stream: FirebaseFirestore.instance
+                        .collection('merchantStats')
+                        .doc(ownerId)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      final stats =
+                          snapshot.data?.data() ?? const <String, dynamic>{};
+                      final averageRating =
+                          (stats['averageRating'] as num?)?.toDouble() ?? 0;
+                      final reviewCount = stats['reviewCount'] as int? ?? 0;
+
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest.withValues(
+                            alpha: 0.55,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.storefront_outlined,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Kereskedo ertekelese',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.labelLarge,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    reviewCount == 0
+                                        ? 'Meg nincs vasarloi ertekeles.'
+                                        : '${averageRating.toStringAsFixed(1)} / 5.0  -  $reviewCount velemeny',
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.star_rounded,
+                              color: reviewCount == 0
+                                  ? Colors.grey
+                                  : Colors.amber.shade700,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
 
                 const SizedBox(height: 24),
 

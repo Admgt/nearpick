@@ -8,6 +8,7 @@ const {
   assertCompletableReservation,
   assertExpirableReservation,
   assertRefundManageableReservation,
+  assertReviewableReservation,
   assertRepriceableProduct,
   assertReservableProduct,
   buildPickupToken,
@@ -41,6 +42,9 @@ const VALID_REFUND_STATUSES = new Set([
   "completed",
   "not_required",
 ]);
+
+const MIN_REVIEW_COMMENT_LENGTH = 3;
+const MAX_REVIEW_COMMENT_LENGTH = 280;
 
 function normalizeOptionalText(value, {maxLength = 250} = {}) {
   if (typeof value !== "string") {
@@ -110,6 +114,12 @@ function asHttpsError(error, contextId) {
       );
     case "permission-denied":
       return new HttpsError("permission-denied", "Nincs jogosultsag.", details);
+    case "already-reviewed":
+      return new HttpsError(
+          "failed-precondition",
+          "Ehhez a foglalashoz mar erkezett ertekeles.",
+          details,
+      );
     case "missing-pricing-recommendation":
       return new HttpsError(
           "failed-precondition",
@@ -325,6 +335,7 @@ exports.reserveProduct = onCall(async (request) => {
         refundReviewedAt: null,
         refundReviewedBy: null,
         refundStatus: "not_requested",
+        reviewSubmittedAt: null,
         status: "reserved",
       });
 
@@ -633,6 +644,122 @@ exports.updateRefundStatus = onCall(async (request) => {
     contextId,
     refundStatus,
     updated: true,
+  };
+});
+
+exports.submitReview = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("review.submit.started", {contextId});
+
+  if (!request.auth) {
+    logWarn("review.submit.unauthenticated", {contextId});
+    throw new HttpsError("unauthenticated", "Bejelentkezes szukseges.", {
+      contextId,
+    });
+  }
+
+  const reservationId = request.data?.reservationId;
+  const rating = request.data?.rating;
+  const comment = normalizeOptionalText(request.data?.comment, {
+    maxLength: MAX_REVIEW_COMMENT_LENGTH,
+  });
+
+  if (typeof reservationId !== "string" || reservationId.trim().length === 0) {
+    logWarn("review.submit.invalid_reservation_id", {contextId});
+    throw new HttpsError("invalid-argument", "Ervenytelen reservationId.", {
+      contextId,
+    });
+  }
+
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    logWarn("review.submit.invalid_rating", {contextId, rating});
+    throw new HttpsError("invalid-argument", "Az ertekeles 1 es 5 kozotti egesz szam legyen.", {
+      contextId,
+    });
+  }
+
+  if (comment.length < MIN_REVIEW_COMMENT_LENGTH) {
+    logWarn("review.submit.invalid_comment", {contextId});
+    throw new HttpsError(
+        "invalid-argument",
+        "Az ertekeles megjegyzese legalabb 3 karakter legyen.",
+        {contextId},
+    );
+  }
+
+  const db = admin.firestore();
+  const buyerId = request.auth.uid;
+  const trimmedReservationId = reservationId.trim();
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const reservationRef = db.collection("reservations").doc(trimmedReservationId);
+      const reviewRef = db.collection("reviews").doc(trimmedReservationId);
+      const reservationSnap = await tx.get(reservationRef);
+      const reviewSnap = await tx.get(reviewRef);
+      const reservation = reservationSnap.data();
+
+      assertReviewableReservation(reservation, buyerId);
+      if (reviewSnap.exists) {
+        throw new Error("already-reviewed");
+      }
+
+      const merchantId =
+        typeof reservation.merchantId === "string" ? reservation.merchantId.trim() : "";
+      if (!merchantId) {
+        throw new Error("invalid-owner");
+      }
+
+      const merchantStatsRef = db.collection("merchantStats").doc(merchantId);
+      const merchantStatsSnap = await tx.get(merchantStatsRef);
+      const merchantStats = merchantStatsSnap.data() ?? {};
+      const currentReviewCount =
+        Number.isInteger(merchantStats.reviewCount) ? merchantStats.reviewCount : 0;
+      const currentRatingTotal =
+        Number.isInteger(merchantStats.ratingTotal) ? merchantStats.ratingTotal : 0;
+      const nextReviewCount = currentReviewCount + 1;
+      const nextRatingTotal = currentRatingTotal + rating;
+
+      tx.set(reviewRef, {
+        buyerId,
+        comment,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        merchantId,
+        productId: typeof reservation.productId === "string" ?
+          reservation.productId.trim() :
+          "",
+        rating,
+        reservationId: trimmedReservationId,
+      });
+
+      tx.update(reservationRef, {
+        reviewSubmittedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      tx.set(merchantStatsRef, {
+        averageRating: nextRatingTotal / nextReviewCount,
+        ratingTotal: nextRatingTotal,
+        reviewCount: nextReviewCount,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, {merge: true});
+    });
+  } catch (error) {
+    logError("review.submit.failed", {
+      contextId,
+      reservationId: trimmedReservationId,
+      userId: buyerId,
+    }, error);
+    throw asHttpsError(error, contextId);
+  }
+
+  logInfo("review.submit.completed", {
+    contextId,
+    reservationId: trimmedReservationId,
+    userId: buyerId,
+  });
+  return {
+    contextId,
+    submitted: true,
   };
 });
 

@@ -101,6 +101,28 @@ class ReservationService {
     }
   }
 
+  Future<void> submitReview({
+    required String reservationId,
+    required int rating,
+    required String comment,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Nincs bejelentkezett felhasznalo.');
+    }
+
+    try {
+      final callable = _functions.httpsCallable('submitReview');
+      await callable.call(<String, dynamic>{
+        'reservationId': reservationId,
+        'rating': rating,
+        'comment': comment,
+      });
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'Az ertekeles nem kuldheto be.');
+    }
+  }
+
   Future<String?> findReservationIdByPickupCode({
     required String merchantId,
     required String pickupCode,

@@ -7,6 +7,7 @@ const {
   assertCompletableReservation,
   assertExpirableReservation,
   assertRefundManageableReservation,
+  assertReviewableReservation,
   assertRepriceableProduct,
   assertReservableProduct,
   buildPickupToken,
@@ -186,6 +187,45 @@ test("assertRefundManageableReservation accepts cancelled reservations for the o
     merchantId: "merchant-1",
     status: "cancelled",
   }, "merchant-1", "approved"));
+});
+
+test("assertReviewableReservation rejects foreign buyer users", () => {
+  assert.throws(
+      () => assertReviewableReservation({
+        buyerId: "buyer-1",
+        status: "completed",
+      }, "buyer-2"),
+      /permission-denied/,
+  );
+});
+
+test("assertReviewableReservation rejects non-completed reservations", () => {
+  assert.throws(
+      () => assertReviewableReservation({
+        buyerId: "buyer-1",
+        status: "reserved",
+      }, "buyer-1"),
+      /invalid-status/,
+  );
+});
+
+test("assertReviewableReservation rejects already reviewed reservations", () => {
+  assert.throws(
+      () => assertReviewableReservation({
+        buyerId: "buyer-1",
+        reviewSubmittedAt: new Date(),
+        status: "completed",
+      }, "buyer-1"),
+      /already-reviewed/,
+  );
+});
+
+test("assertReviewableReservation accepts completed unreviewed reservations for the buyer", () => {
+  assert.doesNotThrow(() => assertReviewableReservation({
+    buyerId: "buyer-1",
+    reviewSubmittedAt: null,
+    status: "completed",
+  }, "buyer-1"));
 });
 
 test("assertExpirableReservation rejects non-expired reservations", () => {

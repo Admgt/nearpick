@@ -107,6 +107,10 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
           isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo),
         )
         .snapshots();
+    final merchantStatsStream = FirebaseFirestore.instance
+        .collection('merchantStats')
+        .doc(user.uid)
+        .snapshots();
 
     return Scaffold(
       appBar: AppBar(
@@ -204,6 +208,52 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                        stream: merchantStatsStream,
+                        builder: (context, statsSnap) {
+                          final stats =
+                              statsSnap.data?.data() ??
+                              const <String, dynamic>{};
+                          final averageRating =
+                              (stats['averageRating'] as num?)?.toDouble() ?? 0;
+                          final reviewCount = stats['reviewCount'] as int? ?? 0;
+
+                          return SurfaceCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Vasarloi visszajelzesek',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  children: [
+                                    InfoBadge(
+                                      icon: Icons.star_rounded,
+                                      label: 'Atlag rating',
+                                      value: reviewCount == 0
+                                          ? '-'
+                                          : averageRating.toStringAsFixed(1),
+                                      tint: Colors.amber.shade700,
+                                    ),
+                                    InfoBadge(
+                                      icon: Icons.reviews_outlined,
+                                      label: 'Review darab',
+                                      value: reviewCount.toString(),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 16),
                       GridView.count(

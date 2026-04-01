@@ -141,7 +141,14 @@ service cloud.firestore {
     }
 
     match /merchantStats/{merchantId} {
-      allow read: if isSignedIn() && request.auth.uid == merchantId;
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if isSignedIn()
+        && (resource.data.buyerId == request.auth.uid
+          || resource.data.merchantId == request.auth.uid);
       allow create, update, delete: if false;
     }
 

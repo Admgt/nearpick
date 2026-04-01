@@ -8,10 +8,10 @@ const rules = fs.readFileSync(
     "utf8",
 );
 
-test("merchantStats client writes remain denied", () => {
+test("merchantStats remain readable for signed-in clients while writes stay denied", () => {
   assert.match(
       rules,
-      /match \/merchantStats\/\{merchantId\} \{[\s\S]*allow create, update, delete: if false;/,
+      /match \/merchantStats\/\{merchantId\} \{[\s\S]*allow read: if isSignedIn\(\);[\s\S]*allow create, update, delete: if false;/,
   );
 });
 
@@ -19,6 +19,13 @@ test("reservation client updates remain denied", () => {
   assert.match(
       rules,
       /match \/reservations\/\{reservationId\} \{[\s\S]*allow update: if false;[\s\S]*allow delete: if false;/,
+  );
+});
+
+test("review client writes remain denied", () => {
+  assert.match(
+      rules,
+      /match \/reviews\/\{reviewId\} \{[\s\S]*allow create, update, delete: if false;/,
   );
 });
 

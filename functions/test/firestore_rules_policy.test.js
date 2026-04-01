@@ -75,7 +75,12 @@ function canReadReservation({auth, reservation}) {
 }
 
 function canReadMerchantStats({auth, merchantId}) {
-  return auth != null && auth.uid === merchantId;
+  return auth != null;
+}
+
+function canReadReview({auth, review}) {
+  return auth != null &&
+    (review.buyerId === auth.uid || review.merchantId === auth.uid);
 }
 
 function canWriteUserDoc({auth, userId}) {
@@ -156,14 +161,38 @@ test("reservation olvasás tiltott idegen felhasználónak", () => {
   }), false);
 });
 
-test("merchantStats olvasás csak saját kereskedőnek engedett", () => {
+test("merchantStats olvasás bármely bejelentkezett felhasználónak engedett", () => {
   assert.equal(canReadMerchantStats({
     auth: createAuth("merchant-1"),
     merchantId: "merchant-1",
   }), true);
   assert.equal(canReadMerchantStats({
-    auth: createAuth("merchant-2"),
+    auth: createAuth("consumer-1"),
     merchantId: "merchant-1",
+  }), true);
+  assert.equal(canReadMerchantStats({
+    auth: null,
+    merchantId: "merchant-1",
+  }), false);
+});
+
+test("review olvasás csak az érintett buyer vagy merchant számára engedett", () => {
+  const review = {
+    buyerId: "buyer-1",
+    merchantId: "merchant-1",
+  };
+
+  assert.equal(canReadReview({
+    auth: createAuth("buyer-1"),
+    review,
+  }), true);
+  assert.equal(canReadReview({
+    auth: createAuth("merchant-1"),
+    review,
+  }), true);
+  assert.equal(canReadReview({
+    auth: createAuth("consumer-2"),
+    review,
   }), false);
 });
 
