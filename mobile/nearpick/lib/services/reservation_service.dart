@@ -57,7 +57,12 @@ class ReservationService {
     }
   }
 
-  Future<void> cancelReservation({required String reservationId}) async {
+  Future<void> cancelReservation({
+    required String reservationId,
+    required String reasonCode,
+    String reasonNote = '',
+    bool refundRequested = false,
+  }) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw Exception('Nincs bejelentkezett felhasznalo.');
@@ -65,9 +70,34 @@ class ReservationService {
 
     try {
       final callable = _functions.httpsCallable('cancelReservation');
-      await callable.call(<String, dynamic>{'reservationId': reservationId});
+      await callable.call(<String, dynamic>{
+        'reservationId': reservationId,
+        'reasonCode': reasonCode,
+        'reasonNote': reasonNote,
+        'refundRequested': refundRequested,
+      });
     } on FirebaseFunctionsException catch (e) {
       throw Exception(e.message ?? 'A foglalas nem mondhato le.');
+    }
+  }
+
+  Future<void> updateRefundStatus({
+    required String reservationId,
+    required String refundStatus,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Nincs bejelentkezett felhasznalo.');
+    }
+
+    try {
+      final callable = _functions.httpsCallable('updateRefundStatus');
+      await callable.call(<String, dynamic>{
+        'reservationId': reservationId,
+        'refundStatus': refundStatus,
+      });
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'A refund statusz nem modosithato.');
     }
   }
 

@@ -142,7 +142,7 @@ void main() {
   );
 
   test(
-    'ReservationWorkflow.cancelReservation restores stock for the buyer',
+    'ReservationWorkflow.cancelReservation stores cancellation metadata and restores stock for the buyer',
     () async {
       final session = FakeReservationSessionGateway()
         ..currentUserId = 'buyer-1';
@@ -188,12 +188,18 @@ void main() {
         now: () => DateTime(2026, 3, 6, 12),
       );
 
-      await workflow.cancelReservation(reservationId: 'reservation-1');
-
-      expect(
-        reservationStore.reservations['reservation-1']?.status,
-        'cancelled',
+      await workflow.cancelReservation(
+        reservationId: 'reservation-1',
+        reasonCode: 'pickup_time_issue',
+        reasonNote: 'Nem erem oda zaras elott.',
+        refundRequested: true,
       );
+
+      final cancelled = reservationStore.reservations['reservation-1'];
+      expect(cancelled?.status, 'cancelled');
+      expect(cancelled?.cancelReasonCode, 'pickup_time_issue');
+      expect(cancelled?.cancelReasonNote, 'Nem erem oda zaras elott.');
+      expect(cancelled?.refundStatus, 'pending');
       expect(productGateway.products['product-1']?.quantityAvailable, 1);
       expect(productGateway.products['product-1']?.status, 'active');
     },

@@ -6,6 +6,7 @@ const {
   assertCancelableReservation,
   assertCompletableReservation,
   assertExpirableReservation,
+  assertRefundManageableReservation,
   assertRepriceableProduct,
   assertReservableProduct,
   buildPickupToken,
@@ -168,6 +169,23 @@ test("assertCancelableReservation rejects expired reservations", () => {
       }, "buyer-1"),
       /expired-reservation/,
   );
+});
+
+test("assertRefundManageableReservation rejects non-cancelled reservations", () => {
+  assert.throws(
+      () => assertRefundManageableReservation({
+        merchantId: "merchant-1",
+        status: "reserved",
+      }, "merchant-1", "pending"),
+      /invalid-status/,
+  );
+});
+
+test("assertRefundManageableReservation accepts cancelled reservations for the owner", () => {
+  assert.doesNotThrow(() => assertRefundManageableReservation({
+    merchantId: "merchant-1",
+    status: "cancelled",
+  }, "merchant-1", "approved"));
 });
 
 test("assertExpirableReservation rejects non-expired reservations", () => {

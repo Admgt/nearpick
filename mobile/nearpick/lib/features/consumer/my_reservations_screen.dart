@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../reservation/reservation_support.dart';
 import '../../models/reservation.dart';
 import '../../ui/app_chrome.dart';
 import 'reservation_detail_screen.dart';
@@ -98,6 +99,10 @@ class MyReservationsScreen extends StatelessWidget {
                       Text(
                         'Status: ${_reservationStatusLabel(reservation, isPastExpiry: isPastExpiry)}',
                       ),
+                      if (reservation.isCancelled)
+                        Text(
+                          'Refund: ${refundStatusLabel(reservation.refundStatus)}',
+                        ),
                     ],
                   ),
                   trailing: Column(

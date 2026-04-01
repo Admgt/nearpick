@@ -137,6 +137,24 @@ function assertCancelableReservation(reservation, callerUid) {
   }
 }
 
+function assertRefundManageableReservation(reservation, callerUid, refundStatus) {
+  if (!reservation) {
+    throw new Error("not-found");
+  }
+
+  if (!callerUid || reservation.merchantId !== callerUid) {
+    throw new Error("permission-denied");
+  }
+
+  if (reservation.status !== "cancelled") {
+    throw new Error("invalid-status");
+  }
+
+  if (typeof refundStatus !== "string" || refundStatus.trim().length === 0) {
+    throw new Error("invalid-refund-status");
+  }
+}
+
 function assertExpirableReservation(reservation) {
   if (!reservation) {
     throw new Error("not-found");
@@ -211,6 +229,7 @@ module.exports = {
   assertCancelableReservation,
   assertCompletableReservation,
   assertExpirableReservation,
+  assertRefundManageableReservation,
   assertRepriceableProduct,
   assertReservableProduct,
   buildPickupToken,

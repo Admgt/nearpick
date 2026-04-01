@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/error/app_error_message.dart';
+import '../reservation/reservation_support.dart';
 import '../../core/reservation/pickup_token.dart';
 import '../../models/reservation.dart';
 import '../../services/reservation_service.dart';
@@ -211,6 +212,9 @@ class _MerchantReservationsScreenState
                     reservation.isReserved;
                 final isReserved =
                     reservation.status == 'reserved' && !isPastExpiry;
+                final refundText = reservation.isCancelled
+                    ? 'Refund: ${refundStatusLabel(reservation.refundStatus)}'
+                    : null;
                 String expiresText = 'Ismeretlen lejarat';
                 if (expiresAt != null) {
                   expiresText =
@@ -247,6 +251,11 @@ class _MerchantReservationsScreenState
                       Text(
                         'Status: ${_merchantReservationStatusLabel(reservation, isPastExpiry: isPastExpiry)}',
                       ),
+                      if (reservation.isCancelled)
+                        Text(
+                          'Ok: ${cancellationReasonLabel(reservation.cancelReasonCode)}',
+                        ),
+                      if (refundText != null) Text(refundText),
                     ],
                   ),
                   trailing: isReserved

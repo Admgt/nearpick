@@ -5,9 +5,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/error/app_error_message.dart';
+import '../../services/merchant_report_service.dart';
 import '../../services/product_service.dart';
-import 'dashboard_metrics.dart';
 import 'dynamic_pricing.dart';
+import 'dashboard_metrics.dart';
 import '../../ui/app_chrome.dart';
 
 class MerchantDashboardScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class MerchantDashboardScreen extends StatefulWidget {
 
 class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
   final Set<String> _repricingIds = {};
+  bool _exportingCsv = false;
 
   Future<void> _applyRecommendedPrice({
     required BuildContext context,
@@ -42,6 +44,39 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
     } finally {
       if (mounted) {
         setState(() => _repricingIds.remove(productId));
+      }
+    }
+  }
+
+  Future<void> _exportReservationsCsv({
+    required BuildContext context,
+    required String merchantId,
+  }) async {
+    setState(() => _exportingCsv = true);
+    try {
+      final result = await MerchantReportService().exportReservationsCsv(
+        merchantId: merchantId,
+      );
+      if (!context.mounted) return;
+      final message = switch (result) {
+        MerchantReportExportResult.downloaded =>
+          'A CSV riport letoltese elindult.',
+        MerchantReportExportResult.copiedToClipboard =>
+          'A CSV riport a vagolapra kerult.',
+        MerchantReportExportResult.empty =>
+          'Nincs exportalhato foglalasi adat.',
+      };
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(appErrorMessage(e))));
+    } finally {
+      if (mounted) {
+        setState(() => _exportingCsv = false);
       }
     }
   }
@@ -74,7 +109,27 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
         .snapshots();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        actions: [
+          TextButton.icon(
+            onPressed: _exportingCsv
+                ? null
+                : () => _exportReservationsCsv(
+                    context: context,
+                    merchantId: user.uid,
+                  ),
+            icon: _exportingCsv
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.download_outlined),
+            label: const Text('CSV export'),
+          ),
+        ],
+      ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: productsStream,
         builder: (context, productsSnap) {

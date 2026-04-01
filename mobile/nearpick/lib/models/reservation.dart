@@ -14,6 +14,14 @@ class Reservation {
   final DateTime? expiredAt;
   final String pickupCode;
   final String pickupToken;
+  final String? cancelReasonCode;
+  final String cancelReasonNote;
+  final String? cancelledBy;
+  final String refundStatus;
+  final DateTime? refundRequestedAt;
+  final DateTime? refundReviewedAt;
+  final DateTime? refundCompletedAt;
+  final String? refundReviewedBy;
   final Map<String, dynamic> productSnapshot;
 
   const Reservation({
@@ -30,6 +38,14 @@ class Reservation {
     required this.expiredAt,
     required this.pickupCode,
     required this.pickupToken,
+    required this.cancelReasonCode,
+    required this.cancelReasonNote,
+    required this.cancelledBy,
+    required this.refundStatus,
+    required this.refundRequestedAt,
+    required this.refundReviewedAt,
+    required this.refundCompletedAt,
+    required this.refundReviewedBy,
     required this.productSnapshot,
   });
 
@@ -54,6 +70,14 @@ class Reservation {
       expiredAt: asDate(data['expiredAt']),
       pickupCode: data['pickupCode'] as String? ?? '',
       pickupToken: data['pickupToken'] as String? ?? '',
+      cancelReasonCode: data['cancelReasonCode'] as String?,
+      cancelReasonNote: data['cancelReasonNote'] as String? ?? '',
+      cancelledBy: data['cancelledBy'] as String?,
+      refundStatus: data['refundStatus'] as String? ?? 'not_requested',
+      refundRequestedAt: asDate(data['refundRequestedAt']),
+      refundReviewedAt: asDate(data['refundReviewedAt']),
+      refundCompletedAt: asDate(data['refundCompletedAt']),
+      refundReviewedBy: data['refundReviewedBy'] as String?,
       productSnapshot: Map<String, dynamic>.from(
         data['productSnapshot'] as Map? ?? {},
       ),
@@ -72,4 +96,7 @@ class Reservation {
   bool get isCancelled => status == 'cancelled';
 
   bool get isExpired => status == 'expired';
+
+  bool get hasRefundRequest =>
+      refundStatus != 'not_requested' && refundStatus != 'not_required';
 }

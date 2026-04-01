@@ -7,6 +7,7 @@ const {
   assertCancelableReservation,
   assertCompletableReservation,
   assertExpirableReservation,
+  assertRefundManageableReservation,
   assertRepriceableProduct,
   assertReservableProduct,
   buildPickupToken,
@@ -20,8 +21,39 @@ const {
   logInfo,
   logWarn,
 } = require("./observability");
+const {resolveNotificationSegment} = require("./notification_segments");
 
 admin.initializeApp();
+
+const VALID_CANCELLATION_REASON_CODES = new Set([
+  "changed_mind",
+  "pickup_time_issue",
+  "found_other_offer",
+  "ordered_by_mistake",
+  "other",
+]);
+
+const VALID_REFUND_STATUSES = new Set([
+  "not_requested",
+  "pending",
+  "approved",
+  "rejected",
+  "completed",
+  "not_required",
+]);
+
+function normalizeOptionalText(value, {maxLength = 250} = {}) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  return trimmed.slice(0, maxLength);
+}
 
 function asHttpsError(error, contextId) {
   const details = {contextId};
@@ -84,6 +116,18 @@ function asHttpsError(error, contextId) {
           "Ehhez a termekhez nincs alkalmazhato arazasi javaslat.",
           details,
       );
+    case "invalid-cancel-reason":
+      return new HttpsError(
+          "invalid-argument",
+          "Ervenytelen lemondasi ok.",
+          details,
+      );
+    case "invalid-refund-status":
+      return new HttpsError(
+          "invalid-argument",
+          "Ervenytelen refund statusz.",
+          details,
+      );
     default:
       return new HttpsError("internal", "Varatlan szerverhiba.", details);
   }
@@ -107,18 +151,17 @@ async function expireDueReservations({limit = 50, contextId}) {
   for (const doc of query.docs) {
     try {
       await db.runTransaction(async (tx) => {
-        const reservationRef = doc.ref;
-        const reservationSnap = await tx.get(reservationRef);
-        const reservation = reservationSnap.data();
-        assertExpirableReservation({...reservation, id: reservationRef.id});
-
-        tx.update(reservationRef, {
-          status: "expired",
-          expiredAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+      const reservationRef = doc.ref;
+      const reservationSnap = await tx.get(reservationRef);
+      const reservation = reservationSnap.data();
+      assertExpirableReservation({...reservation, id: reservationRef.id});
 
         const productId = reservation.productId;
         if (typeof productId !== "string" || productId.trim().length === 0) {
+          tx.update(reservationRef, {
+            status: "expired",
+            expiredAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
           return;
         }
 
@@ -126,6 +169,10 @@ async function expireDueReservations({limit = 50, contextId}) {
         const productSnap = await tx.get(productRef);
         const product = productSnap.data();
         if (!product || product.isDeleted === true) {
+          tx.update(reservationRef, {
+            status: "expired",
+            expiredAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
           return;
         }
 
@@ -148,6 +195,10 @@ async function expireDueReservations({limit = 50, contextId}) {
           quantity: newAvailable,
           quantityAvailable: newAvailable,
           status: nextStatus,
+        });
+        tx.update(reservationRef, {
+          status: "expired",
+          expiredAt: admin.firestore.FieldValue.serverTimestamp(),
         });
       });
       expiredCount += 1;
@@ -258,6 +309,9 @@ exports.reserveProduct = onCall(async (request) => {
       tx.update(productRef, productUpdates);
       tx.set(reservationRef, {
         buyerId,
+        cancelReasonCode: null,
+        cancelReasonNote: "",
+        cancelledBy: null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         expiresAt,
         merchantId: ownerId,
@@ -266,6 +320,11 @@ exports.reserveProduct = onCall(async (request) => {
         productId: trimmedProductId,
         productSnapshot,
         qty: 1,
+        refundCompletedAt: null,
+        refundRequestedAt: null,
+        refundReviewedAt: null,
+        refundReviewedBy: null,
+        refundStatus: "not_requested",
         status: "reserved",
       });
 
@@ -384,11 +443,18 @@ exports.cancelReservation = onCall(async (request) => {
   }
 
   const reservationId = request.data?.reservationId;
+  const reasonCode = request.data?.reasonCode;
+  const reasonNote = normalizeOptionalText(request.data?.reasonNote);
+  const refundRequested = request.data?.refundRequested === true;
   if (typeof reservationId !== "string" || reservationId.trim().length === 0) {
     logWarn("reservation.cancel.invalid_argument", {contextId});
     throw new HttpsError("invalid-argument", "Ervenytelen reservationId.", {
       contextId,
     });
+  }
+  if (!VALID_CANCELLATION_REASON_CODES.has(reasonCode)) {
+    logWarn("reservation.cancel.invalid_reason", {contextId});
+    throw asHttpsError(new Error("invalid-cancel-reason"), contextId);
   }
 
   const db = admin.firestore();
@@ -402,13 +468,22 @@ exports.cancelReservation = onCall(async (request) => {
 
       assertCancelableReservation(reservation, buyerId);
 
-      tx.update(reservationRef, {
-        cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
-        status: "cancelled",
-      });
-
       const productId = reservation.productId;
       if (typeof productId !== "string" || productId.trim().length === 0) {
+        tx.update(reservationRef, {
+          cancelReasonCode: reasonCode,
+          cancelReasonNote: reasonNote,
+          cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+          cancelledBy: "buyer",
+          refundCompletedAt: null,
+          refundRequestedAt: refundRequested ?
+            admin.firestore.FieldValue.serverTimestamp() :
+            null,
+          refundReviewedAt: null,
+          refundReviewedBy: null,
+          refundStatus: refundRequested ? "pending" : "not_requested",
+          status: "cancelled",
+        });
         return;
       }
 
@@ -416,6 +491,20 @@ exports.cancelReservation = onCall(async (request) => {
       const productSnap = await tx.get(productRef);
       const product = productSnap.data();
       if (!product || product.isDeleted === true) {
+        tx.update(reservationRef, {
+          cancelReasonCode: reasonCode,
+          cancelReasonNote: reasonNote,
+          cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+          cancelledBy: "buyer",
+          refundCompletedAt: null,
+          refundRequestedAt: refundRequested ?
+            admin.firestore.FieldValue.serverTimestamp() :
+            null,
+          refundReviewedAt: null,
+          refundReviewedBy: null,
+          refundStatus: refundRequested ? "pending" : "not_requested",
+          status: "cancelled",
+        });
         return;
       }
 
@@ -439,6 +528,20 @@ exports.cancelReservation = onCall(async (request) => {
         quantityAvailable: newAvailable,
         status: nextStatus,
       });
+      tx.update(reservationRef, {
+        cancelReasonCode: reasonCode,
+        cancelReasonNote: reasonNote,
+        cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+        cancelledBy: "buyer",
+        refundCompletedAt: null,
+        refundRequestedAt: refundRequested ?
+          admin.firestore.FieldValue.serverTimestamp() :
+          null,
+        refundReviewedAt: null,
+        refundReviewedBy: null,
+        refundStatus: refundRequested ? "pending" : "not_requested",
+        status: "cancelled",
+      });
     });
   } catch (error) {
     logError("reservation.cancel.failed", {
@@ -457,6 +560,79 @@ exports.cancelReservation = onCall(async (request) => {
   return {
     cancelled: true,
     contextId,
+  };
+});
+
+exports.updateRefundStatus = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("reservation.refund_update.started", {contextId});
+
+  if (!request.auth) {
+    logWarn("reservation.refund_update.unauthenticated", {contextId});
+    throw new HttpsError("unauthenticated", "Bejelentkezes szukseges.", {
+      contextId,
+    });
+  }
+
+  const reservationId = request.data?.reservationId;
+  const refundStatus = normalizeOptionalText(request.data?.refundStatus, {
+    maxLength: 32,
+  });
+  if (typeof reservationId !== "string" || reservationId.trim().length === 0) {
+    logWarn("reservation.refund_update.invalid_argument", {contextId});
+    throw new HttpsError("invalid-argument", "Ervenytelen reservationId.", {
+      contextId,
+    });
+  }
+  if (!VALID_REFUND_STATUSES.has(refundStatus)) {
+    logWarn("reservation.refund_update.invalid_status", {contextId});
+    throw asHttpsError(new Error("invalid-refund-status"), contextId);
+  }
+
+  const db = admin.firestore();
+  const merchantId = request.auth.uid;
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const reservationRef = db.collection("reservations").doc(reservationId.trim());
+      const reservationSnap = await tx.get(reservationRef);
+      const reservation = reservationSnap.data();
+
+      assertRefundManageableReservation(
+          reservation,
+          merchantId,
+          refundStatus,
+      );
+
+      tx.update(reservationRef, {
+        refundCompletedAt: refundStatus === "completed" ?
+          admin.firestore.FieldValue.serverTimestamp() :
+          null,
+        refundReviewedAt: admin.firestore.FieldValue.serverTimestamp(),
+        refundReviewedBy: merchantId,
+        refundStatus,
+      });
+    });
+  } catch (error) {
+    logError("reservation.refund_update.failed", {
+      contextId,
+      reservationId: reservationId.trim(),
+      refundStatus,
+      userId: merchantId,
+    }, error);
+    throw asHttpsError(error, contextId);
+  }
+
+  logInfo("reservation.refund_update.completed", {
+    contextId,
+    reservationId: reservationId.trim(),
+    refundStatus,
+    userId: merchantId,
+  });
+  return {
+    contextId,
+    refundStatus,
+    updated: true,
   };
 });
 
@@ -620,7 +796,6 @@ exports.notifyOnNewProduct = onDocumentCreated(
           .firestore()
           .collection("users")
           .where("role", "==", "consumer")
-          .where("favoriteCategories", "array-contains", category)
           .get();
 
       if (usersSnap.empty) {
@@ -633,25 +808,50 @@ exports.notifyOnNewProduct = onDocumentCreated(
         return;
       }
 
-      const tokens = [];
+      const tokensBySegment = new Map();
+      const segmentCounts = {};
       for (const userDoc of usersSnap.docs) {
         const uid = userDoc.id;
         if (uid === ownerId) continue;
 
-        const tokenSnap = await admin
-            .firestore()
-            .collection("users")
-            .doc(uid)
-            .collection("fcmTokens")
-            .get();
+        const [implicitPrefsSnap, negativePrefsSnap, tokenSnap] = await Promise.all([
+          admin.firestore().collection("userImplicitPrefs").doc(uid).get(),
+          admin.firestore().collection("userNegativePrefs").doc(uid).get(),
+          admin
+              .firestore()
+              .collection("users")
+              .doc(uid)
+              .collection("fcmTokens")
+              .get(),
+        ]);
 
+        const audience = resolveNotificationSegment({
+          category,
+          implicitPrefs: implicitPrefsSnap.data(),
+          negativePrefs: negativePrefsSnap.data(),
+          now: new Date(),
+          userProfile: userDoc.data(),
+        });
+        if (!audience.eligible || !audience.segment) {
+          continue;
+        }
+
+        segmentCounts[audience.segment] =
+          (segmentCounts[audience.segment] ?? 0) + 1;
+        const tokens = tokensBySegment.get(audience.segment) ?? [];
         tokenSnap.forEach((t) => {
           const token = t.data().token;
           if (token) tokens.push(token);
         });
+        if (tokens.length > 0) {
+          tokensBySegment.set(audience.segment, tokens);
+        }
       }
 
-      if (tokens.length === 0) {
+      const tokenCount = Array.from(tokensBySegment.values())
+          .reduce((sum, chunk) => sum + chunk.length, 0);
+
+      if (tokenCount === 0) {
         logInfo("notification.product_created.no_tokens", {
           category,
           contextId,
@@ -674,22 +874,29 @@ exports.notifyOnNewProduct = onDocumentCreated(
       };
 
       const chunkSize = 500;
-      for (let i = 0; i < tokens.length; i += chunkSize) {
-        const chunk = tokens.slice(i, i + chunkSize);
-        const res = await admin.messaging().sendEachForMulticast({
-          ...messageBase,
-          tokens: chunk,
-        });
+      for (const [segment, tokens] of tokensBySegment.entries()) {
+        for (let i = 0; i < tokens.length; i += chunkSize) {
+          const chunk = tokens.slice(i, i + chunkSize);
+          const res = await admin.messaging().sendEachForMulticast({
+            ...messageBase,
+            data: {
+              ...messageBase.data,
+              segment,
+            },
+            tokens: chunk,
+          });
 
-        const failed = res.responses.filter((r) => !r.success).length;
-        logInfo("notification.product_created.chunk_sent", {
-          category,
-          chunkSize: chunk.length,
-          contextId,
-          failedCount: failed,
-          ownerId,
-          productId,
-        });
+          const failed = res.responses.filter((r) => !r.success).length;
+          logInfo("notification.product_created.chunk_sent", {
+            category,
+            chunkSize: chunk.length,
+            contextId,
+            failedCount: failed,
+            ownerId,
+            productId,
+            segment,
+          });
+        }
       }
 
       logInfo("notification.product_created.completed", {
@@ -697,7 +904,8 @@ exports.notifyOnNewProduct = onDocumentCreated(
         contextId,
         ownerId,
         productId,
-        tokenCount: tokens.length,
+        segmentCounts,
+        tokenCount,
       });
     },
 );

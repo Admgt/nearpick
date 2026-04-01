@@ -65,6 +65,13 @@ class ReservationRecord {
   final DateTime? expiredAt;
   final String pickupCode;
   final String pickupToken;
+  final String? cancelReasonCode;
+  final String cancelReasonNote;
+  final String? cancelledBy;
+  final String refundStatus;
+  final DateTime? refundRequestedAt;
+  final DateTime? refundReviewedAt;
+  final DateTime? refundCompletedAt;
   final Map<String, dynamic> productSnapshot;
 
   const ReservationRecord({
@@ -81,6 +88,13 @@ class ReservationRecord {
     required this.expiredAt,
     required this.pickupCode,
     required this.pickupToken,
+    this.cancelReasonCode,
+    this.cancelReasonNote = '',
+    this.cancelledBy,
+    this.refundStatus = 'not_requested',
+    this.refundRequestedAt,
+    this.refundReviewedAt,
+    this.refundCompletedAt,
     required this.productSnapshot,
   });
 
@@ -89,6 +103,13 @@ class ReservationRecord {
     DateTime? completedAt,
     DateTime? cancelledAt,
     DateTime? expiredAt,
+    String? cancelReasonCode,
+    String? cancelReasonNote,
+    String? cancelledBy,
+    String? refundStatus,
+    DateTime? refundRequestedAt,
+    DateTime? refundReviewedAt,
+    DateTime? refundCompletedAt,
   }) {
     return ReservationRecord(
       id: id,
@@ -104,6 +125,13 @@ class ReservationRecord {
       expiredAt: expiredAt ?? this.expiredAt,
       pickupCode: pickupCode,
       pickupToken: pickupToken,
+      cancelReasonCode: cancelReasonCode ?? this.cancelReasonCode,
+      cancelReasonNote: cancelReasonNote ?? this.cancelReasonNote,
+      cancelledBy: cancelledBy ?? this.cancelledBy,
+      refundStatus: refundStatus ?? this.refundStatus,
+      refundRequestedAt: refundRequestedAt ?? this.refundRequestedAt,
+      refundReviewedAt: refundReviewedAt ?? this.refundReviewedAt,
+      refundCompletedAt: refundCompletedAt ?? this.refundCompletedAt,
       productSnapshot: productSnapshot,
     );
   }
@@ -200,6 +228,13 @@ class ReservationWorkflow {
         expiredAt: null,
         pickupCode: pickupCode,
         pickupToken: 'NEARPICK:$reservationId:$pickupCode',
+        cancelReasonCode: null,
+        cancelReasonNote: '',
+        cancelledBy: null,
+        refundStatus: 'not_requested',
+        refundRequestedAt: null,
+        refundReviewedAt: null,
+        refundCompletedAt: null,
         productSnapshot: {
           'name': product.name,
           'discountedPrice': product.discountedPrice,
@@ -264,7 +299,12 @@ class ReservationWorkflow {
     await merchantStatsGateway.incrementCompleted(userId);
   }
 
-  Future<void> cancelReservation({required String reservationId}) async {
+  Future<void> cancelReservation({
+    required String reservationId,
+    String reasonCode = 'changed_mind',
+    String reasonNote = '',
+    bool refundRequested = false,
+  }) async {
     final userId = sessionGateway.currentUserId;
     if (userId == null || userId.isEmpty) {
       throw Exception('Nincs bejelentkezett felhasznalo.');
@@ -294,7 +334,17 @@ class ReservationWorkflow {
     }
 
     await reservationStore.saveUpdatedReservation(
-      reservation.copyWith(status: 'cancelled', cancelledAt: now()),
+      reservation.copyWith(
+        status: 'cancelled',
+        cancelledAt: now(),
+        cancelReasonCode: reasonCode,
+        cancelReasonNote: reasonNote.trim(),
+        cancelledBy: 'buyer',
+        refundStatus: refundRequested ? 'pending' : 'not_requested',
+        refundRequestedAt: refundRequested ? now() : null,
+        refundReviewedAt: null,
+        refundCompletedAt: null,
+      ),
     );
   }
 }
