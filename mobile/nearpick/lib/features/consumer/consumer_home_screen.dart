@@ -9,10 +9,12 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../core/error/app_error_message.dart';
 import 'product_detail_screen.dart';
 import '../../recommendation/recommendation_engine.dart';
+import 'offer_map_view.dart';
 import 'offer_filter.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
+import '../../utils/date_time_formatters.dart';
 import '../../services/user_interaction_service.dart';
 import '../../widgets/storage_image.dart';
 import '../../services/negative_feedback_service.dart';
@@ -20,11 +22,18 @@ import '../../services/reservation_service.dart';
 import 'my_reservations_screen.dart';
 import 'reservation_detail_screen.dart';
 import 'favorites_screen.dart';
+import 'location_preferences.dart';
 import 'location_settings_screen.dart';
 import 'profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 //import 'package:firebase_auth/firebase_auth.dart';
 //import 'package:cloud_firestore/cloud_firestore.dart';
+
+DateTime? _asDate(dynamic value) {
+  if (value is Timestamp) return value.toDate();
+  if (value is DateTime) return value;
+  return null;
+}
 
 class ConsumerHomeScreen extends StatefulWidget {
   const ConsumerHomeScreen({super.key});
@@ -42,9 +51,11 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
 
   List<String> _favoriteCategories = [];
   GeoPoint? _userLocation;
+  double _preferredRadiusKm = LocationPreferences.defaultPreferredRadiusKm;
   final Set<String> _dismissedProductIds = {};
 
   String _selectedCategory = _allCategories.first;
+  _BrowseMode _browseMode = _BrowseMode.list;
   int _buildCounter = 0;
 
   @override
@@ -76,12 +87,14 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
     debugPrint(
       '[ConsumerHome] users/${user.uid} exists=${doc.exists} hasData=${doc.data() != null}',
     );
+    final locationPreferences = LocationPreferences.fromUserData(doc.data());
 
     setState(() {
       _favoriteCategories = List<String>.from(
         doc.data()?['favoriteCategories'] ?? [],
       );
-      _userLocation = doc.data()?['homeLocation'] as GeoPoint?;
+      _userLocation = locationPreferences.homeLocation;
+      _preferredRadiusKm = locationPreferences.preferredRadiusKm;
     });
   }
 
@@ -228,6 +241,271 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
     );
   }
 
+  void _openProductDetail({
+    required String productId,
+    required Map<String, dynamic> data,
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ProductDetailScreen(productId: productId, data: data),
+      ),
+    );
+  }
+
+  void _showReasonsDialog(RecommendationResult result) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        final scorePercent = (result.score * 100)
+            .clamp(0, 100)
+            .toStringAsFixed(0);
+        final reasons = result.reasons;
+        final maxHeight = MediaQuery.of(context).size.height * 0.6;
+        return AlertDialog(
+          title: const Text('Miert ajanlott?'),
+          content: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Pontszam: $scorePercent%'),
+                  const SizedBox(height: 8),
+                  if (reasons.isEmpty)
+                    const Text('Nincs elerheto indok.')
+                  else
+                    ...reasons.map(
+                      (reason) => ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(reason.label),
+                        subtitle:
+                            reason.detail == null || reason.detail!.isEmpty
+                            ? null
+                            : Text(reason.detail!),
+                        trailing: Text(
+                          '${(reason.contribution * 100).toStringAsFixed(0)}%',
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Bezar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildBrowseSummary(List<RecommendationResult> scored) {
+    final withLocationCount = scored
+        .where((offer) => offer.distanceKm != null)
+        .length;
+    final withinRadiusCount = scored
+        .where((offer) => offer.isWithinPreferredRadius)
+        .length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            InfoBadge(
+              icon: Icons.inventory_2_outlined,
+              label: 'Ajanlat',
+              value: '${scored.length} db',
+            ),
+            InfoBadge(
+              icon: Icons.route_outlined,
+              label: 'Sugar',
+              value: LocationPreferences.radiusLabel(_preferredRadiusKm),
+            ),
+            InfoBadge(
+              icon: Icons.place_outlined,
+              label: 'Pozicio',
+              value: _userLocation == null ? 'nincs beallitva' : 'elerheto',
+            ),
+            InfoBadge(
+              icon: Icons.near_me_outlined,
+              label: 'Sugarban',
+              value: '$withinRadiusCount / $withLocationCount',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOfferList(
+    List<RecommendationResult> scored,
+    Set<String> interestedProductIds,
+  ) {
+    return ListView.separated(
+      itemCount: scored.length,
+      separatorBuilder: (_, __) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final result = scored[index];
+        final docId = result.productId;
+        final data = result.product;
+        final imagePath = data['imagePath'] as String?;
+        final hasImage = data['hasImage'] == true;
+        final name = data['name'] as String? ?? 'Nevtelen termek';
+        final category = data['category'] as String? ?? 'Ismeretlen kategoria';
+        final discounted = data['discountedPrice'] as int? ?? 0;
+        final original = data['originalPrice'] as int? ?? 0;
+        final quantityAvailable =
+            data['quantityAvailable'] as int? ?? data['quantity'] as int? ?? 0;
+        final expiresAt = (data['expiresAt'] as Timestamp?)?.toDate();
+        final pickupStartAt = _asDate(data['pickupStartAt']);
+        final pickupEndAt = _asDate(data['pickupEndAt']);
+        final pickupWindowText = pickupStartAt != null && pickupEndAt != null
+            ? formatPickupWindow(
+                pickupStartAt: pickupStartAt,
+                pickupEndAt: pickupEndAt,
+              )
+            : null;
+        final isInterested = interestedProductIds.contains(docId);
+
+        String expiresText = 'Ismeretlen lejarat';
+        if (expiresAt != null) {
+          final now = DateTime.now();
+          final diff = expiresAt.difference(now);
+          if (diff.inMinutes <= 0) {
+            expiresText = 'Hamarosan lejar';
+          } else if (diff.inHours < 1) {
+            expiresText = 'Lejar ${diff.inMinutes} percen belul';
+          } else if (diff.inHours < 24) {
+            expiresText = 'Lejar ${diff.inHours} oran belul';
+          } else {
+            expiresText =
+                'Lejar: ${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')}';
+          }
+        }
+
+        final chips = <Widget>[
+          if (result.distanceKm != null)
+            Chip(
+              label: Text(
+                result.isWithinPreferredRadius
+                    ? '${distanceLabelKm(result.distanceKm!)} | sugarban'
+                    : distanceLabelKm(result.distanceKm!),
+                style: const TextStyle(fontSize: 12),
+              ),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ...result.reasons
+              .take(2)
+              .map(
+                (reason) => Chip(
+                  label: Text(
+                    reason.label,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+        ];
+
+        return ListTile(
+          leading: _buildThumbnail(imagePath: imagePath, hasImage: hasImage),
+          title: Row(
+            children: [
+              Expanded(child: Text(name)),
+              if (isInterested) const Icon(Icons.favorite, size: 18),
+              IconButton(
+                icon: const Icon(Icons.info_outline, size: 18),
+                tooltip: 'Miert ajanlott?',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () => _showReasonsDialog(result),
+              ),
+            ],
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                pickupWindowText == null
+                    ? '$category\n$expiresText - Elerheto: $quantityAvailable db'
+                    : '$category\n$expiresText - Elerheto: $quantityAvailable db\nAtvetel: $pickupWindowText',
+              ),
+              if (chips.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Wrap(spacing: 6, runSpacing: 6, children: chips),
+              ],
+            ],
+          ),
+          isThreeLine: true,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$discounted Ft',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  if (original > discounted)
+                    Text(
+                      '$original Ft',
+                      style: const TextStyle(
+                        decoration: TextDecoration.lineThrough,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 4),
+              ElevatedButton(
+                onPressed: quantityAvailable <= 0
+                    ? null
+                    : () => _reserveProduct(docId),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const TextStyle(fontSize: 12),
+                ),
+                child: const Text('Lefoglalom'),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.thumb_down_outlined, size: 18),
+                tooltip: 'Nem erdekel',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                visualDensity: VisualDensity.compact,
+                onPressed: () => _dismissCategoryForProduct(
+                  productId: docId,
+                  category: category,
+                  ownerId: data['ownerId'] as String?,
+                ),
+              ),
+            ],
+          ),
+          onTap: () => _openProductDetail(productId: docId, data: data),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     _buildCounter += 1;
@@ -293,11 +571,14 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   const Text('Kategória:'),
-                  const SizedBox(width: 12),
-                  Expanded(
+                  SizedBox(
+                    width: 280,
                     child: DropdownButton<String>(
                       value: _selectedCategory,
                       isExpanded: true,
@@ -314,6 +595,26 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                         }
                       },
                     ),
+                  ),
+                  SegmentedButton<_BrowseMode>(
+                    segments: const [
+                      ButtonSegment<_BrowseMode>(
+                        value: _BrowseMode.list,
+                        icon: Icon(Icons.view_list_outlined),
+                        label: Text('Lista'),
+                      ),
+                      ButtonSegment<_BrowseMode>(
+                        value: _BrowseMode.map,
+                        icon: Icon(Icons.map_outlined),
+                        label: Text('Terkep'),
+                      ),
+                    ],
+                    selected: {_browseMode},
+                    onSelectionChanged: (selection) {
+                      setState(() {
+                        _browseMode = selection.first;
+                      });
+                    },
                   ),
                 ],
               ),
@@ -472,6 +773,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                                       product: doc.data(),
                                       favoriteCategories: favSet,
                                       userLocation: _userLocation,
+                                      preferredRadiusKm: _preferredRadiusKm,
                                       implicitCategoryViews:
                                           implicitCategoryViews,
                                       implicitLastViewedAt:
@@ -507,254 +809,30 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                                 );
                               }
 
-                              return ListView.separated(
-                                itemCount: scored.length,
-                                separatorBuilder: (_, __) =>
-                                    const Divider(height: 1),
-                                itemBuilder: (context, index) {
-                                  final result = scored[index];
-                                  final docId = result.productId;
-                                  final data = result.product;
-                                  final imagePath =
-                                      data['imagePath'] as String?;
-                                  final hasImage = data['hasImage'] == true;
-                                  final name =
-                                      data['name'] as String? ??
-                                      'Nevtelen termek';
-                                  final category =
-                                      data['category'] as String? ??
-                                      'Ismeretlen kategoria';
-                                  final discounted =
-                                      data['discountedPrice'] as int? ?? 0;
-                                  final original =
-                                      data['originalPrice'] as int? ?? 0;
-                                  final quantityAvailable =
-                                      data['quantityAvailable'] as int? ??
-                                      data['quantity'] as int? ??
-                                      0;
-                                  final expiresAt =
-                                      (data['expiresAt'] as Timestamp?)
-                                          ?.toDate();
-                                  final isInterested = interestedProductIds
-                                      .contains(docId);
-
-                                  String expiresText = 'Ismeretlen lejarat';
-                                  if (expiresAt != null) {
-                                    final now = DateTime.now();
-                                    final diff = expiresAt.difference(now);
-                                    if (diff.inMinutes <= 0) {
-                                      expiresText = 'Hamarosan lejar';
-                                    } else if (diff.inHours < 1) {
-                                      expiresText =
-                                          'Lejar ${diff.inMinutes} percen belul';
-                                    } else if (diff.inHours < 24) {
-                                      expiresText =
-                                          'Lejar ${diff.inHours} oran belul';
-                                    } else {
-                                      expiresText =
-                                          'Lejar: ${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')}';
-                                    }
-                                  }
-
-                                  void showReasons() {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        final scorePercent =
-                                            (result.score * 100)
-                                                .clamp(0, 100)
-                                                .toStringAsFixed(0);
-                                        final reasons = result.reasons;
-                                        final maxHeight =
-                                            MediaQuery.of(context).size.height *
-                                            0.6;
-                                        return AlertDialog(
-                                          title: const Text('Miert ajanlott?'),
-                                          content: ConstrainedBox(
-                                            constraints: BoxConstraints(
-                                              maxHeight: maxHeight,
-                                            ),
-                                            child: SingleChildScrollView(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    'Pontszam: $scorePercent%',
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  if (reasons.isEmpty)
-                                                    const Text(
-                                                      'Nincs elerheto indok.',
-                                                    )
-                                                  else
-                                                    ...reasons.map(
-                                                      (r) => ListTile(
-                                                        dense: true,
-                                                        contentPadding:
-                                                            EdgeInsets.zero,
-                                                        title: Text(r.label),
-                                                        subtitle:
-                                                            (r.detail == null ||
-                                                                r
-                                                                    .detail!
-                                                                    .isEmpty)
-                                                            ? null
-                                                            : Text(r.detail!),
-                                                        trailing: Text(
-                                                          '${(r.contribution * 100).toStringAsFixed(0)}%',
-                                                        ),
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(context).pop(),
-                                              child: const Text('Bezar'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  }
-
-                                  return ListTile(
-                                    leading: _buildThumbnail(
-                                      imagePath: imagePath,
-                                      hasImage: hasImage,
-                                    ),
-                                    title: Row(
-                                      children: [
-                                        Expanded(child: Text(name)),
-                                        if (isInterested)
-                                          const Icon(Icons.favorite, size: 18),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.info_outline,
-                                            size: 18,
-                                          ),
-                                          tooltip: 'Miert ajanlott?',
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(),
-                                          onPressed: showReasons,
-                                        ),
-                                      ],
-                                    ),
-                                    subtitle: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '$category\n$expiresText - Elerheto: $quantityAvailable db',
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Wrap(
-                                          spacing: 6,
-                                          runSpacing: 6,
-                                          children: result.reasons
-                                              .take(2)
-                                              .map(
-                                                (r) => Chip(
-                                                  label: Text(
-                                                    r.label,
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                    ),
-                                                  ),
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                  materialTapTargetSize:
-                                                      MaterialTapTargetSize
-                                                          .shrinkWrap,
+                              return Column(
+                                children: [
+                                  _buildBrowseSummary(scored),
+                                  const Divider(height: 1),
+                                  Expanded(
+                                    child: _browseMode == _BrowseMode.map
+                                        ? OfferMapView(
+                                            offers: scored,
+                                            userLocation: _userLocation,
+                                            preferredRadiusKm:
+                                                _preferredRadiusKm,
+                                            onOpenProduct: (result) =>
+                                                _openProductDetail(
+                                                  productId: result.productId,
+                                                  data: result.product,
                                                 ),
-                                              )
-                                              .toList(),
-                                        ),
-                                      ],
-                                    ),
-                                    isThreeLine: true,
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
-                                          children: [
-                                            Text(
-                                              '$discounted Ft',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            if (original > discounted)
-                                              Text(
-                                                '$original Ft',
-                                                style: const TextStyle(
-                                                  decoration: TextDecoration
-                                                      .lineThrough,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                        const SizedBox(width: 4),
-                                        ElevatedButton(
-                                          onPressed: quantityAvailable <= 0
-                                              ? null
-                                              : () => _reserveProduct(docId),
-                                          style: ElevatedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            minimumSize: const Size(0, 0),
-                                            tapTargetSize: MaterialTapTargetSize
-                                                .shrinkWrap,
-                                            textStyle: const TextStyle(
-                                              fontSize: 12,
-                                            ),
+                                            onReserveProduct: _reserveProduct,
+                                          )
+                                        : _buildOfferList(
+                                            scored,
+                                            interestedProductIds,
                                           ),
-                                          child: const Text('Lefoglalom'),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.thumb_down_outlined,
-                                            size: 18,
-                                          ),
-                                          tooltip: 'Nem erdekel',
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(),
-                                          visualDensity: VisualDensity.compact,
-                                          onPressed: () =>
-                                              _dismissCategoryForProduct(
-                                                productId: docId,
-                                                category: category,
-                                                ownerId:
-                                                    data['ownerId'] as String?,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => ProductDetailScreen(
-                                            productId: docId,
-                                            data: data,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
+                                  ),
+                                ],
                               );
                             },
                           );
@@ -771,6 +849,8 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
     );
   }
 }
+
+enum _BrowseMode { list, map }
 
 const List<String> _allCategories = [
   'Összes kategória',

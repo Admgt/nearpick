@@ -21,6 +21,8 @@ class ProductService {
     required int discountedPrice,
     required int quantity,
     required DateTime expiresAt,
+    required DateTime pickupStartAt,
+    required DateTime pickupEndAt,
     GeoPoint? location,
   }) async {
     await createProductWithOptionalImage(
@@ -30,6 +32,8 @@ class ProductService {
       discountedPrice: discountedPrice,
       quantity: quantity,
       expiresAt: expiresAt,
+      pickupStartAt: pickupStartAt,
+      pickupEndAt: pickupEndAt,
       location: location,
       imageBytes: null,
     );
@@ -42,6 +46,8 @@ class ProductService {
     required int discountedPrice,
     required int quantity,
     required DateTime expiresAt,
+    required DateTime pickupStartAt,
+    required DateTime pickupEndAt,
     GeoPoint? location,
     Uint8List? imageBytes,
     DynamicPricingRecommendation? pricingRecommendation,
@@ -62,6 +68,8 @@ class ProductService {
       'quantity': quantity,
       'quantityAvailable': quantity,
       'expiresAt': Timestamp.fromDate(expiresAt),
+      'pickupStartAt': Timestamp.fromDate(pickupStartAt),
+      'pickupEndAt': Timestamp.fromDate(pickupEndAt),
       'createdAt': FieldValue.serverTimestamp(),
       'interestCount': 0,
       'status': 'active',

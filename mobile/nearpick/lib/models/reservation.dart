@@ -1,5 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+DateTime? _asDate(dynamic value) {
+  if (value is Timestamp) return value.toDate();
+  if (value is DateTime) return value;
+  return null;
+}
+
 class Reservation {
   final String id;
   final String productId;
@@ -52,12 +58,6 @@ class Reservation {
   });
 
   factory Reservation.fromMap(String id, Map<String, dynamic> data) {
-    DateTime? asDate(dynamic value) {
-      if (value is Timestamp) return value.toDate();
-      if (value is DateTime) return value;
-      return null;
-    }
-
     return Reservation(
       id: id,
       productId: data['productId'] as String? ?? '',
@@ -65,22 +65,22 @@ class Reservation {
       buyerId: data['buyerId'] as String? ?? '',
       qty: data['qty'] as int? ?? 1,
       status: data['status'] as String? ?? 'reserved',
-      createdAt: asDate(data['createdAt']),
-      expiresAt: asDate(data['expiresAt']),
-      completedAt: asDate(data['completedAt']),
-      cancelledAt: asDate(data['cancelledAt']),
-      expiredAt: asDate(data['expiredAt']),
+      createdAt: _asDate(data['createdAt']),
+      expiresAt: _asDate(data['expiresAt']),
+      completedAt: _asDate(data['completedAt']),
+      cancelledAt: _asDate(data['cancelledAt']),
+      expiredAt: _asDate(data['expiredAt']),
       pickupCode: data['pickupCode'] as String? ?? '',
       pickupToken: data['pickupToken'] as String? ?? '',
       cancelReasonCode: data['cancelReasonCode'] as String?,
       cancelReasonNote: data['cancelReasonNote'] as String? ?? '',
       cancelledBy: data['cancelledBy'] as String?,
       refundStatus: data['refundStatus'] as String? ?? 'not_requested',
-      refundRequestedAt: asDate(data['refundRequestedAt']),
-      refundReviewedAt: asDate(data['refundReviewedAt']),
-      refundCompletedAt: asDate(data['refundCompletedAt']),
+      refundRequestedAt: _asDate(data['refundRequestedAt']),
+      refundReviewedAt: _asDate(data['refundReviewedAt']),
+      refundCompletedAt: _asDate(data['refundCompletedAt']),
       refundReviewedBy: data['refundReviewedBy'] as String?,
-      reviewSubmittedAt: asDate(data['reviewSubmittedAt']),
+      reviewSubmittedAt: _asDate(data['reviewSubmittedAt']),
       productSnapshot: Map<String, dynamic>.from(
         data['productSnapshot'] as Map? ?? {},
       ),
@@ -104,4 +104,8 @@ class Reservation {
       refundStatus != 'not_requested' && refundStatus != 'not_required';
 
   bool get hasReview => reviewSubmittedAt != null;
+
+  DateTime? get pickupStartAt => _asDate(productSnapshot['pickupStartAt']);
+
+  DateTime? get pickupEndAt => _asDate(productSnapshot['pickupEndAt']);
 }

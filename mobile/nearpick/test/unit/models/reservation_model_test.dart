@@ -16,5 +16,7 @@ void main() {
     expect(reservation.reviewSubmittedAt, isNull);
     expect(reservation.hasReview, isFalse);
     expect(reservation.productSnapshot, isEmpty);
+    expect(reservation.pickupStartAt, isNull);
+    expect(reservation.pickupEndAt, isNull);
   });
 }

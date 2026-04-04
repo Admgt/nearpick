@@ -10,6 +10,8 @@ import '../reservation/reservation_support.dart';
 import '../../models/reservation.dart';
 import '../../services/reservation_service.dart';
 import '../../ui/app_chrome.dart';
+import '../../utils/date_time_formatters.dart';
+import '../../widgets/merchant_reviews_section.dart';
 
 class ReservationDetailScreen extends StatefulWidget {
   final String reservationId;
@@ -289,7 +291,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                 if (review.createdAt != null) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Bekuldve: ${_formatDateTime(review.createdAt!)}',
+                    'Bekuldve: ${formatDateTime(review.createdAt!)}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -356,6 +358,11 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
           final original = product['originalPrice'] as int? ?? 0;
           final category = product['category'] as String? ?? '';
           final expiresAt = reservation.expiresAt;
+          final reservedAt = reservation.createdAt;
+          final pickupWindowText = formatPickupWindow(
+            pickupStartAt: reservation.pickupStartAt,
+            pickupEndAt: reservation.pickupEndAt,
+          );
           final isPastExpiry =
               expiresAt != null &&
               !expiresAt.isAfter(DateTime.now()) &&
@@ -366,9 +373,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
           );
           String expiresText = 'Ismeretlen lejarat';
           if (expiresAt != null) {
-            expiresText =
-                '${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')} '
-                '${expiresAt.hour.toString().padLeft(2, '0')}:${expiresAt.minute.toString().padLeft(2, '0')}';
+            expiresText = formatDateTime(expiresAt);
           }
 
           return NearPickBackground(
@@ -402,6 +407,12 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                     if (category.isNotEmpty) Text('Kategoria: $category'),
                     const SizedBox(height: 8),
                     Text('Lejar: $expiresText'),
+                    if (reservedAt != null) ...[
+                      const SizedBox(height: 8),
+                      Text('Foglalva: ${formatDateTime(reservedAt)}'),
+                    ],
+                    const SizedBox(height: 8),
+                    Text('Atvetel: $pickupWindowText'),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -467,6 +478,11 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                           Text(
                             'Status: ${_reservationStatusLabel(reservation, isPastExpiry: isPastExpiry)}',
                           ),
+                          if (reservedAt != null)
+                            Text(
+                              'Foglalas ideje: ${formatDateTime(reservedAt)}',
+                            ),
+                          Text('Atveteli idosav: $pickupWindowText'),
                           if (reservation.isReserved && expiresAt != null)
                             Text('Atvetel vege: $expiresText'),
                           if (reservation.isCancelled) ...[
@@ -507,6 +523,14 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                     if (reservation.isCompleted || reservation.hasReview) ...[
                       const SizedBox(height: 16),
                       _buildReviewSection(reservation),
+                      const SizedBox(height: 16),
+                      MerchantReviewsSection(
+                        merchantId: reservation.merchantId,
+                        title: 'A kereskedo velemenyei',
+                        emptyMessage:
+                            'Ehhez a kereskedohoz meg nincs megjelenitheto velemeny.',
+                        currentUserId: reservation.buyerId,
+                      ),
                     ],
                   ],
                 ),
@@ -536,11 +560,6 @@ class _SubmitReviewFormResult {
   final String comment;
 
   const _SubmitReviewFormResult({required this.rating, required this.comment});
-}
-
-String _formatDateTime(DateTime value) {
-  return '${value.year}.${value.month.toString().padLeft(2, '0')}.${value.day.toString().padLeft(2, '0')} '
-      '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
 }
 
 String _reservationStatusLabel(

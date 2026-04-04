@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../features/merchant/dynamic_pricing.dart';
 import '../models/product.dart';
 import '../ui/app_chrome.dart';
+import '../utils/date_time_formatters.dart';
 import 'storage_image.dart';
 
 class ProductListTile extends StatelessWidget {
@@ -28,10 +29,13 @@ class ProductListTile extends StatelessWidget {
     final demandLevel = pricingRecommendation?['demandLevel'] as String?;
     final expectedReservations24h =
         pricingRecommendation?['expectedReservations24h'] as int?;
+    final pickupWindowText = formatPickupWindow(
+      pickupStartAt: product.pickupStartAt,
+      pickupEndAt: product.pickupEndAt,
+    );
     String expiresText = 'Ismeretlen lejarat';
     if (expiresAt != null) {
-      expiresText =
-          'Lejar: ${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')}';
+      expiresText = 'Lejar: ${formatDate(expiresAt)}';
     }
 
     final imagePath = product.imagePath;
@@ -105,6 +109,12 @@ class ProductListTile extends StatelessWidget {
                       label: 'Mennyiseg ${product.quantityAvailable} db',
                       icon: Icons.inventory_2_outlined,
                     ),
+                    if (product.pickupStartAt != null &&
+                        product.pickupEndAt != null)
+                      _MetaChip(
+                        label: 'Atvetel $pickupWindowText',
+                        icon: Icons.schedule_send_outlined,
+                      ),
                     _MetaChip(
                       label: 'Status ${product.status}',
                       icon: Icons.flag_outlined,

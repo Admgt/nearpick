@@ -23,6 +23,8 @@ ReservationProductRecord reservationProductFromMap(
     status: data['status'] as String? ?? 'active',
     isDeleted: data['isDeleted'] == true,
     expiresAt: data['expiresAt'],
+    pickupStartAt: data['pickupStartAt'],
+    pickupEndAt: data['pickupEndAt'],
     imageUrl: data['imageUrl'] as String?,
   );
 }
@@ -44,6 +46,8 @@ void main() {
       );
 
       final expiresAt = DateTime(2026, 3, 7, 18, 30);
+      final pickupStartAt = DateTime(2026, 3, 7, 15);
+      final pickupEndAt = DateTime(2026, 3, 7, 18);
       final productId = await productWorkflow.createProductWithOptionalImage(
         name: 'Sajtos pogacsa',
         category: 'Pekseg',
@@ -51,6 +55,8 @@ void main() {
         discountedPrice: 490,
         quantity: 2,
         expiresAt: expiresAt,
+        pickupStartAt: pickupStartAt,
+        pickupEndAt: pickupEndAt,
         imageBytes: Uint8List.fromList(const [9, 8, 7, 6]),
       );
 

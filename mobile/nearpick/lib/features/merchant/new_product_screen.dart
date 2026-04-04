@@ -9,6 +9,7 @@ import '../../services/dynamic_pricing_service.dart';
 import '../../services/location_service.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
+import '../../utils/date_time_formatters.dart';
 import 'dynamic_pricing.dart';
 import 'new_product_form_logic.dart';
 
@@ -56,6 +57,8 @@ class _NewProductScreenState extends State<NewProductScreen> {
 
   String _selectedCategory = _categories.first;
   DateTime? _selectedExpiry;
+  TimeOfDay _selectedPickupStartTime = const TimeOfDay(hour: 9, minute: 0);
+  TimeOfDay _selectedPickupEndTime = const TimeOfDay(hour: 18, minute: 0);
   bool _loading = false;
   String? _error;
   DynamicPricingRecommendation? _pricingRecommendation;
@@ -146,6 +149,30 @@ class _NewProductScreenState extends State<NewProductScreen> {
     }
   }
 
+  Future<void> _pickPickupTime({required bool isStart}) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: isStart ? _selectedPickupStartTime : _selectedPickupEndTime,
+    );
+    if (picked == null) return;
+
+    setState(() {
+      if (isStart) {
+        _selectedPickupStartTime = picked;
+      } else {
+        _selectedPickupEndTime = picked;
+      }
+    });
+  }
+
+  DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+  String _formatTimeOfDay(TimeOfDay value) {
+    return '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
+  }
+
   void _clearPricingRecommendation() {
     if (_pricingRecommendation == null && _pricingError == null) {
       return;
@@ -203,6 +230,21 @@ class _NewProductScreenState extends State<NewProductScreen> {
       return;
     }
 
+    final pickupStartAt = _combineDateAndTime(
+      _selectedExpiry!,
+      _selectedPickupStartTime,
+    );
+    final pickupEndAt = _combineDateAndTime(
+      _selectedExpiry!,
+      _selectedPickupEndTime,
+    );
+    if (!pickupEndAt.isAfter(pickupStartAt)) {
+      setState(() {
+        _error = 'Az atveteli idosav vege legyen kesobb, mint a kezdete.';
+      });
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
@@ -235,6 +277,8 @@ class _NewProductScreenState extends State<NewProductScreen> {
           23,
           59,
         ),
+        pickupStartAt: pickupStartAt,
+        pickupEndAt: pickupEndAt,
         pricingRecommendation: _pricingRecommendation,
       );
 
@@ -248,6 +292,8 @@ class _NewProductScreenState extends State<NewProductScreen> {
           discountedPrice: command.discountedPrice,
           quantity: command.quantity,
           expiresAt: command.expiresAt,
+          pickupStartAt: command.pickupStartAt,
+          pickupEndAt: command.pickupEndAt,
           location: command.location,
           imageBytes: _selectedImageBytes,
           pricingRecommendation: command.pricingRecommendation,
@@ -521,13 +567,37 @@ class _NewProductScreenState extends State<NewProductScreen> {
                           child: Text(
                             _selectedExpiry == null
                                 ? 'Nincs kivalasztva lejarati datum'
-                                : 'Lejarat: ${_selectedExpiry!.year}.${_selectedExpiry!.month.toString().padLeft(2, '0')}.${_selectedExpiry!.day.toString().padLeft(2, '0')}',
+                                : 'Lejarat: ${formatDate(_selectedExpiry!)}',
                           ),
                         ),
                         TextButton(
                           key: const ValueKey('new_product_pick_expiry_button'),
                           onPressed: _pickExpiryDate,
                           child: const Text('Lejarati datum'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Atvetel: ${_formatTimeOfDay(_selectedPickupStartTime)} - ${_formatTimeOfDay(_selectedPickupEndTime)}',
+                          ),
+                        ),
+                        TextButton(
+                          key: const ValueKey(
+                            'new_product_pickup_start_time_button',
+                          ),
+                          onPressed: () => _pickPickupTime(isStart: true),
+                          child: const Text('Kezdo ido'),
+                        ),
+                        TextButton(
+                          key: const ValueKey(
+                            'new_product_pickup_end_time_button',
+                          ),
+                          onPressed: () => _pickPickupTime(isStart: false),
+                          child: const Text('Vege ido'),
                         ),
                       ],
                     ),

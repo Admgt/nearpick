@@ -66,6 +66,8 @@ class ProductWorkflow {
     required int discountedPrice,
     required int quantity,
     required DateTime expiresAt,
+    required DateTime pickupStartAt,
+    required DateTime pickupEndAt,
     GeoPoint? location,
     Uint8List? imageBytes,
   }) async {
@@ -84,6 +86,8 @@ class ProductWorkflow {
       'quantity': quantity,
       'quantityAvailable': quantity,
       'expiresAt': expiresAt,
+      'pickupStartAt': pickupStartAt,
+      'pickupEndAt': pickupEndAt,
       'interestCount': 0,
       'status': 'active',
       'isDeleted': false,

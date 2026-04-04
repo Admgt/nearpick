@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import '../../core/error/app_error_message.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
+import '../../utils/date_time_formatters.dart';
 import '../../widgets/storage_image.dart';
 import '../../services/user_interaction_service.dart';
 import '../../services/negative_feedback_service.dart';
 import '../../services/reservation_service.dart';
+import '../../widgets/merchant_reviews_section.dart';
 import 'reservation_detail_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -150,6 +152,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
+    DateTime? asDate(dynamic value) {
+      if (value is Timestamp) return value.toDate();
+      if (value is DateTime) return value;
+      return null;
+    }
 
     final imagePath = data['imagePath'] as String?;
     final hasImage = data['hasImage'] == true;
@@ -160,8 +167,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final original = data['originalPrice'] as int? ?? 0;
     final quantityAvailable =
         data['quantityAvailable'] as int? ?? data['quantity'] as int? ?? 0;
-    final expiresAt = (data['expiresAt'] as Timestamp?)?.toDate();
+    final expiresAt = asDate(data['expiresAt']);
+    final pickupStartAt = asDate(data['pickupStartAt']);
+    final pickupEndAt = asDate(data['pickupEndAt']);
     final ownerId = (data['ownerId'] as String?)?.trim() ?? '';
+    final pickupWindowText = formatPickupWindow(
+      pickupStartAt: pickupStartAt,
+      pickupEndAt: pickupEndAt,
+    );
 
     String expiresText = 'Ismeretlen lejárat';
     if (expiresAt != null) {
@@ -202,6 +215,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 Text('Lejárat: $expiresText'),
                 const SizedBox(height: 8),
                 Text('Elérhető: $quantityAvailable db'),
+                Text('Atvetel: $pickupWindowText'),
+                const SizedBox(height: 8),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -283,6 +298,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                       );
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  MerchantReviewsSection(
+                    merchantId: ownerId,
+                    title: 'Vasarloi velemenyek a kereskedorol',
+                    emptyMessage:
+                        'Ehhez a kereskedohoz meg nincs megjelenitheto velemeny.',
+                    currentUserId: FirebaseAuth.instance.currentUser?.uid,
                   ),
                 ],
 

@@ -29,6 +29,13 @@ test("review client writes remain denied", () => {
   );
 });
 
+test("reviews remain readable for signed-in clients", () => {
+  assert.match(
+      rules,
+      /match \/reviews\/\{reviewId\} \{[\s\S]*allow read: if isSignedIn\(\);[\s\S]*allow create, update, delete: if false;/,
+  );
+});
+
 test("product create keeps owned imagePath constraint", () => {
   assert.match(
       rules,

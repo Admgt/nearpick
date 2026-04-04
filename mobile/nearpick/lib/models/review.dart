@@ -5,7 +5,9 @@ class Review {
   final String reservationId;
   final String merchantId;
   final String buyerId;
+  final String buyerDisplayName;
   final String productId;
+  final String productName;
   final int rating;
   final String comment;
   final DateTime? createdAt;
@@ -15,7 +17,9 @@ class Review {
     required this.reservationId,
     required this.merchantId,
     required this.buyerId,
+    required this.buyerDisplayName,
     required this.productId,
+    required this.productName,
     required this.rating,
     required this.comment,
     required this.createdAt,
@@ -33,7 +37,9 @@ class Review {
       reservationId: data['reservationId'] as String? ?? '',
       merchantId: data['merchantId'] as String? ?? '',
       buyerId: data['buyerId'] as String? ?? '',
+      buyerDisplayName: data['buyerDisplayName'] as String? ?? '',
       productId: data['productId'] as String? ?? '',
+      productName: data['productName'] as String? ?? '',
       rating: data['rating'] as int? ?? 0,
       comment: data['comment'] as String? ?? '',
       createdAt: asDate(data['createdAt']),

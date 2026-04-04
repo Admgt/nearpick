@@ -305,6 +305,8 @@ exports.reserveProduct = onCall(async (request) => {
         originalPrice: Number.isInteger(product.originalPrice) ?
           product.originalPrice :
           0,
+        pickupEndAt: product.pickupEndAt ?? null,
+        pickupStartAt: product.pickupStartAt ?? null,
       };
 
       const productUpdates = {
@@ -695,9 +697,12 @@ exports.submitReview = onCall(async (request) => {
     await db.runTransaction(async (tx) => {
       const reservationRef = db.collection("reservations").doc(trimmedReservationId);
       const reviewRef = db.collection("reviews").doc(trimmedReservationId);
+      const buyerRef = db.collection("users").doc(buyerId);
       const reservationSnap = await tx.get(reservationRef);
       const reviewSnap = await tx.get(reviewRef);
+      const buyerSnap = await tx.get(buyerRef);
       const reservation = reservationSnap.data();
+      const buyerProfile = buyerSnap.data() ?? {};
 
       assertReviewableReservation(reservation, buyerId);
       if (reviewSnap.exists) {
@@ -719,15 +724,25 @@ exports.submitReview = onCall(async (request) => {
         Number.isInteger(merchantStats.ratingTotal) ? merchantStats.ratingTotal : 0;
       const nextReviewCount = currentReviewCount + 1;
       const nextRatingTotal = currentRatingTotal + rating;
+      const buyerDisplayName = normalizeOptionalText(
+          buyerProfile.displayName,
+          {maxLength: 80},
+      );
+      const productName = normalizeOptionalText(
+          reservation.productSnapshot?.name,
+          {maxLength: 120},
+      );
 
       tx.set(reviewRef, {
         buyerId,
+        buyerDisplayName,
         comment,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         merchantId,
         productId: typeof reservation.productId === "string" ?
           reservation.productId.trim() :
           "",
+        productName,
         rating,
         reservationId: trimmedReservationId,
       });

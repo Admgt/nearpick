@@ -22,6 +22,8 @@ void main() {
           status: 'active',
           isDeleted: false,
           expiresAt: null,
+          pickupStartAt: null,
+          pickupEndAt: null,
           imageUrl: null,
         );
       final reservationStore = InMemoryReservationStore();
@@ -159,6 +161,8 @@ void main() {
           status: 'sold_out',
           isDeleted: false,
           expiresAt: null,
+          pickupStartAt: null,
+          pickupEndAt: null,
           imageUrl: null,
         );
       final reservationStore = InMemoryReservationStore()

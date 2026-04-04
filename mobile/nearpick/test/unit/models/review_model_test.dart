@@ -9,7 +9,9 @@ void main() {
     expect(review.reservationId, '');
     expect(review.merchantId, '');
     expect(review.buyerId, '');
+    expect(review.buyerDisplayName, '');
     expect(review.productId, '');
+    expect(review.productName, '');
     expect(review.rating, 0);
     expect(review.comment, '');
     expect(review.createdAt, isNull);

@@ -12,6 +12,8 @@ class ReservationProductRecord {
   final String status;
   final bool isDeleted;
   final Object? expiresAt;
+  final Object? pickupStartAt;
+  final Object? pickupEndAt;
   final String? imageUrl;
 
   const ReservationProductRecord({
@@ -26,6 +28,8 @@ class ReservationProductRecord {
     required this.status,
     required this.isDeleted,
     required this.expiresAt,
+    required this.pickupStartAt,
+    required this.pickupEndAt,
     required this.imageUrl,
   });
 
@@ -46,6 +50,8 @@ class ReservationProductRecord {
       status: status ?? this.status,
       isDeleted: isDeleted,
       expiresAt: expiresAt,
+      pickupStartAt: pickupStartAt,
+      pickupEndAt: pickupEndAt,
       imageUrl: imageUrl,
     );
   }
@@ -242,6 +248,8 @@ class ReservationWorkflow {
           'imageUrl': product.imageUrl,
           'expiresAt': product.expiresAt,
           'category': product.category,
+          'pickupStartAt': product.pickupStartAt,
+          'pickupEndAt': product.pickupEndAt,
         },
       ),
     );

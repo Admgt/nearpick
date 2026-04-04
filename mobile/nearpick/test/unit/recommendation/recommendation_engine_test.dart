@@ -133,6 +133,79 @@ void main() {
       expect(result.score, inInclusiveRange(0.0, 1.0));
     });
 
+    test('preferred radius boosts nearby offers over out-of-radius ones', () {
+      final nearby = scoreProductDoc(
+        productId: 'near',
+        product: {
+          'category': 'Pekseg',
+          'expiresAt': Timestamp.fromDate(anchor.add(const Duration(hours: 3))),
+          'createdAt': Timestamp.fromDate(
+            anchor.subtract(const Duration(hours: 1)),
+          ),
+          'interestCount': 5,
+          'location': const GeoPoint(47.5005, 19.0005),
+        },
+        favoriteCategories: const {'Pekseg'},
+        now: anchor,
+        userLocation: const GeoPoint(47.5, 19.0),
+        preferredRadiusKm: 3,
+      );
+
+      final far = scoreProductDoc(
+        productId: 'far',
+        product: {
+          'category': 'Pekseg',
+          'expiresAt': Timestamp.fromDate(anchor.add(const Duration(hours: 3))),
+          'createdAt': Timestamp.fromDate(
+            anchor.subtract(const Duration(hours: 1)),
+          ),
+          'interestCount': 5,
+          'location': const GeoPoint(47.65, 19.2),
+        },
+        favoriteCategories: const {'Pekseg'},
+        now: anchor,
+        userLocation: const GeoPoint(47.5, 19.0),
+        preferredRadiusKm: 3,
+      );
+
+      expect(nearby.score, greaterThan(far.score));
+      expect(nearby.isWithinPreferredRadius, isTrue);
+      expect(far.isWithinPreferredRadius, isFalse);
+    });
+
+    test('distanceLabelKm formats meter and kilometer ranges', () {
+      expect(distanceLabelKm(0.42), '420 m');
+      expect(distanceLabelKm(2.35), '2.4 km');
+      expect(distanceLabelKm(12.4), '12 km');
+    });
+
+    test(
+      'result exposes distance metadata when user and offer locations exist',
+      () {
+        final result = scoreProductDoc(
+          productId: 'p1',
+          product: {
+            'category': 'Pekseg',
+            'expiresAt': Timestamp.fromDate(
+              anchor.add(const Duration(hours: 3)),
+            ),
+            'createdAt': Timestamp.fromDate(
+              anchor.subtract(const Duration(hours: 1)),
+            ),
+            'interestCount': 5,
+            'location': const GeoPoint(47.5005, 19.0005),
+          },
+          favoriteCategories: const {'Pekseg'},
+          now: anchor,
+          userLocation: const GeoPoint(47.5, 19.0),
+          preferredRadiusKm: 3,
+        );
+
+        expect(result.distanceKm, isNotNull);
+        expect(result.preferredRadiusKm, 3);
+      },
+    );
+
     test('expiryDetail formats minute, hour, and date variants', () {
       expect(
         expiryDetail(anchor.add(const Duration(minutes: 45)), now: anchor),

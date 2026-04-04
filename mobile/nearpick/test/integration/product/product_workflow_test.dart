@@ -28,6 +28,8 @@ void main() {
           discountedPrice: 500,
           quantity: 2,
           expiresAt: DateTime(2026, 3, 7),
+          pickupStartAt: DateTime(2026, 3, 7, 9),
+          pickupEndAt: DateTime(2026, 3, 7, 12),
         ),
         throwsException,
       );
@@ -54,6 +56,8 @@ void main() {
         discountedPrice: 500,
         quantity: 2,
         expiresAt: DateTime(2026, 3, 7),
+        pickupStartAt: DateTime(2026, 3, 7, 9),
+        pickupEndAt: DateTime(2026, 3, 7, 12),
         imageBytes: Uint8List.fromList(const [1, 2, 3]),
       );
 
@@ -79,6 +83,8 @@ void main() {
       );
 
       final expiresAt = DateTime(2026, 3, 7, 18, 30);
+      final pickupStartAt = DateTime(2026, 3, 7, 15);
+      final pickupEndAt = DateTime(2026, 3, 7, 18);
       final productId = await workflow.createProductWithOptionalImage(
         name: 'Bagel Box',
         category: 'Pekseg',
@@ -86,6 +92,8 @@ void main() {
         discountedPrice: 690,
         quantity: 3,
         expiresAt: expiresAt,
+        pickupStartAt: pickupStartAt,
+        pickupEndAt: pickupEndAt,
         location: GeoPoint(46.253, 20.147),
         imageBytes: Uint8List.fromList(const [1, 2, 3, 4]),
       );
@@ -100,6 +108,8 @@ void main() {
         'quantity': 3,
         'quantityAvailable': 3,
         'expiresAt': expiresAt,
+        'pickupStartAt': pickupStartAt,
+        'pickupEndAt': pickupEndAt,
         'interestCount': 0,
         'status': 'active',
         'isDeleted': false,

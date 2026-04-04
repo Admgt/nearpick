@@ -56,6 +56,8 @@ void main() {
     expect(receivedCommand?.quantity, 2);
     expect(receivedCommand?.location?.latitude, 47.5);
     expect(receivedCommand?.location?.longitude, 19.0);
+    expect(receivedCommand?.pickupStartAt, DateTime(2026, 3, 7, 9));
+    expect(receivedCommand?.pickupEndAt, DateTime(2026, 3, 7, 18));
   });
 
   testWidgets('NewProductScreen can generate and apply pricing suggestion', (

@@ -97,6 +97,8 @@ service cloud.firestore {
           'name',
           'originalPrice',
           'ownerId',
+          'pickupEndAt',
+          'pickupStartAt',
           'pricingRecommendation',
           'quantity',
           'quantityAvailable',
@@ -114,6 +116,9 @@ service cloud.firestore {
         && request.resource.data.quantityAvailable is int
         && request.resource.data.quantityAvailable == request.resource.data.quantity
         && request.resource.data.expiresAt is timestamp
+        && request.resource.data.pickupStartAt is timestamp
+        && request.resource.data.pickupEndAt is timestamp
+        && request.resource.data.pickupEndAt > request.resource.data.pickupStartAt
         && request.resource.data.createdAt is timestamp
         && request.resource.data.interestCount == 0
         && request.resource.data.status == 'active'
@@ -146,9 +151,7 @@ service cloud.firestore {
     }
 
     match /reviews/{reviewId} {
-      allow read: if isSignedIn()
-        && (resource.data.buyerId == request.auth.uid
-          || resource.data.merchantId == request.auth.uid);
+      allow read: if isSignedIn();
       allow create, update, delete: if false;
     }
 

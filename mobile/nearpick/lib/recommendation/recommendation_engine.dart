@@ -23,12 +23,18 @@ class RecommendationResult {
   final Map<String, dynamic> product;
   final double score;
   final List<RecommendationReason> reasons;
+  final double? distanceKm;
+  final double? preferredRadiusKm;
+  final bool isWithinPreferredRadius;
 
   const RecommendationResult({
     required this.productId,
     required this.product,
     required this.score,
     required this.reasons,
+    required this.distanceKm,
+    required this.preferredRadiusKm,
+    required this.isWithinPreferredRadius,
   });
 }
 
@@ -71,6 +77,53 @@ double interestScore(int interestCount) {
   return _clamp01(interestCount / 30.0);
 }
 
+String distanceLabelKm(double distanceKm) {
+  if (distanceKm < 1.0) {
+    return '${(distanceKm * 1000).round()} m';
+  }
+  if (distanceKm >= 10.0) {
+    return '${distanceKm.toStringAsFixed(0)} km';
+  }
+  return '${distanceKm.toStringAsFixed(1)} km';
+}
+
+double proximityScore(double? distanceKm, {required double preferredRadiusKm}) {
+  if (distanceKm == null) return 0;
+
+  final effectiveWindowKm = math.max(8.0, preferredRadiusKm * 2.5);
+  if (distanceKm >= effectiveWindowKm) {
+    return 0;
+  }
+
+  return _clamp01(1.0 - (distanceKm / effectiveWindowKm));
+}
+
+double radiusAlignmentScore(
+  double? distanceKm, {
+  required double preferredRadiusKm,
+}) {
+  if (distanceKm == null || distanceKm > preferredRadiusKm) {
+    return 0;
+  }
+
+  return _clamp01(1.0 - (distanceKm / preferredRadiusKm));
+}
+
+double outsideRadiusPenalty(
+  double? distanceKm, {
+  required double preferredRadiusKm,
+}) {
+  if (distanceKm == null) return 0;
+
+  final overflowKm = distanceKm - preferredRadiusKm;
+  if (overflowKm <= 0) {
+    return 0;
+  }
+
+  final overflowRatio = overflowKm / math.max(preferredRadiusKm, 1.0);
+  return math.min(0.12, overflowRatio * 0.08);
+}
+
 String expiryDetail(DateTime expiresAt, {DateTime? now}) {
   final referenceNow = now ?? DateTime.now();
   final diff = expiresAt.difference(referenceNow);
@@ -95,19 +148,21 @@ RecommendationResult scoreProductDoc({
   required Set<String> favoriteCategories,
   DateTime? now,
   GeoPoint? userLocation,
+  double preferredRadiusKm = 5.0,
   Map<String, int>? implicitCategoryViews,
   Map<String, Timestamp>? implicitLastViewedAt,
   Map<String, int>? negativeCategoryDismissals,
   Map<String, Timestamp>? negativeCategoryLastDismissedAt,
 }) {
-  const wFav = 0.35;
-  const wExp = 0.25;
+  const wFav = 0.30;
+  const wExp = 0.23;
   const wRec = 0.12;
   const wInt = 0.05;
-  const wImplicit = 0.13;
+  const wImplicit = 0.10;
   const wDist = 0.10;
+  const wRadius = 0.10;
   const halfLifeDays = 7.0;
-  const maxDistanceKm = 10.0;
+  final normalizedPreferredRadiusKm = preferredRadiusKm.clamp(1.0, 20.0);
 
   final category = product['category'] as String?;
   final expiresAt = _asDate(product['expiresAt']);
@@ -138,8 +193,10 @@ RecommendationResult scoreProductDoc({
   final recScore = recencyScore(createdAt, now: referenceNow);
   final intScore = interestScore(interestCount);
   final implicitScore = _clamp01(effectiveCount / 10.0);
-  double distanceKm = 0;
+  double? distanceKm;
   double distanceScore = 0;
+  double radiusScore = 0;
+  double distancePenalty = 0;
   if (userLocation != null && productLoc != null) {
     distanceKm = GeoUtils.haversineKm(
       userLocation.latitude,
@@ -147,7 +204,18 @@ RecommendationResult scoreProductDoc({
       productLoc.latitude,
       productLoc.longitude,
     );
-    distanceScore = _clamp01(1.0 - (distanceKm / maxDistanceKm));
+    distanceScore = proximityScore(
+      distanceKm,
+      preferredRadiusKm: normalizedPreferredRadiusKm,
+    );
+    radiusScore = radiusAlignmentScore(
+      distanceKm,
+      preferredRadiusKm: normalizedPreferredRadiusKm,
+    );
+    distancePenalty = outsideRadiusPenalty(
+      distanceKm,
+      preferredRadiusKm: normalizedPreferredRadiusKm,
+    );
   }
 
   final negativeDismissals =
@@ -182,8 +250,10 @@ RecommendationResult scoreProductDoc({
         (wRec * recScore) +
         (wInt * intScore) +
         (wImplicit * implicitScore) +
-        (wDist * distanceScore) -
-        dismissPenalty,
+        (wDist * distanceScore) +
+        (wRadius * radiusScore) -
+        dismissPenalty -
+        distancePenalty,
   );
 
   final reasons = <RecommendationReason>[];
@@ -267,13 +337,37 @@ RecommendationResult scoreProductDoc({
     );
   }
 
-  if (distanceScore > 0.2) {
+  if (distanceScore > 0.2 && distanceKm != null) {
     reasons.add(
       RecommendationReason(
         code: 'NEARBY',
         label: 'Közel van',
-        detail: '${distanceKm.toStringAsFixed(1)} km',
+        detail: distanceLabelKm(distanceKm),
         contribution: wDist * distanceScore,
+      ),
+    );
+  }
+
+  if (radiusScore > 0.1 && distanceKm != null) {
+    reasons.add(
+      RecommendationReason(
+        code: 'INSIDE_RADIUS',
+        label: 'Belefer a sugarba',
+        detail:
+            '${distanceLabelKm(distanceKm)} / ${distanceLabelKm(normalizedPreferredRadiusKm)}',
+        contribution: wRadius * radiusScore,
+      ),
+    );
+  }
+
+  if (distancePenalty > 0.005 && distanceKm != null) {
+    reasons.add(
+      RecommendationReason(
+        code: 'OUTSIDE_RADIUS',
+        label: 'Kivul esik a sugaron',
+        detail:
+            '${distanceLabelKm(distanceKm)} - cel: ${distanceLabelKm(normalizedPreferredRadiusKm)}',
+        contribution: -distancePenalty,
       ),
     );
   }
@@ -285,5 +379,9 @@ RecommendationResult scoreProductDoc({
     product: product,
     score: score,
     reasons: reasons,
+    distanceKm: distanceKm,
+    preferredRadiusKm: distanceKm == null ? null : normalizedPreferredRadiusKm,
+    isWithinPreferredRadius:
+        distanceKm != null && distanceKm <= normalizedPreferredRadiusKm,
   );
 }

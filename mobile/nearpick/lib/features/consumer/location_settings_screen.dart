@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'location_preferences.dart';
 import '../../services/location_service.dart';
 import '../../ui/app_chrome.dart';
 
@@ -19,6 +20,7 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
   final _lngCtrl = TextEditingController();
   bool _loading = false;
   bool _fetchingLocation = false;
+  double _preferredRadiusKm = LocationPreferences.defaultPreferredRadiusKm;
   String? _message;
   String? _error;
 
@@ -43,11 +45,23 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
         .collection('users')
         .doc(user.uid)
         .get();
-    final location = doc.data()?['homeLocation'] as GeoPoint?;
+    final preferences = LocationPreferences.fromUserData(doc.data());
+    if (mounted) {
+      setState(() {
+        _preferredRadiusKm = preferences.preferredRadiusKm;
+      });
+    } else {
+      _preferredRadiusKm = preferences.preferredRadiusKm;
+    }
+
+    final location = preferences.homeLocation;
     if (location == null) return;
 
     _latCtrl.text = location.latitude.toStringAsFixed(6);
     _lngCtrl.text = location.longitude.toStringAsFixed(6);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _showSnackBar(String text) {
@@ -113,6 +127,9 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
     try {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'homeLocation': GeoPoint(lat, lng),
+        'preferredRadiusKm': LocationPreferences.normalizePreferredRadiusKm(
+          _preferredRadiusKm,
+        ),
       }, SetOptions(merge: true));
       setState(() => _message = 'Mentve.');
     } catch (e) {
@@ -186,6 +203,32 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
                     }
                     return null;
                   },
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Ajanlott keresesi sugar',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Slider(
+                  value: _preferredRadiusKm,
+                  min: LocationPreferences.minPreferredRadiusKm,
+                  max: LocationPreferences.maxPreferredRadiusKm,
+                  divisions: 19,
+                  label: LocationPreferences.radiusLabel(_preferredRadiusKm),
+                  onChanged: (value) {
+                    setState(() {
+                      _preferredRadiusKm = value;
+                    });
+                  },
+                ),
+                Text(
+                  'Jelenlegi sugar: ${LocationPreferences.radiusLabel(_preferredRadiusKm)}. '
+                  'Az app ezt veszi alapul a kozeledben levo ajanlatok '
+                  'erositesenel es a terkepezesnel.',
                 ),
                 const SizedBox(height: 16),
                 if (_error != null)

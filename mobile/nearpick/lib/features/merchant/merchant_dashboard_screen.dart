@@ -10,6 +10,7 @@ import '../../services/product_service.dart';
 import 'dynamic_pricing.dart';
 import 'dashboard_metrics.dart';
 import '../../ui/app_chrome.dart';
+import '../../widgets/merchant_reviews_section.dart';
 
 class MerchantDashboardScreen extends StatefulWidget {
   const MerchantDashboardScreen({super.key});
@@ -254,6 +255,15 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                             ),
                           );
                         },
+                      ),
+                      const SizedBox(height: 16),
+                      MerchantReviewsSection(
+                        merchantId: user.uid,
+                        title: 'Legutobbi vasarloi velemenyek',
+                        emptyMessage:
+                            'Meg nincs egyetlen publikus vasarloi velemenyed sem.',
+                        limit: 10,
+                        showProductName: true,
                       ),
                       const SizedBox(height: 16),
                       GridView.count(

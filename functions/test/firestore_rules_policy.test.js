@@ -22,6 +22,8 @@ function canCreateProduct({auth, productId, data}) {
     "name",
     "originalPrice",
     "ownerId",
+    "pickupEndAt",
+    "pickupStartAt",
     "quantity",
     "quantityAvailable",
     "status",
@@ -41,6 +43,8 @@ function canCreateProduct({auth, productId, data}) {
     data.quantity > 0 &&
     Number.isInteger(data.quantityAvailable) &&
     data.quantityAvailable === data.quantity &&
+    data.pickupStartAt === "timestamp" &&
+    data.pickupEndAt === "timestamp" &&
     data.interestCount === 0 &&
     data.status === "active" &&
     data.isDeleted === false &&
@@ -79,8 +83,7 @@ function canReadMerchantStats({auth, merchantId}) {
 }
 
 function canReadReview({auth, review}) {
-  return auth != null &&
-    (review.buyerId === auth.uid || review.merchantId === auth.uid);
+  return auth != null;
 }
 
 function canWriteUserDoc({auth, userId}) {
@@ -111,6 +114,8 @@ test("product create policy engedi a saját képes termék létrehozását", () 
       name: "Bagel",
       originalPrice: 1000,
       ownerId: "merchant-1",
+      pickupEndAt: "timestamp",
+      pickupStartAt: "timestamp",
       quantity: 2,
       quantityAvailable: 2,
       status: "active",
@@ -138,6 +143,8 @@ test("product create policy tiltja az idegen ownerId-t", () => {
       name: "Bagel",
       originalPrice: 1000,
       ownerId: "merchant-2",
+      pickupEndAt: "timestamp",
+      pickupStartAt: "timestamp",
       quantity: 2,
       quantityAvailable: 2,
       status: "active",
@@ -176,7 +183,7 @@ test("merchantStats olvasás bármely bejelentkezett felhasználónak engedett",
   }), false);
 });
 
-test("review olvasás csak az érintett buyer vagy merchant számára engedett", () => {
+test("review olvasás bármely bejelentkezett felhasználónak engedett", () => {
   const review = {
     buyerId: "buyer-1",
     merchantId: "merchant-1",
@@ -192,6 +199,10 @@ test("review olvasás csak az érintett buyer vagy merchant számára engedett",
   }), true);
   assert.equal(canReadReview({
     auth: createAuth("consumer-2"),
+    review,
+  }), true);
+  assert.equal(canReadReview({
+    auth: null,
     review,
   }), false);
 });
@@ -236,6 +247,8 @@ test("product create policy denies anonymous creation", () => {
       name: "Bagel",
       originalPrice: 1000,
       ownerId: "merchant-1",
+      pickupEndAt: "timestamp",
+      pickupStartAt: "timestamp",
       quantity: 2,
       quantityAvailable: 2,
       status: "active",
@@ -265,6 +278,8 @@ test("product create policy denies invalid owned image path", () => {
       name: "Bagel",
       originalPrice: 1000,
       ownerId: "merchant-1",
+      pickupEndAt: "timestamp",
+      pickupStartAt: "timestamp",
       quantity: 2,
       quantityAvailable: 2,
       status: "active",

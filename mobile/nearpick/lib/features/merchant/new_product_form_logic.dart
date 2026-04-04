@@ -9,6 +9,8 @@ class NewProductCommand {
   final int discountedPrice;
   final int quantity;
   final DateTime expiresAt;
+  final DateTime pickupStartAt;
+  final DateTime pickupEndAt;
   final GeoPoint? location;
   final DynamicPricingRecommendation? pricingRecommendation;
 
@@ -19,6 +21,8 @@ class NewProductCommand {
     required this.discountedPrice,
     required this.quantity,
     required this.expiresAt,
+    required this.pickupStartAt,
+    required this.pickupEndAt,
     required this.location,
     this.pricingRecommendation,
   });

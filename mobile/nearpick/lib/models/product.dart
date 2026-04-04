@@ -1,5 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+DateTime? _asDate(dynamic value) {
+  if (value is Timestamp) return value.toDate();
+  if (value is DateTime) return value;
+  return null;
+}
+
 class Product {
   final String id;
   final String ownerId;
@@ -10,6 +16,8 @@ class Product {
   final int quantity;
   final int quantityAvailable;
   final DateTime? expiresAt;
+  final DateTime? pickupStartAt;
+  final DateTime? pickupEndAt;
   final DateTime? createdAt;
   final GeoPoint? location;
   final int interestCount;
@@ -32,6 +40,8 @@ class Product {
     required this.quantity,
     required this.quantityAvailable,
     required this.expiresAt,
+    required this.pickupStartAt,
+    required this.pickupEndAt,
     required this.createdAt,
     required this.location,
     required this.interestCount,
@@ -46,12 +56,6 @@ class Product {
   });
 
   factory Product.fromMap(String id, Map<String, dynamic> data) {
-    DateTime? asDate(dynamic value) {
-      if (value is Timestamp) return value.toDate();
-      if (value is DateTime) return value;
-      return null;
-    }
-
     return Product(
       id: id,
       ownerId: data['ownerId'] as String? ?? '',
@@ -62,14 +66,16 @@ class Product {
       quantity: data['quantity'] as int? ?? 0,
       quantityAvailable:
           data['quantityAvailable'] as int? ?? data['quantity'] as int? ?? 0,
-      expiresAt: asDate(data['expiresAt']),
-      createdAt: asDate(data['createdAt']),
+      expiresAt: _asDate(data['expiresAt']),
+      pickupStartAt: _asDate(data['pickupStartAt']),
+      pickupEndAt: _asDate(data['pickupEndAt']),
+      createdAt: _asDate(data['createdAt']),
       location: data['location'] as GeoPoint?,
       interestCount: data['interestCount'] as int? ?? 0,
       status: data['status'] as String? ?? 'active',
       isDeleted: data['isDeleted'] as bool? ?? false,
-      archivedAt: asDate(data['archivedAt']),
-      deletedAt: asDate(data['deletedAt']),
+      archivedAt: _asDate(data['archivedAt']),
+      deletedAt: _asDate(data['deletedAt']),
       imageUrl: data['imageUrl'] as String?,
       imagePath: data['imagePath'] as String?,
       hasImage: data['hasImage'] as bool? ?? false,
@@ -94,6 +100,12 @@ class Product {
       'quantity': quantity,
       'quantityAvailable': quantityAvailable,
       'expiresAt': expiresAt == null ? null : Timestamp.fromDate(expiresAt!),
+      'pickupStartAt': pickupStartAt == null
+          ? null
+          : Timestamp.fromDate(pickupStartAt!),
+      'pickupEndAt': pickupEndAt == null
+          ? null
+          : Timestamp.fromDate(pickupEndAt!),
       'createdAt': createdAt == null ? null : Timestamp.fromDate(createdAt!),
       'location': location,
       'interestCount': interestCount,

@@ -10,6 +10,7 @@ import '../../core/reservation/pickup_token.dart';
 import '../../models/reservation.dart';
 import '../../services/reservation_service.dart';
 import '../../ui/app_chrome.dart';
+import '../../utils/date_time_formatters.dart';
 import 'merchant_reservation_detail_screen.dart';
 import 'merchant_qr_scanner_screen.dart';
 
@@ -206,6 +207,11 @@ class _MerchantReservationsScreenState
                 final name = product['name'] as String? ?? 'Ismeretlen termek';
                 final imageUrl = product['imageUrl'] as String?;
                 final expiresAt = reservation.expiresAt;
+                final reservedAt = reservation.createdAt;
+                final pickupWindowText = formatPickupWindow(
+                  pickupStartAt: reservation.pickupStartAt,
+                  pickupEndAt: reservation.pickupEndAt,
+                );
                 final isPastExpiry =
                     expiresAt != null &&
                     !expiresAt.isAfter(DateTime.now()) &&
@@ -217,9 +223,7 @@ class _MerchantReservationsScreenState
                     : null;
                 String expiresText = 'Ismeretlen lejarat';
                 if (expiresAt != null) {
-                  expiresText =
-                      '${expiresAt.year}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.day.toString().padLeft(2, '0')} '
-                      '${expiresAt.hour.toString().padLeft(2, '0')}:${expiresAt.minute.toString().padLeft(2, '0')}';
+                  expiresText = formatDateTime(expiresAt);
                 }
 
                 return ListTile(
@@ -247,6 +251,9 @@ class _MerchantReservationsScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Kod: ${reservation.pickupCode}'),
+                      if (reservedAt != null)
+                        Text('Foglalva: ${formatDateTime(reservedAt)}'),
+                      Text('Atvetel: $pickupWindowText'),
                       Text('Lejar: $expiresText'),
                       Text(
                         'Status: ${_merchantReservationStatusLabel(reservation, isPastExpiry: isPastExpiry)}',
