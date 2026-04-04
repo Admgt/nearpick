@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'location_catalog.dart';
 import 'location_preferences.dart';
 import '../../services/location_service.dart';
 import '../../ui/app_chrome.dart';
@@ -18,6 +19,8 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _latCtrl = TextEditingController();
   final _lngCtrl = TextEditingController();
+  ConsumerLocationMode _locationMode = ConsumerLocationMode.exact;
+  String? _selectedCityId;
   bool _loading = false;
   bool _fetchingLocation = false;
   double _preferredRadiusKm = LocationPreferences.defaultPreferredRadiusKm;
@@ -49,9 +52,13 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
     if (mounted) {
       setState(() {
         _preferredRadiusKm = preferences.preferredRadiusKm;
+        _locationMode = preferences.locationMode;
+        _selectedCityId = preferences.selectedCity?.id;
       });
     } else {
       _preferredRadiusKm = preferences.preferredRadiusKm;
+      _locationMode = preferences.locationMode;
+      _selectedCityId = preferences.selectedCity?.id;
     }
 
     final location = preferences.homeLocation;
@@ -78,8 +85,11 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
 
     try {
       final pos = await LocationService.getCurrentPosition();
-      _latCtrl.text = pos.latitude.toStringAsFixed(6);
-      _lngCtrl.text = pos.longitude.toStringAsFixed(6);
+      setState(() {
+        _locationMode = ConsumerLocationMode.exact;
+        _latCtrl.text = pos.latitude.toStringAsFixed(6);
+        _lngCtrl.text = pos.longitude.toStringAsFixed(6);
+      });
       _showSnackBar('Hely meghatarozva.');
     } on LocationServiceException catch (e) {
       if (e.code == LocationServiceError.serviceDisabled) {
@@ -115,8 +125,20 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
       return;
     }
 
-    final lat = double.parse(_latCtrl.text.trim());
-    final lng = double.parse(_lngCtrl.text.trim());
+    GeoPoint? location;
+    PredefinedCity? selectedCity;
+    if (_locationMode == ConsumerLocationMode.exact) {
+      final lat = double.parse(_latCtrl.text.trim());
+      final lng = double.parse(_lngCtrl.text.trim());
+      location = GeoPoint(lat, lng);
+    } else {
+      selectedCity = predefinedCityById(_selectedCityId);
+      if (selectedCity == null) {
+        setState(() => _error = 'Valassz egy varost a listabol.');
+        return;
+      }
+      location = selectedCity.center;
+    }
 
     setState(() {
       _loading = true;
@@ -126,7 +148,13 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
 
     try {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        'homeLocation': GeoPoint(lat, lng),
+        'homeLocation': location,
+        'homeLocationMode': _locationMode == ConsumerLocationMode.city
+            ? 'city'
+            : 'exact',
+        'homeLocationCityId': _locationMode == ConsumerLocationMode.city
+            ? selectedCity!.id
+            : FieldValue.delete(),
         'preferredRadiusKm': LocationPreferences.normalizePreferredRadiusKm(
           _preferredRadiusKm,
         ),
@@ -152,58 +180,125 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
             key: _formKey,
             child: Column(
               children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _fetchingLocation ? null : _fetchLocation,
-                    icon: _fetchingLocation
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.my_location),
-                    label: const Text('Aktualis hely meghatarozasa'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _latCtrl,
-                  decoration: const InputDecoration(labelText: 'Latitude'),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: true,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Kotelezo mezo';
-                    }
-                    final parsed = double.tryParse(value.trim());
-                    if (parsed == null || parsed < -90 || parsed > 90) {
-                      return 'Adj meg -90 es 90 kozotti erteket';
-                    }
-                    return null;
+                SegmentedButton<ConsumerLocationMode>(
+                  segments: const [
+                    ButtonSegment<ConsumerLocationMode>(
+                      value: ConsumerLocationMode.exact,
+                      icon: Icon(Icons.my_location_outlined),
+                      label: Text('Pontos hely'),
+                    ),
+                    ButtonSegment<ConsumerLocationMode>(
+                      value: ConsumerLocationMode.city,
+                      icon: Icon(Icons.location_city_outlined),
+                      label: Text('Csak varos'),
+                    ),
+                  ],
+                  selected: {_locationMode},
+                  onSelectionChanged: (selection) {
+                    setState(() {
+                      _locationMode = selection.first;
+                      _message = null;
+                      _error = null;
+                    });
                   },
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _lngCtrl,
-                  decoration: const InputDecoration(labelText: 'Longitude'),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: true,
+                const SizedBox(height: 16),
+                if (_locationMode == ConsumerLocationMode.exact) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _fetchingLocation ? null : _fetchLocation,
+                      icon: _fetchingLocation
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.my_location),
+                      label: const Text('Aktualis hely meghatarozasa'),
+                    ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Kotelezo mezo';
-                    }
-                    final parsed = double.tryParse(value.trim());
-                    if (parsed == null || parsed < -180 || parsed > 180) {
-                      return 'Adj meg -180 es 180 kozotti erteket';
-                    }
-                    return null;
-                  },
-                ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _latCtrl,
+                    decoration: const InputDecoration(labelText: 'Latitude'),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                      signed: true,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Kotelezo mezo';
+                      }
+                      final parsed = double.tryParse(value.trim());
+                      if (parsed == null || parsed < -90 || parsed > 90) {
+                        return 'Adj meg -90 es 90 kozotti erteket';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+                if (_locationMode == ConsumerLocationMode.exact) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _lngCtrl,
+                    decoration: const InputDecoration(labelText: 'Longitude'),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                      signed: true,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Kotelezo mezo';
+                      }
+                      final parsed = double.tryParse(value.trim());
+                      if (parsed == null || parsed < -180 || parsed > 180) {
+                        return 'Adj meg -180 es 180 kozotti erteket';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+                if (_locationMode == ConsumerLocationMode.city) ...[
+                  DropdownButtonFormField<String>(
+                    key: ValueKey('consumer_city_${_selectedCityId ?? 'none'}'),
+                    initialValue: _selectedCityId,
+                    decoration: const InputDecoration(labelText: 'Varos'),
+                    items: predefinedConsumerCities
+                        .map(
+                          (city) => DropdownMenuItem<String>(
+                            value: city.id,
+                            child: Text(city.displayLabel),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedCityId = value;
+                        _message = null;
+                        _error = null;
+                      });
+                    },
+                    validator: (value) {
+                      if (_locationMode != ConsumerLocationMode.city) {
+                        return null;
+                      }
+                      if (value == null || predefinedCityById(value) == null) {
+                        return 'Valassz egy varost';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Varos modban a rendszer a kivalasztott telepules '
+                      'kozeppontjaval szamol, ezert a tavolsag csak kozelito '
+                      'ertek lesz.',
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerLeft,

@@ -52,6 +52,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
   List<String> _favoriteCategories = [];
   GeoPoint? _userLocation;
   double _preferredRadiusKm = LocationPreferences.defaultPreferredRadiusKm;
+  String _locationStatusLabel = 'nincs beallitva';
   final Set<String> _dismissedProductIds = {};
 
   String _selectedCategory = _allCategories.first;
@@ -95,6 +96,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
       );
       _userLocation = locationPreferences.homeLocation;
       _preferredRadiusKm = locationPreferences.preferredRadiusKm;
+      _locationStatusLabel = locationPreferences.locationStatusLabel;
     });
   }
 
@@ -332,7 +334,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
             InfoBadge(
               icon: Icons.place_outlined,
               label: 'Pozicio',
-              value: _userLocation == null ? 'nincs beallitva' : 'elerheto',
+              value: _locationStatusLabel,
             ),
             InfoBadge(
               icon: Icons.near_me_outlined,
