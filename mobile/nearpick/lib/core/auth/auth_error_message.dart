@@ -16,6 +16,8 @@ String authErrorMessage(Object error) {
       case 'wrong-password':
       case 'user-not-found':
         return 'Hibas email vagy jelszo.';
+      case 'invalid-email':
+        return 'Adj meg egy ervenyes email-cimet.';
       case 'email-already-in-use':
         return 'Ez az email-cim mar hasznalatban van.';
       case 'weak-password':

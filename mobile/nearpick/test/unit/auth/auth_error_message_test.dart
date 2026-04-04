@@ -22,6 +22,12 @@ void main() {
     expect(authErrorMessage(error), 'Hibas email vagy jelszo.');
   });
 
+  test('maps invalid email errors to a user-facing message', () {
+    final error = FirebaseAuthException(code: 'invalid-email');
+
+    expect(authErrorMessage(error), 'Adj meg egy ervenyes email-cimet.');
+  });
+
   test('falls back to the original exception text for unknown errors', () {
     final error = Exception('unexpected');
 

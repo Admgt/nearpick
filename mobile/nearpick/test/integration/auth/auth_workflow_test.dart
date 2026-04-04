@@ -77,4 +77,28 @@ void main() {
     );
     expect(authGateway.currentUserId, isNull);
   });
+
+  test(
+    'AuthWorkflow.resetPassword forwards the password reset request',
+    () async {
+      final authGateway = FakeAuthGateway();
+      final profileGateway = FakeUserProfileGateway();
+      final workflow = AuthWorkflow(
+        authGateway: authGateway,
+        userProfileGateway: profileGateway,
+      );
+
+      await workflow.register(
+        email: 'user@example.com',
+        password: 'correct-password',
+        displayName: 'User',
+        role: 'consumer',
+        companyName: '',
+      );
+
+      await workflow.resetPassword(email: 'user@example.com');
+
+      expect(authGateway.passwordResetEmails, ['user@example.com']);
+    },
+  );
 }

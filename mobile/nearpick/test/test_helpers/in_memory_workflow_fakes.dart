@@ -7,6 +7,7 @@ import 'package:nearpick/services/pickup_code_generator.dart';
 
 class FakeAuthGateway implements AuthGateway {
   final Map<String, String> _passwordByEmail = {};
+  final List<String> passwordResetEmails = [];
   int _idCounter = 0;
 
   @override
@@ -31,6 +32,14 @@ class FakeAuthGateway implements AuthGateway {
       throw StateError('invalid-credentials');
     }
     currentUserId = 'signed-in-$email';
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    if (!_passwordByEmail.containsKey(email)) {
+      throw StateError('user-not-found');
+    }
+    passwordResetEmails.add(email);
   }
 
   @override

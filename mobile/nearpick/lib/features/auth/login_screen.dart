@@ -6,13 +6,20 @@ import '../../ui/app_chrome.dart';
 import 'register_screen.dart';
 
 typedef LoginAction = Future<void> Function(String email, String password);
+typedef PasswordResetAction = Future<void> Function(String email);
 typedef RegisterScreenBuilder = Widget Function(BuildContext context);
 
 class LoginScreen extends StatefulWidget {
   final LoginAction? onLogin;
+  final PasswordResetAction? onPasswordReset;
   final RegisterScreenBuilder? registerScreenBuilder;
 
-  const LoginScreen({super.key, this.onLogin, this.registerScreenBuilder});
+  const LoginScreen({
+    super.key,
+    this.onLogin,
+    this.onPasswordReset,
+    this.registerScreenBuilder,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -23,6 +30,118 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordCtrl = TextEditingController();
   bool _loading = false;
   String? _error;
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openPasswordResetDialog() async {
+    var resetEmail = _emailCtrl.text.trim();
+    var resetLoading = false;
+    String? resetError;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (_, setDialogState) {
+            Future<void> submitReset() async {
+              final email = resetEmail.trim();
+              if (email.isEmpty) {
+                setDialogState(() {
+                  resetError = 'Add meg az email-cimedet.';
+                });
+                return;
+              }
+
+              setDialogState(() {
+                resetLoading = true;
+                resetError = null;
+              });
+
+              try {
+                final sendReset =
+                    widget.onPasswordReset ??
+                    (String email) {
+                      return AuthService().sendPasswordResetEmail(email: email);
+                    };
+                await sendReset(email);
+                if (!dialogContext.mounted || !mounted) return;
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Elkuldtuk a jelszo-visszaallitasi emailt: $email',
+                    ),
+                  ),
+                );
+              } catch (e) {
+                setDialogState(() {
+                  resetError = authErrorMessage(e);
+                });
+              } finally {
+                if (dialogContext.mounted) {
+                  setDialogState(() {
+                    resetLoading = false;
+                  });
+                }
+              }
+            }
+
+            return AlertDialog(
+              title: const Text('Elfelejtett jelszo'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    key: const ValueKey('password_reset_email_field'),
+                    initialValue: resetEmail,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      hintText: 'pelda@email.com',
+                    ),
+                    onChanged: (value) {
+                      resetEmail = value;
+                    },
+                  ),
+                  if (resetError != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      resetError!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: resetLoading
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Megse'),
+                ),
+                ElevatedButton(
+                  key: const ValueKey('password_reset_submit_button'),
+                  onPressed: resetLoading ? null : submitReset,
+                  child: resetLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Email kuldese'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +166,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _passwordCtrl,
                     decoration: const InputDecoration(labelText: 'Jelszó'),
                     obscureText: true,
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      key: const ValueKey('open_password_reset_button'),
+                      onPressed: _openPasswordResetDialog,
+                      child: const Text('Elfelejtett jelszo?'),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   if (_error != null)
