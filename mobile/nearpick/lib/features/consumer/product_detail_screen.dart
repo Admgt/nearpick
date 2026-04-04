@@ -171,6 +171,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final pickupStartAt = asDate(data['pickupStartAt']);
     final pickupEndAt = asDate(data['pickupEndAt']);
     final ownerId = (data['ownerId'] as String?)?.trim() ?? '';
+    final merchantName = (data['merchantName'] as String?)?.trim() ?? '';
     final pickupWindowText = formatPickupWindow(
       pickupStartAt: pickupStartAt,
       pickupEndAt: pickupEndAt,
@@ -216,6 +217,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 const SizedBox(height: 8),
                 Text('Elérhető: $quantityAvailable db'),
                 Text('Atvetel: $pickupWindowText'),
+                if (merchantName.isNotEmpty) Text('Kereskedo: $merchantName'),
                 const SizedBox(height: 8),
                 const SizedBox(height: 16),
                 Row(
@@ -274,7 +276,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Kereskedo ertekelese',
+                                    merchantName.isEmpty
+                                        ? 'Kereskedo ertekelese'
+                                        : '$merchantName ertekelese',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.labelLarge,

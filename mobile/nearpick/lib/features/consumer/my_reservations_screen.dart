@@ -57,6 +57,7 @@ class MyReservationsScreen extends StatelessWidget {
                 final imageUrl = snapshotData['imageUrl'] as String?;
                 final name =
                     snapshotData['name'] as String? ?? 'Ismeretlen termek';
+                final merchantName = reservation.merchantName.trim();
                 final discounted = snapshotData['discountedPrice'] as int? ?? 0;
                 final original = snapshotData['originalPrice'] as int? ?? 0;
                 final expiresAt = reservation.expiresAt;
@@ -98,6 +99,8 @@ class MyReservationsScreen extends StatelessWidget {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (merchantName.isNotEmpty)
+                        Text('Kereskedo: $merchantName'),
                       Text('Kod: ${reservation.pickupCode}'),
                       if (reservedAt != null)
                         Text('Foglalva: ${formatDateTime(reservedAt)}'),

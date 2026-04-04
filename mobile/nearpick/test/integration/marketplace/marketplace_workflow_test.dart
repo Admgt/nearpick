@@ -13,6 +13,7 @@ ReservationProductRecord reservationProductFromMap(
   return ReservationProductRecord(
     id: productId,
     ownerId: data['ownerId'] as String? ?? '',
+    merchantName: data['merchantName'] as String? ?? '',
     name: data['name'] as String? ?? '',
     category: data['category'] as String? ?? '',
     originalPrice: data['originalPrice'] as int? ?? 0,
@@ -57,12 +58,14 @@ void main() {
         expiresAt: expiresAt,
         pickupStartAt: pickupStartAt,
         pickupEndAt: pickupEndAt,
+        merchantName: 'Spar',
         imageBytes: Uint8List.fromList(const [9, 8, 7, 6]),
       );
 
       final createdProduct = productRepository.products[productId]!;
       expect(createdProduct['name'], 'Sajtos pogacsa');
       expect(createdProduct['category'], 'Pekseg');
+      expect(createdProduct['merchantName'], 'Spar');
       expect(createdProduct['hasImage'], true);
       expect(
         createdProduct['imagePath'],
@@ -112,6 +115,12 @@ void main() {
             .reservations[reservationId]
             ?.productSnapshot['category'],
         'Pekseg',
+      );
+      expect(
+        reservationStore
+            .reservations[reservationId]
+            ?.productSnapshot['merchantName'],
+        'Spar',
       );
     },
   );

@@ -19,6 +19,7 @@ function canCreateProduct({auth, productId, data}) {
     "interestCount",
     "isDeleted",
     "location",
+    "merchantName",
     "name",
     "originalPrice",
     "ownerId",
@@ -33,6 +34,7 @@ function canCreateProduct({auth, productId, data}) {
   return auth != null &&
     JSON.stringify(keys) === JSON.stringify([...requiredKeys].sort()) &&
     data.ownerId === auth.uid &&
+    typeof data.merchantName === "string" &&
     typeof data.name === "string" &&
     typeof data.category === "string" &&
     Number.isInteger(data.originalPrice) &&
@@ -111,6 +113,7 @@ test("product create policy engedi a saját képes termék létrehozását", () 
       interestCount: 0,
       isDeleted: false,
       location: null,
+      merchantName: "Penny",
       name: "Bagel",
       originalPrice: 1000,
       ownerId: "merchant-1",
@@ -140,6 +143,7 @@ test("product create policy tiltja az idegen ownerId-t", () => {
       interestCount: 0,
       isDeleted: false,
       location: null,
+      merchantName: "Penny",
       name: "Bagel",
       originalPrice: 1000,
       ownerId: "merchant-2",
@@ -244,6 +248,7 @@ test("product create policy denies anonymous creation", () => {
       interestCount: 0,
       isDeleted: false,
       location: null,
+      merchantName: "Penny",
       name: "Bagel",
       originalPrice: 1000,
       ownerId: "merchant-1",
@@ -275,6 +280,7 @@ test("product create policy denies invalid owned image path", () => {
       interestCount: 0,
       isDeleted: false,
       location: null,
+      merchantName: "Penny",
       name: "Bagel",
       originalPrice: 1000,
       ownerId: "merchant-1",

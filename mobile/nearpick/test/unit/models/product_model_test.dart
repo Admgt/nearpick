@@ -7,6 +7,7 @@ void main() {
     final product = Product.fromMap('p1', const {});
 
     expect(product.id, 'p1');
+    expect(product.merchantName, '');
     expect(product.name, 'Nevtelen termek');
     expect(product.category, 'Ismeretlen kategoria');
     expect(product.quantityAvailable, 0);
@@ -23,6 +24,7 @@ void main() {
     final product = Product(
       id: 'p1',
       ownerId: 'merchant-1',
+      merchantName: 'Penny',
       name: 'Bagel',
       category: 'Pekseg',
       originalPrice: 1000,
@@ -54,5 +56,6 @@ void main() {
     expect((map['expiresAt'] as Timestamp).toDate(), expiresAt);
     expect((map['pickupStartAt'] as Timestamp).toDate(), pickupStartAt);
     expect((map['pickupEndAt'] as Timestamp).toDate(), pickupEndAt);
+    expect(map['merchantName'], 'Penny');
   });
 }

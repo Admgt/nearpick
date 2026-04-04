@@ -3,6 +3,7 @@ import '../../services/pickup_code_generator.dart';
 class ReservationProductRecord {
   final String id;
   final String ownerId;
+  final String merchantName;
   final String name;
   final String category;
   final int originalPrice;
@@ -19,6 +20,7 @@ class ReservationProductRecord {
   const ReservationProductRecord({
     required this.id,
     required this.ownerId,
+    required this.merchantName,
     required this.name,
     required this.category,
     required this.originalPrice,
@@ -41,6 +43,7 @@ class ReservationProductRecord {
     return ReservationProductRecord(
       id: id,
       ownerId: ownerId,
+      merchantName: merchantName,
       name: name,
       category: category,
       originalPrice: originalPrice,
@@ -243,6 +246,7 @@ class ReservationWorkflow {
         refundCompletedAt: null,
         productSnapshot: {
           'name': product.name,
+          'merchantName': product.merchantName,
           'discountedPrice': product.discountedPrice,
           'originalPrice': product.originalPrice,
           'imageUrl': product.imageUrl,

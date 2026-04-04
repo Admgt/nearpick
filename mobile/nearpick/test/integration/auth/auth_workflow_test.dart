@@ -17,6 +17,7 @@ void main() {
       password: 'secret-123',
       displayName: 'Merchant',
       role: 'merchant',
+      companyName: 'Penny',
     );
 
     expect(authGateway.currentUserId, isNotNull);
@@ -24,6 +25,7 @@ void main() {
       'email': 'merchant@example.com',
       'displayName': 'Merchant',
       'role': 'merchant',
+      'companyName': 'Penny',
     });
   });
 
@@ -40,6 +42,7 @@ void main() {
       password: 'correct-password',
       displayName: 'User',
       role: 'consumer',
+      companyName: '',
     );
     await authGateway.signOut();
 
@@ -64,6 +67,7 @@ void main() {
       password: 'correct-password',
       displayName: 'User',
       role: 'consumer',
+      companyName: '',
     );
     await authGateway.signOut();
 

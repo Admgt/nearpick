@@ -99,6 +99,8 @@ class FavoritesScreen extends StatelessWidget {
                     final name = p['name'] as String? ?? 'Névtelen termék';
                     final category =
                         p['category'] as String? ?? 'Ismeretlen kategória';
+                    final merchantName =
+                        (p['merchantName'] as String?)?.trim() ?? '';
                     final discounted = p['discountedPrice'] as int? ?? 0;
                     final original = p['originalPrice'] as int? ?? 0;
                     final quantityAvailable =
@@ -121,7 +123,9 @@ class FavoritesScreen extends StatelessWidget {
                         vertical: 4,
                       ),
 
-                      title: Text(name),
+                      title: Text(
+                        merchantName.isEmpty ? name : '$name - $merchantName',
+                      ),
                       subtitle: Text(
                         '$category • $expiresText\n'
                         'Ár: $discounted Ft${(original > discounted) ? " (eredeti: $original Ft)" : ""} • Elérhető: $quantityAvailable db',

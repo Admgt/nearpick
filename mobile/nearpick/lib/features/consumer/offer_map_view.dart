@@ -264,6 +264,7 @@ class _SelectedOfferCard extends StatelessWidget {
     final imagePath = product['imagePath'] as String?;
     final hasImage = product['hasImage'] == true;
     final name = product['name'] as String? ?? 'Nevtelen termek';
+    final merchantName = (product['merchantName'] as String?)?.trim() ?? '';
     final category = product['category'] as String? ?? 'Ismeretlen kategoria';
     final discountedPrice = product['discountedPrice'] as int? ?? 0;
     final quantityAvailable =
@@ -311,7 +312,9 @@ class _SelectedOfferCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '$category | $distanceText',
+                  merchantName.isEmpty
+                      ? '$category | $distanceText'
+                      : '$merchantName | $category | $distanceText',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

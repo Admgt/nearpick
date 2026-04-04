@@ -24,6 +24,7 @@ abstract class UserProfileGateway {
     required String email,
     required String displayName,
     required String role,
+    required String companyName,
   });
 }
 
@@ -41,6 +42,7 @@ class AuthWorkflow {
     required String password,
     required String displayName,
     required String role,
+    required String companyName,
   }) async {
     final identity = await authGateway.createUser(
       email: email,
@@ -51,6 +53,7 @@ class AuthWorkflow {
       email: email,
       displayName: displayName,
       role: role,
+      companyName: companyName,
     );
   }
 

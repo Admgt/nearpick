@@ -94,6 +94,7 @@ service cloud.firestore {
           'interestCount',
           'isDeleted',
           'location',
+          'merchantName',
           'name',
           'originalPrice',
           'ownerId',
@@ -105,6 +106,7 @@ service cloud.firestore {
           'status',
         ])
         && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.merchantName is string
         && request.resource.data.name is string
         && request.resource.data.category is string
         && request.resource.data.originalPrice is int

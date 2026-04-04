@@ -357,6 +357,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
           final discounted = product['discountedPrice'] as int? ?? 0;
           final original = product['originalPrice'] as int? ?? 0;
           final category = product['category'] as String? ?? '';
+          final merchantName = reservation.merchantName.trim();
           final expiresAt = reservation.expiresAt;
           final reservedAt = reservation.createdAt;
           final pickupWindowText = formatPickupWindow(
@@ -404,6 +405,9 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    if (merchantName.isNotEmpty)
+                      Text('Kereskedo: $merchantName'),
+                    if (merchantName.isNotEmpty) const SizedBox(height: 8),
                     if (category.isNotEmpty) Text('Kategoria: $category'),
                     const SizedBox(height: 8),
                     Text('Lejar: $expiresText'),

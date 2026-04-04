@@ -108,4 +108,6 @@ class Reservation {
   DateTime? get pickupStartAt => _asDate(productSnapshot['pickupStartAt']);
 
   DateTime? get pickupEndAt => _asDate(productSnapshot['pickupEndAt']);
+
+  String get merchantName => productSnapshot['merchantName'] as String? ?? '';
 }

@@ -13,6 +13,22 @@ class ProductService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
+  Future<String> _resolveMerchantName(User user) async {
+    final profile = await _db.collection('users').doc(user.uid).get();
+    final data = profile.data() ?? const <String, dynamic>{};
+    final companyName = (data['companyName'] as String?)?.trim() ?? '';
+    if (companyName.isNotEmpty) {
+      return companyName;
+    }
+
+    final displayName = (data['displayName'] as String?)?.trim() ?? '';
+    if (displayName.isNotEmpty) {
+      return displayName;
+    }
+
+    return (user.email ?? user.uid).trim();
+  }
+
   /// Új termék hozzáadása az aktuálisan bejelentkezett kereskedőhöz
   Future<void> addProduct({
     required String name,
@@ -58,9 +74,11 @@ class ProductService {
     }
 
     final docRef = _db.collection('products').doc();
+    final merchantName = await _resolveMerchantName(user);
 
     final data = <String, dynamic>{
       'ownerId': user.uid,
+      'merchantName': merchantName,
       'name': name,
       'category': category,
       'originalPrice': originalPrice,

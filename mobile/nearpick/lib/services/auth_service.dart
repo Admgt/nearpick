@@ -12,18 +12,24 @@ class AuthService {
     required String password,
     required String displayName,
     required String role, // 'consumer' vagy 'merchant'
+    required String companyName,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
 
-    await _db.collection('users').doc(credential.user!.uid).set({
+    final data = <String, dynamic>{
       'email': email,
       'displayName': displayName,
       'role': role,
       'createdAt': FieldValue.serverTimestamp(),
-    });
+    };
+    if (companyName.trim().isNotEmpty) {
+      data['companyName'] = companyName.trim();
+    }
+
+    await _db.collection('users').doc(credential.user!.uid).set(data);
   }
 
   Future<void> login({required String email, required String password}) async {

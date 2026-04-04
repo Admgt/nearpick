@@ -359,6 +359,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
         final imagePath = data['imagePath'] as String?;
         final hasImage = data['hasImage'] == true;
         final name = data['name'] as String? ?? 'Nevtelen termek';
+        final merchantName = (data['merchantName'] as String?)?.trim() ?? '';
         final category = data['category'] as String? ?? 'Ismeretlen kategoria';
         final discounted = data['discountedPrice'] as int? ?? 0;
         final original = data['originalPrice'] as int? ?? 0;
@@ -437,8 +438,12 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
             children: [
               Text(
                 pickupWindowText == null
-                    ? '$category\n$expiresText - Elerheto: $quantityAvailable db'
-                    : '$category\n$expiresText - Elerheto: $quantityAvailable db\nAtvetel: $pickupWindowText',
+                    ? merchantName.isEmpty
+                          ? '$category\n$expiresText - Elerheto: $quantityAvailable db'
+                          : '$merchantName\n$category - $expiresText - Elerheto: $quantityAvailable db'
+                    : merchantName.isEmpty
+                    ? '$category\n$expiresText - Elerheto: $quantityAvailable db\nAtvetel: $pickupWindowText'
+                    : '$merchantName\n$category - $expiresText - Elerheto: $quantityAvailable db\nAtvetel: $pickupWindowText',
               ),
               if (chips.isNotEmpty) ...[
                 const SizedBox(height: 6),

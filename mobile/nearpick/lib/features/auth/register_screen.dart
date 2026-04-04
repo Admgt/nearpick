@@ -11,6 +11,7 @@ typedef RegisterAction =
       String password,
       String displayName,
       String role,
+      String companyName,
     );
 
 class RegisterScreen extends StatefulWidget {
@@ -24,11 +25,21 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _nameCtrl = TextEditingController();
+  final _companyNameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   String _role = 'consumer';
   bool _loading = false;
   String? _error;
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _companyNameCtrl.dispose();
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +64,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _emailCtrl,
                     decoration: const InputDecoration(labelText: 'Email'),
                   ),
+                  if (_role == 'merchant')
+                    TextField(
+                      key: const ValueKey('register_company_name_field'),
+                      controller: _companyNameCtrl,
+                      decoration: const InputDecoration(labelText: 'Ceg neve'),
+                    ),
                   TextField(
                     key: const ValueKey('register_password_field'),
                     controller: _passwordCtrl,
@@ -81,6 +98,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onPressed: _loading
                         ? null
                         : () async {
+                            final companyName = _companyNameCtrl.text.trim();
+                            if (_role == 'merchant' && companyName.isEmpty) {
+                              setState(() {
+                                _error = 'Kereskedokent add meg a ceg nevet.';
+                              });
+                              return;
+                            }
                             setState(() {
                               _loading = true;
                               _error = null;
@@ -93,12 +117,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     String password,
                                     String displayName,
                                     String role,
+                                    String companyName,
                                   ) {
                                     return AuthService().register(
                                       email: email,
                                       password: password,
                                       displayName: displayName,
                                       role: role,
+                                      companyName: companyName,
                                     );
                                   };
                               await register(
@@ -106,6 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 _passwordCtrl.text.trim(),
                                 _nameCtrl.text.trim(),
                                 _role,
+                                companyName,
                               );
                               if (!context.mounted) return;
                               Navigator.of(context).pop();

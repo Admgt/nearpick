@@ -293,6 +293,18 @@ exports.reserveProduct = onCall(async (request) => {
           new Date(Date.now() + 30 * 60 * 1000),
       );
       const pickupCode = generatePickupCode(6);
+      let merchantName =
+        typeof product.merchantName === "string" ? product.merchantName.trim() : "";
+      if (!merchantName) {
+        const merchantSnap = await tx.get(db.collection("users").doc(ownerId));
+        const merchantProfile = merchantSnap.data() ?? {};
+        merchantName = normalizeOptionalText(
+            merchantProfile.companyName ||
+              merchantProfile.displayName ||
+              merchantProfile.email,
+            {maxLength: 120},
+        );
+      }
 
       const productSnapshot = {
         category: product.category ?? "",
@@ -301,6 +313,7 @@ exports.reserveProduct = onCall(async (request) => {
           0,
         expiresAt: product.expiresAt ?? null,
         imageUrl: typeof product.imageUrl === "string" ? product.imageUrl : null,
+        merchantName,
         name: typeof product.name === "string" ? product.name : "",
         originalPrice: Number.isInteger(product.originalPrice) ?
           product.originalPrice :

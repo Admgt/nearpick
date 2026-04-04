@@ -9,27 +9,37 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: RegisterScreen(
-          onRegister: (email, password, displayName, role) async {
-            submissions.add('$email|$password|$displayName|$role');
+          onRegister: (email, password, displayName, role, companyName) async {
+            submissions.add('$email|$password|$displayName|$role|$companyName');
           },
         ),
       ),
     );
 
-    await tester.enterText(find.byType(TextField).at(0), 'Merchant User');
     await tester.enterText(
-      find.byType(TextField).at(1),
+      find.byKey(const ValueKey('register_name_field')),
+      'Merchant User',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register_email_field')),
       'merchant@example.com',
     );
-    await tester.enterText(find.byType(TextField).at(2), 'secret123');
     await tester.tap(find.byType(RadioListTile<String>).at(1));
     await tester.pump();
-    await tester.tap(find.byType(ElevatedButton));
+    await tester.enterText(
+      find.byKey(const ValueKey('register_company_name_field')),
+      'Penny',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register_password_field')),
+      'secret123',
+    );
+    await tester.tap(find.byKey(const ValueKey('register_submit_button')));
     await tester.pumpAndSettle();
 
     expect(
       submissions.single,
-      'merchant@example.com|secret123|Merchant User|merchant',
+      'merchant@example.com|secret123|Merchant User|merchant|Penny',
     );
   });
 
@@ -37,19 +47,53 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: RegisterScreen(
-          onRegister: (_, __, ___, ____) async {
+          onRegister: (_, __, ___, ____, _____) async {
             throw Exception('register-failed');
           },
         ),
       ),
     );
 
-    await tester.enterText(find.byType(TextField).at(0), 'User');
-    await tester.enterText(find.byType(TextField).at(1), 'user@example.com');
-    await tester.enterText(find.byType(TextField).at(2), 'secret123');
-    await tester.tap(find.byType(ElevatedButton));
+    await tester.enterText(
+      find.byKey(const ValueKey('register_name_field')),
+      'User',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register_email_field')),
+      'user@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register_password_field')),
+      'secret123',
+    );
+    await tester.tap(find.byKey(const ValueKey('register_submit_button')));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('register-failed'), findsOneWidget);
+  });
+
+  testWidgets('RegisterScreen requires company name for merchants', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+
+    await tester.enterText(
+      find.byKey(const ValueKey('register_name_field')),
+      'Merchant User',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register_email_field')),
+      'merchant@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register_password_field')),
+      'secret123',
+    );
+    await tester.tap(find.byType(RadioListTile<String>).at(1));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('register_submit_button')));
+    await tester.pump();
+
+    expect(find.textContaining('ceg nevet'), findsOneWidget);
   });
 }

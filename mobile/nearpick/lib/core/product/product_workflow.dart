@@ -68,6 +68,7 @@ class ProductWorkflow {
     required DateTime expiresAt,
     required DateTime pickupStartAt,
     required DateTime pickupEndAt,
+    String merchantName = '',
     GeoPoint? location,
     Uint8List? imageBytes,
   }) async {
@@ -79,6 +80,7 @@ class ProductWorkflow {
     final productId = productRepository.nextProductId();
     final data = <String, dynamic>{
       'ownerId': userId,
+      'merchantName': merchantName,
       'name': name,
       'category': category,
       'originalPrice': originalPrice,

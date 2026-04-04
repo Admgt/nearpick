@@ -13,6 +13,7 @@ void main() {
         ..products['product-1'] = const ReservationProductRecord(
           id: 'product-1',
           ownerId: 'merchant-1',
+          merchantName: 'Penny',
           name: 'Bagel',
           category: 'Pekseg',
           originalPrice: 1000,
@@ -47,6 +48,12 @@ void main() {
       expect(
         reservationStore.reservations[reservationId]?.pickupCode,
         'ABC123',
+      );
+      expect(
+        reservationStore
+            .reservations[reservationId]
+            ?.productSnapshot['merchantName'],
+        'Penny',
       );
       expect(merchantStats.stats['merchant-1']?['reservedCount'], 1);
       expect(merchantStats.stats['merchant-1']?['soldOutCount'], 1);
@@ -152,6 +159,7 @@ void main() {
         ..products['product-1'] = const ReservationProductRecord(
           id: 'product-1',
           ownerId: 'merchant-1',
+          merchantName: 'Penny',
           name: 'Bagel',
           category: 'Pekseg',
           originalPrice: 1000,

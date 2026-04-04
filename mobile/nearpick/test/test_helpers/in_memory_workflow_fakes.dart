@@ -48,8 +48,14 @@ class FakeUserProfileGateway implements UserProfileGateway {
     required String email,
     required String displayName,
     required String role,
+    required String companyName,
   }) async {
-    profiles[uid] = {'email': email, 'displayName': displayName, 'role': role};
+    profiles[uid] = {
+      'email': email,
+      'displayName': displayName,
+      'role': role,
+      'companyName': companyName,
+    };
   }
 }
 

@@ -142,9 +142,13 @@ class _IntegrationFlowHarnessState extends State<_IntegrationFlowHarness> {
     String password,
     String displayName,
     String role,
+    String companyName,
   ) async {
     if (displayName.isEmpty) {
       throw StateError('display-name-required');
+    }
+    if (role == 'merchant' && companyName.trim().isEmpty) {
+      throw StateError('company-name-required');
     }
 
     setState(() {

@@ -94,6 +94,7 @@ void main() {
         expiresAt: expiresAt,
         pickupStartAt: pickupStartAt,
         pickupEndAt: pickupEndAt,
+        merchantName: 'Penny',
         location: GeoPoint(46.253, 20.147),
         imageBytes: Uint8List.fromList(const [1, 2, 3, 4]),
       );
@@ -101,6 +102,7 @@ void main() {
       expect(productId, 'product-1');
       expect(repository.products[productId], {
         'ownerId': 'merchant-1',
+        'merchantName': 'Penny',
         'name': 'Bagel Box',
         'category': 'Pekseg',
         'originalPrice': 1200,

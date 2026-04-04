@@ -9,6 +9,7 @@ DateTime? _asDate(dynamic value) {
 class Product {
   final String id;
   final String ownerId;
+  final String merchantName;
   final String name;
   final String category;
   final int originalPrice;
@@ -33,6 +34,7 @@ class Product {
   const Product({
     required this.id,
     required this.ownerId,
+    required this.merchantName,
     required this.name,
     required this.category,
     required this.originalPrice,
@@ -59,6 +61,7 @@ class Product {
     return Product(
       id: id,
       ownerId: data['ownerId'] as String? ?? '',
+      merchantName: data['merchantName'] as String? ?? '',
       name: data['name'] as String? ?? 'Nevtelen termek',
       category: data['category'] as String? ?? 'Ismeretlen kategoria',
       originalPrice: data['originalPrice'] as int? ?? 0,
@@ -93,6 +96,7 @@ class Product {
   Map<String, dynamic> toMap() {
     return {
       'ownerId': ownerId,
+      'merchantName': merchantName,
       'name': name,
       'category': category,
       'originalPrice': originalPrice,
