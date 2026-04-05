@@ -9,6 +9,11 @@ import '../../models/reservation.dart';
 import '../../services/reservation_service.dart';
 import '../../ui/app_chrome.dart';
 import '../../utils/date_time_formatters.dart';
+import 'merchant_dashboard_screen.dart';
+import 'merchant_home_screen.dart';
+import 'merchant_navigation.dart';
+import 'merchant_profile_screen.dart';
+import 'merchant_reservations_screen.dart';
 import 'merchant_qr_scanner_screen.dart';
 
 class MerchantReservationDetailScreen extends StatefulWidget {
@@ -31,6 +36,27 @@ class _MerchantReservationDetailScreenState
   final TextEditingController _pickupInputController = TextEditingController();
   bool _submitting = false;
   String? _refundUpdatingStatus;
+
+  void _openTopDestination(MerchantTopDestination destination) {
+    switch (destination) {
+      case MerchantTopDestination.home:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantHomeScreen()),
+        );
+      case MerchantTopDestination.reservations:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantReservationsScreen()),
+        );
+      case MerchantTopDestination.dashboard:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantDashboardScreen()),
+        );
+      case MerchantTopDestination.profile:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantProfileScreen()),
+        );
+    }
+  }
 
   @override
   void initState() {
@@ -121,7 +147,13 @@ class _MerchantReservationDetailScreenState
         .snapshots();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Foglalas reszletei')),
+      appBar: AppBar(
+        title: const Text('Foglalas reszletei'),
+        actions: buildMerchantAppBarActions(
+          context,
+          onSelected: _openTopDestination,
+        ),
+      ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: reservationStream,
         builder: (context, snapshot) {

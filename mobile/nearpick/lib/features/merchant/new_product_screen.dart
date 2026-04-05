@@ -11,6 +11,11 @@ import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
 import '../../utils/date_time_formatters.dart';
 import 'dynamic_pricing.dart';
+import 'merchant_dashboard_screen.dart';
+import 'merchant_home_screen.dart';
+import 'merchant_navigation.dart';
+import 'merchant_profile_screen.dart';
+import 'merchant_reservations_screen.dart';
 import 'new_product_form_logic.dart';
 
 typedef SaveProductAction = Future<void> Function(NewProductCommand command);
@@ -63,6 +68,27 @@ class _NewProductScreenState extends State<NewProductScreen> {
   String? _error;
   DynamicPricingRecommendation? _pricingRecommendation;
   String? _pricingError;
+
+  void _openTopDestination(MerchantTopDestination destination) {
+    switch (destination) {
+      case MerchantTopDestination.home:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantHomeScreen()),
+        );
+      case MerchantTopDestination.reservations:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantReservationsScreen()),
+        );
+      case MerchantTopDestination.dashboard:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantDashboardScreen()),
+        );
+      case MerchantTopDestination.profile:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantProfileScreen()),
+        );
+    }
+  }
 
   @override
   void initState() {
@@ -391,7 +417,13 @@ class _NewProductScreenState extends State<NewProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Uj termek hozzaadasa')),
+      appBar: AppBar(
+        title: const Text('Uj termek hozzaadasa'),
+        actions: buildMerchantAppBarActions(
+          context,
+          onSelected: _openTopDestination,
+        ),
+      ),
       body: NearPickBackground(
         maxWidth: 760,
         child: Center(

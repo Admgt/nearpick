@@ -2,6 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import 'merchant_dashboard_screen.dart';
+import 'merchant_home_screen.dart';
+import 'merchant_navigation.dart';
+import 'merchant_profile_screen.dart';
+import 'merchant_reservations_screen.dart';
+
 class MerchantQrScannerScreen extends StatefulWidget {
   const MerchantQrScannerScreen({super.key});
 
@@ -17,6 +23,27 @@ class _MerchantQrScannerScreenState extends State<MerchantQrScannerScreen> {
   );
   bool _handled = false;
   bool _torchOn = false;
+
+  void _openTopDestination(MerchantTopDestination destination) {
+    switch (destination) {
+      case MerchantTopDestination.home:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantHomeScreen()),
+        );
+      case MerchantTopDestination.reservations:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantReservationsScreen()),
+        );
+      case MerchantTopDestination.dashboard:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantDashboardScreen()),
+        );
+      case MerchantTopDestination.profile:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantProfileScreen()),
+        );
+    }
+  }
 
   bool get _isSupportedPlatform =>
       kIsWeb ||
@@ -48,7 +75,13 @@ class _MerchantQrScannerScreenState extends State<MerchantQrScannerScreen> {
   Widget build(BuildContext context) {
     if (!_isSupportedPlatform) {
       return Scaffold(
-        appBar: AppBar(title: const Text('QR scanner')),
+        appBar: AppBar(
+          title: const Text('QR scanner'),
+          actions: buildMerchantAppBarActions(
+            context,
+            onSelected: _openTopDestination,
+          ),
+        ),
         body: const Center(
           child: Padding(
             padding: EdgeInsets.all(24),
@@ -66,6 +99,10 @@ class _MerchantQrScannerScreenState extends State<MerchantQrScannerScreen> {
       appBar: AppBar(
         title: const Text('QR scanner'),
         actions: [
+          ...buildMerchantAppBarActions(
+            context,
+            onSelected: _openTopDestination,
+          ),
           IconButton(
             onPressed: () async {
               await _controller.switchCamera();

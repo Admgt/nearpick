@@ -4,10 +4,33 @@ import 'package:flutter/material.dart';
 
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
+import 'account_screen.dart';
+import 'consumer_navigation.dart';
+import 'my_reservations_screen.dart';
 import 'product_detail_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
+
+  void _openTopDestination(
+    BuildContext context,
+    ConsumerTopDestination destination,
+  ) {
+    switch (destination) {
+      case ConsumerTopDestination.home:
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      case ConsumerTopDestination.reservations:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MyReservationsScreen()),
+        );
+      case ConsumerTopDestination.favorites:
+        return;
+      case ConsumerTopDestination.account:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AccountScreen()),
+        );
+    }
+  }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _myInterestsStream() {
     final user = FirebaseAuth.instance.currentUser;
@@ -33,7 +56,15 @@ class FavoritesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Kedvencek')),
+      appBar: AppBar(
+        title: const Text('Kedvencek'),
+        actions: buildConsumerAppBarActions(
+          context,
+          current: ConsumerTopDestination.favorites,
+          onSelected: (destination) =>
+              _openTopDestination(context, destination),
+        ),
+      ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: _myInterestsStream(),
         builder: (context, snapshot) {

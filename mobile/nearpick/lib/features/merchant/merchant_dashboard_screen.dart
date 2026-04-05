@@ -7,8 +7,12 @@ import 'package:flutter/material.dart';
 import '../../core/error/app_error_message.dart';
 import '../../services/merchant_report_service.dart';
 import '../../services/product_service.dart';
-import 'dynamic_pricing.dart';
 import 'dashboard_metrics.dart';
+import 'dynamic_pricing.dart';
+import 'merchant_home_screen.dart';
+import 'merchant_navigation.dart';
+import 'merchant_profile_screen.dart';
+import 'merchant_reservations_screen.dart';
 import '../../ui/app_chrome.dart';
 import '../../widgets/merchant_reviews_section.dart';
 
@@ -23,6 +27,25 @@ class MerchantDashboardScreen extends StatefulWidget {
 class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
   final Set<String> _repricingIds = {};
   bool _exportingCsv = false;
+
+  void _openTopDestination(MerchantTopDestination destination) {
+    switch (destination) {
+      case MerchantTopDestination.home:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantHomeScreen()),
+        );
+      case MerchantTopDestination.reservations:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantReservationsScreen()),
+        );
+      case MerchantTopDestination.dashboard:
+        return;
+      case MerchantTopDestination.profile:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantProfileScreen()),
+        );
+    }
+  }
 
   Future<void> _applyRecommendedPrice({
     required BuildContext context,
@@ -87,7 +110,14 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Dashboard')),
+        appBar: AppBar(
+          title: const Text('Dashboard'),
+          actions: buildMerchantAppBarActions(
+            context,
+            current: MerchantTopDestination.dashboard,
+            onSelected: _openTopDestination,
+          ),
+        ),
         body: const Center(child: Text('Nincs bejelentkezett felhasznalo.')),
       );
     }
@@ -117,6 +147,11 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
+          ...buildMerchantAppBarActions(
+            context,
+            current: MerchantTopDestination.dashboard,
+            onSelected: _openTopDestination,
+          ),
           TextButton.icon(
             onPressed: _exportingCsv
                 ? null

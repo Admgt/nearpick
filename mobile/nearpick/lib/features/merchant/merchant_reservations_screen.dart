@@ -11,6 +11,10 @@ import '../../models/reservation.dart';
 import '../../services/reservation_service.dart';
 import '../../ui/app_chrome.dart';
 import '../../utils/date_time_formatters.dart';
+import 'merchant_dashboard_screen.dart';
+import 'merchant_home_screen.dart';
+import 'merchant_navigation.dart';
+import 'merchant_profile_screen.dart';
 import 'merchant_reservation_detail_screen.dart';
 import 'merchant_qr_scanner_screen.dart';
 
@@ -25,6 +29,25 @@ class MerchantReservationsScreen extends StatefulWidget {
 class _MerchantReservationsScreenState
     extends State<MerchantReservationsScreen> {
   final Set<String> _loadingIds = {};
+
+  void _openTopDestination(MerchantTopDestination destination) {
+    switch (destination) {
+      case MerchantTopDestination.home:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantHomeScreen()),
+        );
+      case MerchantTopDestination.reservations:
+        return;
+      case MerchantTopDestination.dashboard:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantDashboardScreen()),
+        );
+      case MerchantTopDestination.profile:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MerchantProfileScreen()),
+        );
+    }
+  }
 
   Future<void> _openReservationDetail({
     required String reservationId,
@@ -144,7 +167,14 @@ class _MerchantReservationsScreenState
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Foglalasok')),
+        appBar: AppBar(
+          title: const Text('Foglalasok'),
+          actions: buildMerchantAppBarActions(
+            context,
+            current: MerchantTopDestination.reservations,
+            onSelected: _openTopDestination,
+          ),
+        ),
         body: const Center(child: Text('Nincs bejelentkezett felhasznalo.')),
       );
     }
@@ -163,6 +193,11 @@ class _MerchantReservationsScreenState
       appBar: AppBar(
         title: const Text('Foglalasok'),
         actions: [
+          ...buildMerchantAppBarActions(
+            context,
+            current: MerchantTopDestination.reservations,
+            onSelected: _openTopDestination,
+          ),
           IconButton(
             onPressed: () async {
               final scanned = await Navigator.of(context).push<String>(

@@ -4,16 +4,39 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/error/app_error_message.dart';
 import '../../models/product.dart';
-import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
 import '../../widgets/product_list_tile.dart';
-import 'new_product_screen.dart';
 import 'merchant_dashboard_screen.dart';
+import 'merchant_navigation.dart';
+import 'merchant_profile_screen.dart';
 import 'merchant_reservations_screen.dart';
+import 'new_product_screen.dart';
 
 class MerchantHomeScreen extends StatelessWidget {
   const MerchantHomeScreen({super.key});
+
+  void _openTopDestination(
+    BuildContext context,
+    MerchantTopDestination destination,
+  ) {
+    switch (destination) {
+      case MerchantTopDestination.home:
+        return;
+      case MerchantTopDestination.reservations:
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MerchantReservationsScreen()),
+        );
+      case MerchantTopDestination.dashboard:
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MerchantDashboardScreen()),
+        );
+      case MerchantTopDestination.profile:
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MerchantProfileScreen()),
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,34 +45,12 @@ class MerchantHomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('NearPick - Kereskedő'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const MerchantReservationsScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.list_alt_outlined),
-            tooltip: 'Foglalasok',
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const MerchantDashboardScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.analytics_outlined),
-            tooltip: 'Dashboard',
-          ),
-          IconButton(
-            onPressed: () => AuthService().logout(),
-            icon: const Icon(Icons.logout),
-          ),
-        ],
+        actions: buildMerchantAppBarActions(
+          context,
+          current: MerchantTopDestination.home,
+          onSelected: (destination) =>
+              _openTopDestination(context, destination),
+        ),
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: productService.myProductsStream(),

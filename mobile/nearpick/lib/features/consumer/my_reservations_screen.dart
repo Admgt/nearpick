@@ -8,17 +8,48 @@ import '../reservation/reservation_support.dart';
 import '../../models/reservation.dart';
 import '../../ui/app_chrome.dart';
 import '../../utils/date_time_formatters.dart';
+import 'account_screen.dart';
+import 'consumer_navigation.dart';
+import 'favorites_screen.dart';
 import 'reservation_detail_screen.dart';
 
 class MyReservationsScreen extends StatelessWidget {
   const MyReservationsScreen({super.key});
+
+  void _openTopDestination(
+    BuildContext context,
+    ConsumerTopDestination destination,
+  ) {
+    switch (destination) {
+      case ConsumerTopDestination.home:
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      case ConsumerTopDestination.reservations:
+        return;
+      case ConsumerTopDestination.favorites:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const FavoritesScreen()),
+        );
+      case ConsumerTopDestination.account:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AccountScreen()),
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Foglalasaim')),
+        appBar: AppBar(
+          title: const Text('Foglalasaim'),
+          actions: buildConsumerAppBarActions(
+            context,
+            current: ConsumerTopDestination.reservations,
+            onSelected: (destination) =>
+                _openTopDestination(context, destination),
+          ),
+        ),
         body: const Center(child: Text('Nincs bejelentkezett felhasznalo.')),
       );
     }
@@ -30,7 +61,15 @@ class MyReservationsScreen extends StatelessWidget {
         .snapshots();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Foglalasaim')),
+      appBar: AppBar(
+        title: const Text('Foglalasaim'),
+        actions: buildConsumerAppBarActions(
+          context,
+          current: ConsumerTopDestination.reservations,
+          onSelected: (destination) =>
+              _openTopDestination(context, destination),
+        ),
+      ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: reservationsStream,
         builder: (context, snapshot) {

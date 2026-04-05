@@ -11,7 +11,6 @@ import 'product_detail_screen.dart';
 import '../../recommendation/recommendation_engine.dart';
 import 'offer_map_view.dart';
 import 'offer_filter.dart';
-import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
 import '../../utils/date_time_formatters.dart';
@@ -22,9 +21,9 @@ import '../../services/reservation_service.dart';
 import 'my_reservations_screen.dart';
 import 'reservation_detail_screen.dart';
 import 'favorites_screen.dart';
+import 'account_screen.dart';
+import 'consumer_navigation.dart';
 import 'location_preferences.dart';
-import 'location_settings_screen.dart';
-import 'profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 //import 'package:firebase_auth/firebase_auth.dart';
 //import 'package:cloud_firestore/cloud_firestore.dart';
@@ -252,6 +251,25 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
         builder: (_) => ProductDetailScreen(productId: productId, data: data),
       ),
     );
+  }
+
+  void _openTopDestination(ConsumerTopDestination destination) {
+    switch (destination) {
+      case ConsumerTopDestination.home:
+        return;
+      case ConsumerTopDestination.reservations:
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const MyReservationsScreen()));
+      case ConsumerTopDestination.favorites:
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const FavoritesScreen()));
+      case ConsumerTopDestination.account:
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AccountScreen()));
+    }
   }
 
   void _showReasonsDialog(RecommendationResult result) {
@@ -525,51 +543,10 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
       appBar: AppBar(
         title: const Text('NearPick - Ajánlatok a közelben'),
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MyReservationsScreen()),
-              );
-            },
-            icon: const Icon(Icons.event_available_outlined),
-            tooltip: 'Foglalasaim',
-          ),
-          IconButton(
-            icon: const Icon(Icons.place),
-            tooltip: 'Hely beallitasa',
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const LocationSettingsScreen(),
-                ),
-              );
-              if (mounted) {
-                await _loadUserPreferences();
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: 'Profil',
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
-            },
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const FavoritesScreen()),
-              );
-            },
-            icon: const Icon(Icons.favorite),
-            tooltip: 'Kedvencek',
-          ),
-          IconButton(
-            onPressed: () => AuthService().logout(),
-            icon: const Icon(Icons.logout),
-            tooltip: 'Kijelentkezés',
+          ...buildConsumerAppBarActions(
+            context,
+            current: ConsumerTopDestination.home,
+            onSelected: _openTopDestination,
           ),
         ],
       ),
