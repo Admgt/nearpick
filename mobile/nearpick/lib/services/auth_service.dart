@@ -14,6 +14,8 @@ class AuthService {
     required String role, // 'consumer' vagy 'merchant'
     required String companyName,
   }) async {
+    final trimmedDisplayName = displayName.trim();
+    final trimmedCompanyName = companyName.trim();
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
@@ -21,15 +23,58 @@ class AuthService {
 
     final data = <String, dynamic>{
       'email': email,
-      'displayName': displayName,
+      'displayName': trimmedDisplayName,
       'role': role,
       'createdAt': FieldValue.serverTimestamp(),
     };
-    if (companyName.trim().isNotEmpty) {
-      data['companyName'] = companyName.trim();
+    if (trimmedCompanyName.isNotEmpty) {
+      data['companyName'] = trimmedCompanyName;
     }
 
+    await credential.user!.updateDisplayName(trimmedDisplayName);
     await _db.collection('users').doc(credential.user!.uid).set(data);
+  }
+
+  Future<void> updateCurrentUserProfile({
+    String? displayName,
+    String? companyName,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Nincs bejelentkezett felhasznalo.');
+    }
+
+    final updates = <String, dynamic>{};
+    String? trimmedDisplayName;
+
+    if (displayName != null) {
+      trimmedDisplayName = displayName.trim();
+      if (trimmedDisplayName.isEmpty) {
+        throw Exception('A felhasznalonev nem lehet ures.');
+      }
+      updates['displayName'] = trimmedDisplayName;
+    }
+
+    if (companyName != null) {
+      final trimmedCompanyName = companyName.trim();
+      if (trimmedCompanyName.isEmpty) {
+        throw Exception('A ceg neve nem lehet ures.');
+      }
+      updates['companyName'] = trimmedCompanyName;
+    }
+
+    if (updates.isEmpty) {
+      return;
+    }
+
+    await _db
+        .collection('users')
+        .doc(user.uid)
+        .set(updates, SetOptions(merge: true));
+
+    if (trimmedDisplayName != null) {
+      await user.updateDisplayName(trimmedDisplayName);
+    }
   }
 
   Future<void> login({required String email, required String password}) async {

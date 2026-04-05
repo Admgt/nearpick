@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/auth_service.dart';
 import '../../ui/app_chrome.dart';
+import '../../widgets/profile_field_edit_dialog.dart';
 import 'merchant_dashboard_screen.dart';
 import 'merchant_home_screen.dart';
 import 'merchant_navigation.dart';
@@ -19,8 +20,11 @@ class MerchantProfileScreen extends StatefulWidget {
 class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final AuthService _authService = AuthService();
 
   bool _loading = true;
+  bool _savingDisplayName = false;
+  bool _savingCompanyName = false;
   String _displayName = '';
   String _email = '';
   String _companyName = '';
@@ -71,6 +75,65 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
     }
   }
 
+  void _showSnackBar(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  Future<void> _editDisplayName() async {
+    final updatedValue = await showProfileFieldEditDialog(
+      context,
+      title: 'Felhasznalonev szerkesztese',
+      label: 'Felhasznalonev',
+      initialValue: _displayName,
+    );
+    if (updatedValue == null || updatedValue == _displayName) {
+      return;
+    }
+
+    setState(() => _savingDisplayName = true);
+    try {
+      await _authService.updateCurrentUserProfile(displayName: updatedValue);
+      if (!mounted) return;
+      setState(() {
+        _displayName = updatedValue;
+        _savingDisplayName = false;
+      });
+      _showSnackBar('Felhasznalonev mentve.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _savingDisplayName = false);
+      _showSnackBar('A felhasznalonev mentese nem sikerult: $e');
+    }
+  }
+
+  Future<void> _editCompanyName() async {
+    final updatedValue = await showProfileFieldEditDialog(
+      context,
+      title: 'Cegnev szerkesztese',
+      label: 'Ceg neve',
+      initialValue: _companyName,
+    );
+    if (updatedValue == null || updatedValue == _companyName) {
+      return;
+    }
+
+    setState(() => _savingCompanyName = true);
+    try {
+      await _authService.updateCurrentUserProfile(companyName: updatedValue);
+      if (!mounted) return;
+      setState(() {
+        _companyName = updatedValue;
+        _savingCompanyName = false;
+      });
+      _showSnackBar('Cegnev mentve.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _savingCompanyName = false);
+      _showSnackBar('A cegnev mentese nem sikerult: $e');
+    }
+  }
+
   Widget _buildInfoCard() {
     return SurfaceCard(
       child: Column(
@@ -88,6 +151,17 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
             subtitle: Text(
               _displayName.isEmpty ? 'Nincs megadva' : _displayName,
             ),
+            trailing: _savingDisplayName
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : IconButton(
+                    onPressed: _editDisplayName,
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Felhasznalonev modositasa',
+                  ),
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -102,6 +176,17 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
             subtitle: Text(
               _companyName.isEmpty ? 'Nincs megadva' : _companyName,
             ),
+            trailing: _savingCompanyName
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : IconButton(
+                    onPressed: _editCompanyName,
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Cegnev modositasa',
+                  ),
           ),
         ],
       ),

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../services/location_service.dart';
 import '../../ui/app_chrome.dart';
+import '../../widgets/profile_field_edit_dialog.dart';
 import 'consumer_navigation.dart';
 import 'favorites_screen.dart';
 import 'location_catalog.dart';
@@ -22,6 +23,7 @@ class AccountScreen extends StatefulWidget {
 class _AccountScreenState extends State<AccountScreen> {
   final _db = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
+  final _authService = AuthService();
   final _formKey = GlobalKey<FormState>();
   final _latCtrl = TextEditingController();
   final _lngCtrl = TextEditingController();
@@ -30,6 +32,7 @@ class _AccountScreenState extends State<AccountScreen> {
   bool _loading = true;
   bool _savingCategories = false;
   bool _savingLocation = false;
+  bool _savingDisplayName = false;
   bool _fetchingLocation = false;
   ConsumerLocationMode _locationMode = ConsumerLocationMode.exact;
   String? _selectedCityId;
@@ -169,6 +172,33 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
+  Future<void> _editDisplayName() async {
+    final updatedValue = await showProfileFieldEditDialog(
+      context,
+      title: 'Felhasznalonev szerkesztese',
+      label: 'Felhasznalonev',
+      initialValue: _displayName,
+    );
+    if (updatedValue == null || updatedValue == _displayName) {
+      return;
+    }
+
+    setState(() => _savingDisplayName = true);
+    try {
+      await _authService.updateCurrentUserProfile(displayName: updatedValue);
+      if (!mounted) return;
+      setState(() {
+        _displayName = updatedValue;
+        _savingDisplayName = false;
+      });
+      _showSnackBar('Felhasznalonev mentve.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _savingDisplayName = false);
+      _showSnackBar('A felhasznalonev mentese nem sikerult: $e');
+    }
+  }
+
   Future<void> _saveLocation() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -240,6 +270,17 @@ class _AccountScreenState extends State<AccountScreen> {
             subtitle: Text(
               _displayName.isEmpty ? 'Nincs megadva' : _displayName,
             ),
+            trailing: _savingDisplayName
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : IconButton(
+                    onPressed: _editDisplayName,
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Felhasznalonev modositasa',
+                  ),
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
