@@ -174,8 +174,8 @@ class _NewProductScreenState extends State<NewProductScreen> {
       setState(() => _imageLoading = true);
       final picked = await _imagePicker.pickImage(
         source: source,
-        maxWidth: 1600,
-        imageQuality: 85,
+        maxWidth: 1280,
+        imageQuality: 82,
       );
       if (picked == null) return;
       final bytes = await picked.readAsBytes();
@@ -552,6 +552,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
         borderRadius: BorderRadius.circular(12),
         child: StorageImage(
           imagePath: initialProduct.imagePath!,
+          imageUrl: initialProduct.imageUrl,
           width: double.infinity,
           height: 180,
           fit: BoxFit.cover,

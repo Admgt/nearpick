@@ -245,10 +245,17 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
     }
   }
 
-  Widget _buildThumbnail({required String? imagePath, required bool hasImage}) {
-    if (hasImage && imagePath != null && imagePath.isNotEmpty) {
+  Widget _buildThumbnail({
+    required String? imagePath,
+    required String? imageUrl,
+    required bool hasImage,
+  }) {
+    if (hasImage &&
+        ((imagePath != null && imagePath.isNotEmpty) ||
+            (imageUrl != null && imageUrl.isNotEmpty))) {
       return StorageImage(
         imagePath: imagePath,
+        imageUrl: imageUrl,
         width: 56,
         height: 56,
         borderRadius: 8,
@@ -400,7 +407,9 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
         final result = scored[index];
         final docId = result.productId;
         final data = result.product;
-        final imagePath = data['imagePath'] as String?;
+        final imagePath =
+            data['thumbnailPath'] as String? ?? data['imagePath'] as String?;
+        final imageUrl = data['imageUrl'] as String?;
         final hasImage = data['hasImage'] == true;
         final name = data['name'] as String? ?? 'Nevtelen termek';
         final merchantName = (data['merchantName'] as String?)?.trim() ?? '';
@@ -463,7 +472,11 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
         ];
 
         return ListTile(
-          leading: _buildThumbnail(imagePath: imagePath, hasImage: hasImage),
+          leading: _buildThumbnail(
+            imagePath: imagePath,
+            imageUrl: imageUrl,
+            hasImage: hasImage,
+          ),
           title: Row(
             children: [
               Expanded(child: Text(name)),

@@ -28,6 +28,7 @@ class Product {
   final DateTime? deletedAt;
   final String? imageUrl;
   final String? imagePath;
+  final String? thumbnailPath;
   final bool hasImage;
   final bool hasReservations;
   final Map<String, dynamic>? pricingRecommendation;
@@ -54,6 +55,7 @@ class Product {
     required this.deletedAt,
     required this.imageUrl,
     required this.imagePath,
+    required this.thumbnailPath,
     required this.hasImage,
     required this.hasReservations,
     required this.pricingRecommendation,
@@ -83,6 +85,7 @@ class Product {
       deletedAt: _asDate(data['deletedAt']),
       imageUrl: data['imageUrl'] as String?,
       imagePath: data['imagePath'] as String?,
+      thumbnailPath: data['thumbnailPath'] as String?,
       hasImage: data['hasImage'] as bool? ?? false,
       hasReservations: data['hasReservations'] as bool? ?? false,
       pricingRecommendation: data['pricingRecommendation'] is Map
@@ -122,6 +125,7 @@ class Product {
       'deletedAt': deletedAt == null ? null : Timestamp.fromDate(deletedAt!),
       'imageUrl': imageUrl,
       'imagePath': imagePath,
+      'thumbnailPath': thumbnailPath,
       'hasImage': hasImage,
       'hasReservations': hasReservations,
       'pricingRecommendation': pricingRecommendation,

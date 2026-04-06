@@ -182,6 +182,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
 
     final imagePath = data['imagePath'] as String?;
+    final imageUrl = data['imageUrl'] as String?;
     final hasImage = data['hasImage'] == true;
 
     final name = data['name'] as String? ?? 'Névtelen termék';
@@ -216,15 +217,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (hasImage && imagePath != null && imagePath.isNotEmpty)
+                if (hasImage &&
+                    ((imagePath != null && imagePath.isNotEmpty) ||
+                        (imageUrl != null && imageUrl.isNotEmpty)))
                   StorageImage(
                     imagePath: imagePath,
+                    imageUrl: imageUrl,
                     width: double.infinity,
                     height: 200,
                     borderRadius: 12,
                     maxSizeBytes: 2 * 1024 * 1024,
                   ),
-                if (hasImage && imagePath != null && imagePath.isNotEmpty)
+                if (hasImage &&
+                    ((imagePath != null && imagePath.isNotEmpty) ||
+                        (imageUrl != null && imageUrl.isNotEmpty)))
                   const SizedBox(height: 12),
                 Text(
                   name,

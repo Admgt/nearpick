@@ -31,10 +31,12 @@ abstract class ProductInterestGateway {
 class ProductImageUploadResult {
   final String downloadUrl;
   final String imagePath;
+  final String? thumbnailPath;
 
   const ProductImageUploadResult({
     required this.downloadUrl,
     required this.imagePath,
+    this.thumbnailPath,
   });
 }
 
@@ -111,6 +113,9 @@ class ProductWorkflow {
       );
       data['imageUrl'] = upload.downloadUrl;
       data['imagePath'] = upload.imagePath;
+      if (upload.thumbnailPath != null && upload.thumbnailPath!.isNotEmpty) {
+        data['thumbnailPath'] = upload.thumbnailPath;
+      }
       data['hasImage'] = true;
     }
 

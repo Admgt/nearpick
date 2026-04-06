@@ -2,6 +2,8 @@ const admin = require("firebase-admin");
 const {onDocumentCreated} = require("firebase-functions/v2/firestore");
 const {onCall, onRequest, HttpsError} = require("firebase-functions/v2/https");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
+const {onObjectFinalized} = require("firebase-functions/v2/storage");
+const sharp = require("sharp");
 const {
   assertArchivableProduct,
   assertCancelableReservation,
@@ -25,6 +27,10 @@ const {
 const {resolveNotificationSegment} = require("./notification_segments");
 
 admin.initializeApp();
+
+const PRODUCT_IMAGE_THUMBNAIL_WIDTH = 400;
+const PRODUCT_IMAGE_THUMBNAIL_HEIGHT = 400;
+const PRODUCT_IMAGE_THUMBNAIL_QUALITY = 80;
 
 const VALID_CANCELLATION_REASON_CODES = new Set([
   "changed_mind",
@@ -272,6 +278,67 @@ exports.healthcheck = onRequest(async (request, response) => {
   });
   logInfo("healthcheck.completed", payload);
   response.status(httpStatus).json(payload);
+});
+
+exports.generateProductThumbnail = onObjectFinalized(async (event) => {
+  const contextId = createContextId({headers: {}});
+  const bucketName = event.data?.bucket;
+  const filePath = event.data?.name;
+
+  if (!bucketName || !filePath) {
+    logWarn("product.thumbnail.missing_metadata", {contextId});
+    return;
+  }
+
+  const match = /^products\/([^/]+)\/([^/]+)\/main\.jpg$/.exec(filePath);
+  if (!match) {
+    return;
+  }
+
+  const ownerId = match[1];
+  const productId = match[2];
+  const thumbnailPath = `products/${ownerId}/${productId}/thumbnail.jpg`;
+
+  try {
+    const bucket = admin.storage().bucket(bucketName);
+    const sourceFile = bucket.file(filePath);
+    const [imageBuffer] = await sourceFile.download();
+    const thumbnailBuffer = await sharp(imageBuffer)
+        .resize(PRODUCT_IMAGE_THUMBNAIL_WIDTH, PRODUCT_IMAGE_THUMBNAIL_HEIGHT, {
+          fit: "cover",
+          position: "attention",
+        })
+        .jpeg({
+          quality: PRODUCT_IMAGE_THUMBNAIL_QUALITY,
+          mozjpeg: true,
+        })
+        .toBuffer();
+
+    await bucket.file(thumbnailPath).save(thumbnailBuffer, {
+      metadata: {
+        cacheControl: "public,max-age=31536000",
+        contentType: "image/jpeg",
+      },
+    });
+
+    await admin.firestore().collection("products").doc(productId).set({
+      thumbnailPath,
+    }, {merge: true});
+
+    logInfo("product.thumbnail.generated", {
+      contextId,
+      ownerId,
+      productId,
+      thumbnailPath,
+    });
+  } catch (error) {
+    logError("product.thumbnail.failed", {
+      contextId,
+      ownerId,
+      productId,
+      filePath,
+    }, error);
+  }
 });
 
 exports.reserveProduct = onCall(async (request) => {

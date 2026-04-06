@@ -136,6 +136,7 @@ class FakeProductImageGateway implements ProductImageGateway {
     return ProductImageUploadResult(
       downloadUrl: 'https://example.test/$ownerId/$productId.jpg',
       imagePath: 'products/$ownerId/$productId/main.jpg',
+      thumbnailPath: 'products/$ownerId/$productId/thumbnail.jpg',
     );
   }
 }

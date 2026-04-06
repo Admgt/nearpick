@@ -44,6 +44,7 @@ void main() {
       deletedAt: null,
       imageUrl: null,
       imagePath: null,
+      thumbnailPath: null,
       hasImage: false,
       hasReservations: false,
       pricingRecommendation: null,

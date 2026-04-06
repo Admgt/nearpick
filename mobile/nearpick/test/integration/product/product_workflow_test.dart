@@ -122,6 +122,7 @@ void main() {
         'location': GeoPoint(46.253, 20.147),
         'imageUrl': 'https://example.test/merchant-1/product-1.jpg',
         'imagePath': 'products/merchant-1/product-1/main.jpg',
+        'thumbnailPath': 'products/merchant-1/product-1/thumbnail.jpg',
       });
     },
   );

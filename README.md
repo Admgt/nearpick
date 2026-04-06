@@ -123,14 +123,14 @@ Flutter futtatás emulátor módra kötve:
 
 ```bash
 cd mobile/nearpick
-flutter run -d edge --web-port 49904 --dart-define=USE_FIREBASE_EMULATORS=true
+flutter run -d edge --web-port 49914 --dart-define=USE_FIREBASE_EMULATORS=true
 ```
 
 Android emulátoron a host automatikusan `10.0.2.2`, más platformon `127.0.0.1`. Ha ettől eltérő host kell, add át külön:
 
 ```bash
 cd mobile/nearpick
-flutter run -d edge --web-port 49904 --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1
+flutter run -d edge --web-port 49914 --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1
 ```
 
 Ha csak a Functions logolást szeretnéd helyben látni, marad a szűkebb útvonal:
@@ -149,14 +149,14 @@ Ajánlott, leggyorsabb bírálói útvonal webes Flutter device-on:
 
 ```bash
 cd mobile/nearpick
-flutter run -d edge --web-port 49904
+flutter run -d edge --web-port 49914
 ```
 
 Ha web push értesítést is tesztelnél, add át a VAPID public key-t is:
 
 ```bash
 cd mobile/nearpick
-flutter run -d edge --web-port 49904 --dart-define=FIREBASE_WEB_VAPID_KEY=<your-web-push-vapid-public-key>
+flutter run -d edge --web-port 49914 --dart-define=FIREBASE_WEB_VAPID_KEY=<your-web-push-vapid-public-key>
 ```
 
 Android alternatíva:

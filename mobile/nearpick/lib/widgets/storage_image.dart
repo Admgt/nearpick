@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:flutter/material.dart';
 
 class StorageImage extends StatefulWidget {
-  final String imagePath;
+  final String? imagePath;
+  final String? imageUrl;
   final double width;
   final double height;
   final double borderRadius;
@@ -14,13 +15,17 @@ class StorageImage extends StatefulWidget {
 
   const StorageImage({
     super.key,
-    required this.imagePath,
+    this.imagePath,
+    this.imageUrl,
     required this.width,
     required this.height,
     this.borderRadius = 0,
     this.fit = BoxFit.cover,
     this.maxSizeBytes = 1024 * 1024,
-  });
+  }) : assert(
+         imagePath != null || imageUrl != null,
+         'Either imagePath or imageUrl must be provided.',
+       );
 
   @override
   State<StorageImage> createState() => _StorageImageState();
@@ -39,15 +44,41 @@ class _StorageImageState extends State<StorageImage> {
   void didUpdateWidget(StorageImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.imagePath != widget.imagePath ||
+        oldWidget.imageUrl != widget.imageUrl ||
         oldWidget.maxSizeBytes != widget.maxSizeBytes) {
       _future = _load();
     }
   }
 
   Future<Uint8List?> _load() {
+    if (widget.imagePath == null || widget.imagePath!.isEmpty) {
+      return Future.value(null);
+    }
+
     return FirebaseStorage.instance
-        .ref(widget.imagePath)
+        .ref(widget.imagePath!)
         .getData(widget.maxSizeBytes);
+  }
+
+  Widget _buildNetworkImage() {
+    final imageUrl = widget.imageUrl;
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return const Icon(Icons.image_not_supported);
+    }
+
+    return Image.network(
+      imageUrl,
+      fit: widget.fit,
+      width: widget.width,
+      height: widget.height,
+      errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) {
+          return child;
+        }
+        return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+      },
+    );
   }
 
   @override
@@ -68,7 +99,7 @@ class _StorageImageState extends State<StorageImage> {
             height: widget.height,
           );
         } else {
-          content = const Icon(Icons.image_not_supported);
+          content = _buildNetworkImage();
         }
 
         return ClipRRect(

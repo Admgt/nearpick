@@ -14,6 +14,30 @@ class ProductService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
+  Reference _mainImageRef({
+    required String ownerId,
+    required String productId,
+  }) {
+    return _storage
+        .ref()
+        .child('products')
+        .child(ownerId)
+        .child(productId)
+        .child('main.jpg');
+  }
+
+  Reference _thumbnailImageRef({
+    required String ownerId,
+    required String productId,
+  }) {
+    return _storage
+        .ref()
+        .child('products')
+        .child(ownerId)
+        .child(productId)
+        .child('thumbnail.jpg');
+  }
+
   Future<String> _resolveMerchantName(User user) async {
     final profile = await _db.collection('users').doc(user.uid).get();
     final data = profile.data() ?? const <String, dynamic>{};
@@ -108,12 +132,7 @@ class ProductService {
     }
 
     if (imageBytes != null) {
-      final imageRef = _storage
-          .ref()
-          .child('products')
-          .child(user.uid)
-          .child(docRef.id)
-          .child('main.jpg');
+      final imageRef = _mainImageRef(ownerId: user.uid, productId: docRef.id);
       await imageRef.putData(imageBytes);
       final downloadUrl = await imageRef.getDownloadURL();
       data['imageUrl'] = downloadUrl;
@@ -191,12 +210,7 @@ class ProductService {
     }
 
     if (imageBytes != null) {
-      final imageRef = _storage
-          .ref()
-          .child('products')
-          .child(user.uid)
-          .child(productId)
-          .child('main.jpg');
+      final imageRef = _mainImageRef(ownerId: user.uid, productId: productId);
       await imageRef.putData(imageBytes);
       final downloadUrl = await imageRef.getDownloadURL();
       data['imageUrl'] = downloadUrl;
@@ -209,9 +223,23 @@ class ProductService {
           await _storage.ref().child(imagePath).delete();
         } catch (_) {}
       }
+      final thumbnailPath = existingProduct.thumbnailPath;
+      if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+        try {
+          await _storage.ref().child(thumbnailPath).delete();
+        } catch (_) {}
+      } else {
+        try {
+          await _thumbnailImageRef(
+            ownerId: user.uid,
+            productId: productId,
+          ).delete();
+        } catch (_) {}
+      }
       data['hasImage'] = false;
       data['imageUrl'] = FieldValue.delete();
       data['imagePath'] = FieldValue.delete();
+      data['thumbnailPath'] = FieldValue.delete();
     }
 
     await productRef.update(data);

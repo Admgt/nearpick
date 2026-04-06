@@ -264,7 +264,9 @@ class _SelectedOfferCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final product = offer.product;
-    final imagePath = product['imagePath'] as String?;
+    final imagePath =
+        product['thumbnailPath'] as String? ?? product['imagePath'] as String?;
+    final imageUrl = product['imageUrl'] as String?;
     final hasImage = product['hasImage'] == true;
     final name = product['name'] as String? ?? 'Nevtelen termek';
     final merchantName = (product['merchantName'] as String?)?.trim() ?? '';
@@ -283,9 +285,12 @@ class _SelectedOfferCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          if (hasImage && imagePath != null && imagePath.isNotEmpty)
+          if (hasImage &&
+              ((imagePath != null && imagePath.isNotEmpty) ||
+                  (imageUrl != null && imageUrl.isNotEmpty)))
             StorageImage(
               imagePath: imagePath,
+              imageUrl: imageUrl,
               width: 72,
               height: 72,
               borderRadius: 14,

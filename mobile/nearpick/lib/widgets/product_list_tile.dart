@@ -40,16 +40,20 @@ class ProductListTile extends StatelessWidget {
       expiresText = 'Lejar: ${formatDate(expiresAt)}';
     }
 
-    final imagePath = product.imagePath;
+    final imagePath = product.thumbnailPath ?? product.imagePath;
     return SurfaceCard(
       radius: 24,
       padding: const EdgeInsets.all(18),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          product.hasImage && imagePath != null && imagePath.isNotEmpty
+          product.hasImage &&
+                  ((imagePath != null && imagePath.isNotEmpty) ||
+                      (product.imageUrl != null &&
+                          product.imageUrl!.isNotEmpty))
               ? StorageImage(
                   imagePath: imagePath,
+                  imageUrl: product.imageUrl,
                   width: 78,
                   height: 78,
                   borderRadius: 18,

@@ -71,6 +71,10 @@ void main() {
         createdProduct['imagePath'],
         'products/merchant-1/product-1/main.jpg',
       );
+      expect(
+        createdProduct['thumbnailPath'],
+        'products/merchant-1/product-1/thumbnail.jpg',
+      );
 
       merchantSession.currentUserId = 'consumer-1';
       await productWorkflow.markInterest(productId: productId);
