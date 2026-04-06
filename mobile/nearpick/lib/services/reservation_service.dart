@@ -15,16 +15,23 @@ class ReservationService {
        _auth = auth ?? FirebaseAuth.instance,
        _db = db ?? FirebaseFirestore.instance;
 
-  Future<String> reserveProduct({required String productId}) async {
+  Future<String> reserveProduct({
+    required String productId,
+    int quantity = 1,
+  }) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw Exception('Nincs bejelentkezett felhasznalo.');
+    }
+    if (quantity <= 0) {
+      throw Exception('Ervenytelen foglalasi mennyiseg.');
     }
 
     try {
       final callable = _functions.httpsCallable('reserveProduct');
       final response = await callable.call(<String, dynamic>{
         'productId': productId,
+        'quantity': quantity,
       });
       final data = Map<String, dynamic>.from(response.data as Map);
       final reservationId = data['reservationId'] as String?;

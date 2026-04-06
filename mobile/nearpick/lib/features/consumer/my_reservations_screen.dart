@@ -99,6 +99,8 @@ class MyReservationsScreen extends StatelessWidget {
                 final merchantName = reservation.merchantName.trim();
                 final discounted = snapshotData['discountedPrice'] as int? ?? 0;
                 final original = snapshotData['originalPrice'] as int? ?? 0;
+                final totalDiscounted = discounted * reservation.qty;
+                final totalOriginal = original * reservation.qty;
                 final expiresAt = reservation.expiresAt;
                 final reservedAt = reservation.createdAt;
                 final pickupWindowText = formatPickupWindow(
@@ -141,6 +143,7 @@ class MyReservationsScreen extends StatelessWidget {
                       if (merchantName.isNotEmpty)
                         Text('Kereskedo: $merchantName'),
                       Text('Kod: ${reservation.pickupCode}'),
+                      Text('Mennyiseg: ${reservation.qty} db'),
                       if (reservedAt != null)
                         Text('Foglalva: ${formatDateTime(reservedAt)}'),
                       Text('Atvetel: $pickupWindowText'),
@@ -159,12 +162,17 @@ class MyReservationsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '$discounted Ft',
+                        '$totalDiscounted Ft',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      if (original > discounted)
+                      if (reservation.qty > 1)
                         Text(
-                          '$original Ft',
+                          '$discounted Ft / db',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      if (totalOriginal > totalDiscounted)
+                        Text(
+                          '$totalOriginal Ft',
                           style: const TextStyle(
                             decoration: TextDecoration.lineThrough,
                             fontSize: 12,

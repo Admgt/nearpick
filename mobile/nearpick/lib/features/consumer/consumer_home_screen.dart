@@ -19,6 +19,7 @@ import '../../widgets/storage_image.dart';
 import '../../services/negative_feedback_service.dart';
 import '../../services/reservation_service.dart';
 import 'my_reservations_screen.dart';
+import 'reservation_quantity_dialog.dart';
 import 'reservation_detail_screen.dart';
 import 'favorites_screen.dart';
 import 'account_screen.dart';
@@ -201,10 +202,33 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
     }
   }
 
-  Future<void> _reserveProduct(String productId) async {
+  Future<void> _reserveProduct(
+    String productId,
+    Map<String, dynamic> product,
+  ) async {
+    final quantityAvailable =
+        product['quantityAvailable'] as int? ??
+        product['quantity'] as int? ??
+        0;
+    final discounted = product['discountedPrice'] as int? ?? 0;
+    final productName = product['name'] as String? ?? '';
+
+    var quantity = 1;
+    if (quantityAvailable > 1) {
+      final selectedQuantity = await showReservationQuantityDialog(
+        context: context,
+        productName: productName,
+        quantityAvailable: quantityAvailable,
+        unitPrice: discounted,
+      );
+      if (!mounted || selectedQuantity == null) return;
+      quantity = selectedQuantity;
+    }
+
     try {
       final reservationId = await ReservationService().reserveProduct(
         productId: productId,
+        quantity: quantity,
       );
       if (!mounted) return;
       Navigator.of(context).push(
@@ -498,7 +522,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
               ElevatedButton(
                 onPressed: quantityAvailable <= 0
                     ? null
-                    : () => _reserveProduct(docId),
+                    : () => _reserveProduct(docId, data),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,

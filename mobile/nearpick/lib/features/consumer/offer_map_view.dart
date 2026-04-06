@@ -12,7 +12,8 @@ class OfferMapView extends StatefulWidget {
   final GeoPoint? userLocation;
   final double preferredRadiusKm;
   final ValueChanged<RecommendationResult> onOpenProduct;
-  final ValueChanged<String> onReserveProduct;
+  final void Function(String productId, Map<String, dynamic> product)
+  onReserveProduct;
 
   const OfferMapView({
     super.key,
@@ -160,8 +161,10 @@ class _OfferMapViewState extends State<OfferMapView> {
                     child: _SelectedOfferCard(
                       offer: selectedOffer,
                       onOpen: () => widget.onOpenProduct(selectedOffer),
-                      onReserve: () =>
-                          widget.onReserveProduct(selectedOffer.productId),
+                      onReserve: () => widget.onReserveProduct(
+                        selectedOffer.productId,
+                        selectedOffer.product,
+                      ),
                     ),
                   ),
                 ],

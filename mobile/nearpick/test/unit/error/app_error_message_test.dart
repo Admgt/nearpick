@@ -28,6 +28,15 @@ void main() {
     expect(appErrorMessage(error), 'Ervenytelen atveteli kod.');
   });
 
+  test('preserves quantity-specific failed-precondition errors', () {
+    final error = FirebaseFunctionsException(
+      code: 'failed-precondition',
+      message: 'A kert mennyiseg nem erheto el.',
+    );
+
+    expect(appErrorMessage(error), 'A kert mennyiseg nem erheto el.');
+  });
+
   test('normalizes sign-in required messages from generic exceptions', () {
     expect(
       appErrorMessage(Exception('Nincs bejelentkezett felhasznÃ¡lÃ³.')),

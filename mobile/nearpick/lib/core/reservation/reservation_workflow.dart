@@ -191,10 +191,16 @@ class ReservationWorkflow {
     required this.now,
   });
 
-  Future<String> reserveProduct({required String productId}) async {
+  Future<String> reserveProduct({
+    required String productId,
+    int quantity = 1,
+  }) async {
     final userId = sessionGateway.currentUserId;
     if (userId == null || userId.isEmpty) {
       throw Exception('Nincs bejelentkezett felhasznalo.');
+    }
+    if (quantity <= 0) {
+      throw Exception('Ervenytelen foglalasi mennyiseg.');
     }
 
     final product = productGateway.getProduct(productId);
@@ -207,8 +213,11 @@ class ReservationWorkflow {
     if (product.quantityAvailable <= 0) {
       throw Exception('Elfogyott');
     }
+    if (quantity > product.quantityAvailable) {
+      throw Exception('A kert mennyiseg nem erheto el.');
+    }
 
-    final newQty = product.quantityAvailable - 1;
+    final newQty = product.quantityAvailable - quantity;
     final reservationId = reservationStore.nextReservationId();
     final createdAt = now();
     final expiresAt = createdAt.add(const Duration(minutes: 30));
@@ -228,7 +237,7 @@ class ReservationWorkflow {
         productId: productId,
         merchantId: product.ownerId,
         buyerId: userId,
-        qty: 1,
+        qty: quantity,
         status: 'reserved',
         createdAt: createdAt,
         expiresAt: expiresAt,

@@ -11,6 +11,7 @@ import '../../services/user_interaction_service.dart';
 import '../../services/negative_feedback_service.dart';
 import '../../services/reservation_service.dart';
 import '../../widgets/merchant_reviews_section.dart';
+import 'reservation_quantity_dialog.dart';
 import 'reservation_detail_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -88,10 +89,32 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<void> _reserveProduct() async {
+    final quantityAvailable =
+        widget.data['quantityAvailable'] as int? ??
+        widget.data['quantity'] as int? ??
+        0;
+    final discounted = widget.data['discountedPrice'] as int? ?? 0;
+    final productName = widget.data['name'] as String? ?? '';
+
+    var quantity = 1;
+    if (quantityAvailable > 1) {
+      final selectedQuantity = await showReservationQuantityDialog(
+        context: context,
+        productName: productName,
+        quantityAvailable: quantityAvailable,
+        unitPrice: discounted,
+      );
+      if (!mounted || selectedQuantity == null) {
+        return;
+      }
+      quantity = selectedQuantity;
+    }
+
     setState(() => _reserveLoading = true);
     try {
       final reservationId = await ReservationService().reserveProduct(
         productId: widget.productId,
+        quantity: quantity,
       );
       if (!mounted) return;
       Navigator.of(context).push(

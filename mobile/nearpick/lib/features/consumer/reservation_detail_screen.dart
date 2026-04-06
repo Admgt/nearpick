@@ -356,6 +356,8 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
           final imageUrl = product['imageUrl'] as String?;
           final discounted = product['discountedPrice'] as int? ?? 0;
           final original = product['originalPrice'] as int? ?? 0;
+          final totalDiscounted = discounted * reservation.qty;
+          final totalOriginal = original * reservation.qty;
           final category = product['category'] as String? ?? '';
           final merchantName = reservation.merchantName.trim();
           final expiresAt = reservation.expiresAt;
@@ -416,21 +418,23 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                       Text('Foglalva: ${formatDateTime(reservedAt)}'),
                     ],
                     const SizedBox(height: 8),
+                    Text('Mennyiseg: ${reservation.qty} db'),
+                    const SizedBox(height: 8),
                     Text('Atvetel: $pickupWindowText'),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         Text(
-                          '$discounted Ft',
+                          '$totalDiscounted Ft',
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        if (original > discounted)
+                        if (totalOriginal > totalDiscounted)
                           Text(
-                            '$original Ft',
+                            '$totalOriginal Ft',
                             style: const TextStyle(
                               decoration: TextDecoration.lineThrough,
                               fontSize: 14,
@@ -438,6 +442,8 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                           ),
                       ],
                     ),
+                    const SizedBox(height: 6),
+                    Text('Egyseg ar: $discounted Ft / db'),
                     const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -486,6 +492,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                             Text(
                               'Foglalas ideje: ${formatDateTime(reservedAt)}',
                             ),
+                          Text('Darabszam: ${reservation.qty} db'),
                           Text('Atveteli idosav: $pickupWindowText'),
                           if (reservation.isReserved && expiresAt != null)
                             Text('Atvetel vege: $expiresText'),

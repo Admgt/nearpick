@@ -61,6 +61,53 @@ void main() {
   );
 
   test(
+    'ReservationWorkflow.reserveProduct stores requested quantity when multiple units are reserved',
+    () async {
+      final session = FakeReservationSessionGateway()
+        ..currentUserId = 'buyer-1';
+      final productGateway = InMemoryReservationProductGateway()
+        ..products['product-1'] = const ReservationProductRecord(
+          id: 'product-1',
+          ownerId: 'merchant-1',
+          merchantName: 'Penny',
+          name: 'Bagel',
+          category: 'Pekseg',
+          originalPrice: 1000,
+          discountedPrice: 500,
+          quantity: 4,
+          quantityAvailable: 4,
+          status: 'active',
+          isDeleted: false,
+          expiresAt: null,
+          pickupStartAt: null,
+          pickupEndAt: null,
+          imageUrl: null,
+        );
+      final reservationStore = InMemoryReservationStore();
+      final merchantStats = InMemoryMerchantStatsGateway();
+      final workflow = ReservationWorkflow(
+        sessionGateway: session,
+        productGateway: productGateway,
+        reservationStore: reservationStore,
+        merchantStatsGateway: merchantStats,
+        pickupCodeGenerator: const FixedPickupCodeGenerator('ABC123'),
+        now: () => DateTime(2026, 3, 6, 12),
+      );
+
+      final reservationId = await workflow.reserveProduct(
+        productId: 'product-1',
+        quantity: 3,
+      );
+
+      expect(productGateway.products['product-1']?.quantityAvailable, 1);
+      expect(reservationStore.reservations[reservationId]?.qty, 3);
+      expect(reservationStore.reservations[reservationId]?.status, 'reserved');
+      expect(merchantStats.stats['merchant-1']?['reservedCount'], 1);
+      expect(merchantStats.stats['merchant-1']?['soldOutCount'], 0);
+    },
+  );
+
+  test(
     'ReservationWorkflow.completeReservation rejects foreign merchant user',
     () async {
       final session = FakeReservationSessionGateway()

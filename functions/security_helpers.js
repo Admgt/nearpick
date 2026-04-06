@@ -51,9 +51,13 @@ function asDate(value) {
   return null;
 }
 
-function assertReservableProduct(product, callerUid) {
+function assertReservableProduct(product, callerUid, requestedQuantity = 1) {
   if (!product) {
     throw new Error("not-found");
+  }
+
+  if (!Number.isInteger(requestedQuantity) || requestedQuantity <= 0) {
+    throw new Error("invalid-quantity");
   }
 
   const status = product.status ?? "active";
@@ -69,6 +73,9 @@ function assertReservableProduct(product, callerUid) {
 
   if (!Number.isInteger(quantityAvailable) || quantityAvailable <= 0) {
     throw new Error("sold-out");
+  }
+  if (requestedQuantity > quantityAvailable) {
+    throw new Error("insufficient-quantity");
   }
 
   const ownerId = typeof product.ownerId === "string" ? product.ownerId : "";
@@ -88,6 +95,7 @@ function assertReservableProduct(product, callerUid) {
   return {
     ownerId,
     quantityAvailable,
+    requestedQuantity,
   };
 }
 

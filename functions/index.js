@@ -138,6 +138,18 @@ function asHttpsError(error, contextId) {
           "Ervenytelen refund statusz.",
           details,
       );
+    case "invalid-quantity":
+      return new HttpsError(
+          "invalid-argument",
+          "Ervenytelen foglalasi mennyiseg.",
+          details,
+      );
+    case "insufficient-quantity":
+      return new HttpsError(
+          "failed-precondition",
+          "A kert mennyiseg nem erheto el.",
+          details,
+      );
     default:
       return new HttpsError("internal", "Varatlan szerverhiba.", details);
   }
@@ -268,9 +280,20 @@ exports.reserveProduct = onCall(async (request) => {
   }
 
   const productId = request.data?.productId;
+  const quantity = request.data?.quantity;
   if (typeof productId !== "string" || productId.trim().length === 0) {
     logWarn("reservation.reserve.invalid_argument", {contextId});
     throw new HttpsError("invalid-argument", "Ervenytelen productId.", {
+      contextId,
+    });
+  }
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    logWarn("reservation.reserve.invalid_quantity", {
+      contextId,
+      productId,
+      quantity,
+    });
+    throw new HttpsError("invalid-argument", "Ervenytelen mennyiseg.", {
       contextId,
     });
   }
@@ -285,10 +308,10 @@ exports.reserveProduct = onCall(async (request) => {
       const productRef = db.collection("products").doc(trimmedProductId);
       const productSnap = await tx.get(productRef);
       const product = productSnap.data();
-      const {ownerId, quantityAvailable} =
-        assertReservableProduct(product, buyerId);
+      const {ownerId, quantityAvailable, requestedQuantity} =
+        assertReservableProduct(product, buyerId, quantity);
 
-      const newQty = quantityAvailable - 1;
+      const newQty = quantityAvailable - requestedQuantity;
       const expiresAt = admin.firestore.Timestamp.fromDate(
           new Date(Date.now() + 30 * 60 * 1000),
       );
@@ -344,7 +367,7 @@ exports.reserveProduct = onCall(async (request) => {
         pickupToken: buildPickupToken(reservationRef.id, pickupCode),
         productId: trimmedProductId,
         productSnapshot,
-        qty: 1,
+        qty: requestedQuantity,
         refundCompletedAt: null,
         refundRequestedAt: null,
         refundReviewedAt: null,
@@ -376,6 +399,7 @@ exports.reserveProduct = onCall(async (request) => {
   logInfo("reservation.reserve.completed", {
     contextId,
     productId: trimmedProductId,
+    quantity,
     reservationId: reservationRef.id,
     userId: buyerId,
   });

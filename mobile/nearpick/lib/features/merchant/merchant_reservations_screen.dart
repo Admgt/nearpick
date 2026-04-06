@@ -286,6 +286,7 @@ class _MerchantReservationsScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Kod: ${reservation.pickupCode}'),
+                      Text('Mennyiseg: ${reservation.qty} db'),
                       if (reservedAt != null)
                         Text('Foglalva: ${formatDateTime(reservedAt)}'),
                       Text('Atvetel: $pickupWindowText'),
