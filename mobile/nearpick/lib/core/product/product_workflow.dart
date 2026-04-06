@@ -96,6 +96,7 @@ class ProductWorkflow {
       'archivedAt': null,
       'deletedAt': null,
       'hasImage': false,
+      'hasReservations': false,
     };
 
     if (location != null) {

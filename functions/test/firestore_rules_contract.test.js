@@ -49,3 +49,10 @@ test("product updates still restrict writes to the interestCount delta", () => {
       /changedKeys\(\)[\s\S]*hasOnly\(\['interestCount'\]\)/,
   );
 });
+
+test("product owner updates stay blocked after reservation history", () => {
+  assert.match(
+      rules,
+      /isValidProductOwnerUpdate\(productId\)[\s\S]*resource\.data\.hasReservations == true[\s\S]*request\.resource\.data\.hasReservations == false/,
+  );
+});

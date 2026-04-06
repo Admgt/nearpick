@@ -5,6 +5,7 @@ const {
   assertArchivableProduct,
   assertCancelableReservation,
   assertCompletableReservation,
+  assertEditableProduct,
   assertExpirableReservation,
   assertRefundManageableReservation,
   assertReviewableReservation,
@@ -36,6 +37,7 @@ test("assertReservableProduct accepts active products with stock", () => {
   assert.deepEqual(result, {
     ownerId: "merchant-1",
     quantityAvailable: 2,
+    requestedQuantity: 1,
   });
 });
 
@@ -129,8 +131,19 @@ test("assertArchivableProduct rejects non-owner archive attempts", () => {
   );
 });
 
+test("assertEditableProduct rejects products that already have reservations", () => {
+  assert.throws(
+      () => assertEditableProduct({
+        ownerId: "merchant-1",
+        hasReservations: true,
+      }, "merchant-1"),
+      /has-reservations/,
+  );
+});
+
 test("assertRepriceableProduct returns the recommended price for owned products", () => {
   const result = assertRepriceableProduct({
+    hasReservations: false,
     ownerId: "merchant-1",
     pricingRecommendation: {recommendedPrice: 650},
     status: "active",
@@ -144,10 +157,23 @@ test("assertRepriceableProduct returns the recommended price for owned products"
 test("assertRepriceableProduct rejects missing recommendations", () => {
   assert.throws(
       () => assertRepriceableProduct({
+        hasReservations: false,
         ownerId: "merchant-1",
         status: "active",
       }, "merchant-1"),
       /missing-pricing-recommendation/,
+  );
+});
+
+test("assertRepriceableProduct rejects already reserved products", () => {
+  assert.throws(
+      () => assertRepriceableProduct({
+        hasReservations: true,
+        ownerId: "merchant-1",
+        pricingRecommendation: {recommendedPrice: 650},
+        status: "active",
+      }, "merchant-1"),
+      /has-reservations/,
   );
 });
 

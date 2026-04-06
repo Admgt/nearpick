@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nearpick/features/merchant/dynamic_pricing.dart';
 import 'package:nearpick/features/merchant/new_product_form_logic.dart';
 import 'package:nearpick/features/merchant/new_product_screen.dart';
+import 'package:nearpick/models/product.dart';
 
 void main() {
   testWidgets('NewProductScreen requires expiry selection before save', (
@@ -128,5 +129,55 @@ void main() {
       find.byKey(const ValueKey('new_product_discounted_price_field')),
     );
     expect(discountedPriceField.controller?.text, '650');
+  });
+
+  testWidgets('NewProductScreen preloads product data in edit mode', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NewProductScreen(
+          initialProduct: Product(
+            id: 'product-1',
+            ownerId: 'merchant-1',
+            merchantName: 'Pekseg',
+            name: 'Bagel',
+            category: 'Peksutemeny',
+            originalPrice: 1000,
+            discountedPrice: 500,
+            quantity: 2,
+            quantityAvailable: 2,
+            expiresAt: DateTime(2026, 3, 7, 23, 59),
+            pickupStartAt: DateTime(2026, 3, 7, 9),
+            pickupEndAt: DateTime(2026, 3, 7, 18),
+            createdAt: DateTime(2026, 3, 1),
+            location: null,
+            interestCount: 0,
+            status: 'active',
+            isDeleted: false,
+            archivedAt: null,
+            deletedAt: null,
+            imageUrl: null,
+            imagePath: null,
+            hasImage: false,
+            hasReservations: false,
+            pricingRecommendation: null,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Termek szerkesztese'), findsOneWidget);
+    expect(find.text('Modositas mentese'), findsOneWidget);
+
+    final nameField = tester.widget<TextFormField>(
+      find.byKey(const ValueKey('new_product_name_field')),
+    );
+    final quantityField = tester.widget<TextFormField>(
+      find.byKey(const ValueKey('new_product_quantity_field')),
+    );
+
+    expect(nameField.controller?.text, 'Bagel');
+    expect(quantityField.controller?.text, '2');
   });
 }

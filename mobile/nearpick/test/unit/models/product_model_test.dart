@@ -11,6 +11,7 @@ void main() {
     expect(product.name, 'Nevtelen termek');
     expect(product.category, 'Ismeretlen kategoria');
     expect(product.quantityAvailable, 0);
+    expect(product.hasReservations, false);
     expect(product.status, 'active');
     expect(product.pickupStartAt, isNull);
     expect(product.pickupEndAt, isNull);
@@ -44,6 +45,7 @@ void main() {
       imageUrl: null,
       imagePath: null,
       hasImage: false,
+      hasReservations: false,
       pricingRecommendation: null,
     );
 
@@ -57,5 +59,6 @@ void main() {
     expect((map['pickupStartAt'] as Timestamp).toDate(), pickupStartAt);
     expect((map['pickupEndAt'] as Timestamp).toDate(), pickupEndAt);
     expect(map['merchantName'], 'Penny');
+    expect(map['hasReservations'], false);
   });
 }

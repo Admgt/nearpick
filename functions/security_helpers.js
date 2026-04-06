@@ -205,8 +205,16 @@ function assertArchivableProduct(product, callerUid) {
   }
 }
 
-function assertRepriceableProduct(product, callerUid) {
+function assertEditableProduct(product, callerUid) {
   assertArchivableProduct(product, callerUid);
+
+  if (product.hasReservations === true) {
+    throw new Error("has-reservations");
+  }
+}
+
+function assertRepriceableProduct(product, callerUid) {
+  assertEditableProduct(product, callerUid);
 
   const status = product.status ?? "active";
   const isDeleted = product.isDeleted === true;
@@ -254,6 +262,7 @@ module.exports = {
   assertArchivableProduct,
   assertCancelableReservation,
   assertCompletableReservation,
+  assertEditableProduct,
   assertExpirableReservation,
   assertRefundManageableReservation,
   assertReviewableReservation,

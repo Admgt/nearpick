@@ -262,25 +262,31 @@ class _MerchantReservationsScreenState
                 }
 
                 return ListTile(
-                  leading: imageUrl != null && imageUrl.isNotEmpty
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            imageUrl,
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.cover,
+                  leading: SizedBox(
+                    width: 56,
+                    height: 56,
+                    child: imageUrl != null && imageUrl.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              imageUrl,
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              width: 56,
+                              height: 56,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceVariant,
+                              child: const Icon(Icons.photo_outlined),
+                            ),
                           ),
-                        )
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            width: 56,
-                            height: 56,
-                            color: Theme.of(context).colorScheme.surfaceVariant,
-                            child: const Icon(Icons.photo_outlined),
-                          ),
-                        ),
+                  ),
                   title: Text(name),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

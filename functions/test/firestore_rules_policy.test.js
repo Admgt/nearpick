@@ -14,6 +14,7 @@ function canCreateProduct({auth, productId, data}) {
     "discountedPrice",
     "expiresAt",
     "hasImage",
+    "hasReservations",
     "imagePath",
     "imageUrl",
     "interestCount",
@@ -29,10 +30,17 @@ function canCreateProduct({auth, productId, data}) {
     "quantityAvailable",
     "status",
   ];
+  const optionalKeys = [
+    "imagePath",
+    "imageUrl",
+    "location",
+    "pricingRecommendation",
+  ];
 
   const keys = Object.keys(data).sort();
   return auth != null &&
-    JSON.stringify(keys) === JSON.stringify([...requiredKeys].sort()) &&
+    requiredKeys.every((key) => keys.includes(key)) &&
+    keys.every((key) => [...requiredKeys, ...optionalKeys].includes(key)) &&
     data.ownerId === auth.uid &&
     typeof data.merchantName === "string" &&
     typeof data.name === "string" &&
@@ -50,6 +58,7 @@ function canCreateProduct({auth, productId, data}) {
     data.interestCount === 0 &&
     data.status === "active" &&
     data.isDeleted === false &&
+    data.hasReservations === false &&
     data.archivedAt === null &&
     data.deletedAt === null &&
     (
@@ -73,6 +82,34 @@ function canUpdateInterestCount({auth, before, after}) {
       after.interestCount === before.interestCount + 1 ||
       after.interestCount === before.interestCount - 1
     );
+}
+
+function canUpdateOwnedProduct({auth, before, after}) {
+  return auth != null &&
+    before.ownerId === auth.uid &&
+    before.hasReservations !== true &&
+    after.ownerId === before.ownerId &&
+    after.merchantName === before.merchantName &&
+    after.createdAt === before.createdAt &&
+    after.interestCount === before.interestCount &&
+    after.status === before.status &&
+    after.isDeleted === before.isDeleted &&
+    after.archivedAt === before.archivedAt &&
+    after.deletedAt === before.deletedAt &&
+    typeof after.name === "string" &&
+    typeof after.category === "string" &&
+    Number.isInteger(after.originalPrice) &&
+    after.originalPrice >= 0 &&
+    Number.isInteger(after.discountedPrice) &&
+    after.discountedPrice >= 0 &&
+    Number.isInteger(after.quantity) &&
+    after.quantity > 0 &&
+    Number.isInteger(after.quantityAvailable) &&
+    after.quantityAvailable === after.quantity &&
+    after.expiresAt === "timestamp" &&
+    after.pickupStartAt === "timestamp" &&
+    after.pickupEndAt === "timestamp" &&
+    after.hasReservations === false;
 }
 
 function canReadReservation({auth, reservation}) {
@@ -108,6 +145,7 @@ test("product create policy engedi a saját képes termék létrehozását", () 
       discountedPrice: 500,
       expiresAt: "timestamp",
       hasImage: true,
+      hasReservations: false,
       imagePath: "products/merchant-1/product-1/main.jpg",
       imageUrl: "https://example.test/products/merchant-1/product-1/main.jpg",
       interestCount: 0,
@@ -140,6 +178,7 @@ test("product create policy tiltja az idegen ownerId-t", () => {
       discountedPrice: 500,
       expiresAt: "timestamp",
       hasImage: false,
+      hasReservations: false,
       interestCount: 0,
       isDeleted: false,
       location: null,
@@ -245,6 +284,7 @@ test("product create policy denies anonymous creation", () => {
       discountedPrice: 500,
       expiresAt: "timestamp",
       hasImage: false,
+      hasReservations: false,
       interestCount: 0,
       isDeleted: false,
       location: null,
@@ -275,6 +315,7 @@ test("product create policy denies invalid owned image path", () => {
       discountedPrice: 500,
       expiresAt: "timestamp",
       hasImage: true,
+      hasReservations: false,
       imagePath: "products/merchant-2/product-1/main.jpg",
       imageUrl: "https://example.test/products/merchant-1/product-1/main.jpg",
       interestCount: 0,
@@ -299,13 +340,25 @@ test("product update policy allows an isolated interestCount increment", () => {
   const allowed = canUpdateInterestCount({
     auth: createAuth("consumer-1"),
     before: {
+      archivedAt: null,
+      createdAt: "timestamp",
+      deletedAt: null,
+      hasReservations: false,
       ownerId: "merchant-1",
       interestCount: 0,
+      isDeleted: false,
+      merchantName: "Penny",
       status: "active",
     },
     after: {
+      archivedAt: null,
+      createdAt: "timestamp",
+      deletedAt: null,
+      hasReservations: false,
       ownerId: "merchant-1",
       interestCount: 1,
+      isDeleted: false,
+      merchantName: "Penny",
       status: "active",
     },
   });
@@ -317,14 +370,126 @@ test("product update policy denies extra field changes alongside interestCount",
   const allowed = canUpdateInterestCount({
     auth: createAuth("consumer-1"),
     before: {
+      archivedAt: null,
+      createdAt: "timestamp",
+      deletedAt: null,
+      hasReservations: false,
       ownerId: "merchant-1",
       interestCount: 0,
+      isDeleted: false,
+      merchantName: "Penny",
       status: "active",
     },
     after: {
+      archivedAt: null,
+      createdAt: "timestamp",
+      deletedAt: null,
+      hasReservations: false,
       ownerId: "merchant-1",
       interestCount: 1,
+      isDeleted: false,
+      merchantName: "Penny",
       status: "sold_out",
+    },
+  });
+
+  assert.equal(allowed, false);
+});
+
+test("product owner update policy allows editing before the first reservation", () => {
+  const allowed = canUpdateOwnedProduct({
+    auth: createAuth("merchant-1"),
+    before: {
+      archivedAt: null,
+      category: "Pekseg",
+      createdAt: "timestamp",
+      deletedAt: null,
+      discountedPrice: 500,
+      expiresAt: "timestamp",
+      hasImage: false,
+      hasReservations: false,
+      interestCount: 0,
+      isDeleted: false,
+      merchantName: "Penny",
+      name: "Bagel",
+      originalPrice: 1000,
+      ownerId: "merchant-1",
+      pickupEndAt: "timestamp",
+      pickupStartAt: "timestamp",
+      quantity: 2,
+      quantityAvailable: 2,
+      status: "active",
+    },
+    after: {
+      archivedAt: null,
+      category: "Pekseg",
+      createdAt: "timestamp",
+      deletedAt: null,
+      discountedPrice: 450,
+      expiresAt: "timestamp",
+      hasImage: false,
+      hasReservations: false,
+      interestCount: 0,
+      isDeleted: false,
+      merchantName: "Penny",
+      name: "Bagel Deluxe",
+      originalPrice: 1000,
+      ownerId: "merchant-1",
+      pickupEndAt: "timestamp",
+      pickupStartAt: "timestamp",
+      quantity: 3,
+      quantityAvailable: 3,
+      status: "active",
+    },
+  });
+
+  assert.equal(allowed, true);
+});
+
+test("product owner update policy denies editing after reservation history exists", () => {
+  const allowed = canUpdateOwnedProduct({
+    auth: createAuth("merchant-1"),
+    before: {
+      archivedAt: null,
+      category: "Pekseg",
+      createdAt: "timestamp",
+      deletedAt: null,
+      discountedPrice: 500,
+      expiresAt: "timestamp",
+      hasImage: false,
+      hasReservations: true,
+      interestCount: 0,
+      isDeleted: false,
+      merchantName: "Penny",
+      name: "Bagel",
+      originalPrice: 1000,
+      ownerId: "merchant-1",
+      pickupEndAt: "timestamp",
+      pickupStartAt: "timestamp",
+      quantity: 2,
+      quantityAvailable: 2,
+      status: "active",
+    },
+    after: {
+      archivedAt: null,
+      category: "Pekseg",
+      createdAt: "timestamp",
+      deletedAt: null,
+      discountedPrice: 450,
+      expiresAt: "timestamp",
+      hasImage: false,
+      hasReservations: false,
+      interestCount: 0,
+      isDeleted: false,
+      merchantName: "Penny",
+      name: "Bagel Deluxe",
+      originalPrice: 1000,
+      ownerId: "merchant-1",
+      pickupEndAt: "timestamp",
+      pickupStartAt: "timestamp",
+      quantity: 3,
+      quantityAvailable: 3,
+      status: "active",
     },
   });
 

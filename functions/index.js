@@ -126,6 +126,12 @@ function asHttpsError(error, contextId) {
           "Ehhez a termekhez nincs alkalmazhato arazasi javaslat.",
           details,
       );
+    case "has-reservations":
+      return new HttpsError(
+          "failed-precondition",
+          "A termeket mar lefoglaltak, ezert nem modosithato.",
+          details,
+      );
     case "invalid-cancel-reason":
       return new HttpsError(
           "invalid-argument",
@@ -346,6 +352,7 @@ exports.reserveProduct = onCall(async (request) => {
       };
 
       const productUpdates = {
+        hasReservations: true,
         quantity: newQty,
         quantityAvailable: newQty,
       };

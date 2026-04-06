@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/error/app_error_message.dart';
+import '../../models/product.dart';
 import '../../services/dynamic_pricing_service.dart';
 import '../../services/location_service.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
 import '../../utils/date_time_formatters.dart';
+import '../../widgets/storage_image.dart';
 import 'dynamic_pricing.dart';
 import 'merchant_dashboard_screen.dart';
 import 'merchant_home_screen.dart';
@@ -31,12 +33,14 @@ class NewProductScreen extends StatefulWidget {
   final SaveProductAction? onSaveProduct;
   final DateTime? initialExpiry;
   final GeneratePricingRecommendationAction? onGeneratePricingRecommendation;
+  final Product? initialProduct;
 
   const NewProductScreen({
     super.key,
     this.onSaveProduct,
     this.initialExpiry,
     this.onGeneratePricingRecommendation,
+    this.initialProduct,
   });
 
   @override
@@ -57,6 +61,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
   XFile? _selectedImage;
   Uint8List? _selectedImageBytes;
   bool _imageLoading = false;
+  bool _removeExistingImage = false;
   bool _fetchingLocation = false;
   bool _pricingLoading = false;
 
@@ -93,7 +98,40 @@ class _NewProductScreenState extends State<NewProductScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedExpiry = widget.initialExpiry;
+    final initialProduct = widget.initialProduct;
+    _selectedExpiry = initialProduct?.expiresAt ?? widget.initialExpiry;
+
+    if (initialProduct == null) {
+      return;
+    }
+
+    _nameCtrl.text = initialProduct.name;
+    _originalPriceCtrl.text = initialProduct.originalPrice.toString();
+    _discountedPriceCtrl.text = initialProduct.discountedPrice.toString();
+    _quantityCtrl.text = initialProduct.quantity.toString();
+    _selectedCategory = _categories.contains(initialProduct.category)
+        ? initialProduct.category
+        : _categories.first;
+
+    final location = initialProduct.location;
+    if (location != null) {
+      _latCtrl.text = location.latitude.toString();
+      _lngCtrl.text = location.longitude.toString();
+    }
+
+    final pickupStartAt = initialProduct.pickupStartAt;
+    if (pickupStartAt != null) {
+      _selectedPickupStartTime = TimeOfDay.fromDateTime(pickupStartAt);
+    }
+
+    final pickupEndAt = initialProduct.pickupEndAt;
+    if (pickupEndAt != null) {
+      _selectedPickupEndTime = TimeOfDay.fromDateTime(pickupEndAt);
+    }
+
+    _pricingRecommendation = _pricingRecommendationFromMap(
+      initialProduct.pricingRecommendation,
+    );
   }
 
   @override
@@ -145,6 +183,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
       setState(() {
         _selectedImage = picked;
         _selectedImageBytes = bytes;
+        _removeExistingImage = false;
       });
     } catch (e) {
       if (!mounted) return;
@@ -207,6 +246,60 @@ class _NewProductScreenState extends State<NewProductScreen> {
       _pricingRecommendation = null;
       _pricingError = null;
     });
+  }
+
+  DynamicPricingRecommendation? _pricingRecommendationFromMap(
+    Map<String, dynamic>? source,
+  ) {
+    if (source == null) {
+      return null;
+    }
+
+    final recommendedPrice = source['recommendedPrice'] as int?;
+    final minimumSuggestedPrice = source['minimumSuggestedPrice'] as int?;
+    final maximumSuggestedPrice = source['maximumSuggestedPrice'] as int?;
+    final discountPercent = source['discountPercent'] as int?;
+    final demandScore = source['demandScore'];
+    final demandLevel = source['demandLevel'] as String?;
+    final expectedReservations24h = source['expectedReservations24h'] as int?;
+    final views7d = source['views7d'] as int?;
+    final interests7d = source['interests7d'] as int?;
+    final dismissals7d = source['dismissals7d'] as int?;
+    final activeCategoryOffers = source['activeCategoryOffers'] as int?;
+    final averageDiscountPercent = source['averageDiscountPercent'] as int?;
+
+    if (recommendedPrice == null ||
+        minimumSuggestedPrice == null ||
+        maximumSuggestedPrice == null ||
+        discountPercent == null ||
+        demandScore is! num ||
+        demandLevel == null ||
+        expectedReservations24h == null ||
+        views7d == null ||
+        interests7d == null ||
+        dismissals7d == null ||
+        activeCategoryOffers == null ||
+        averageDiscountPercent == null) {
+      return null;
+    }
+
+    return DynamicPricingRecommendation(
+      recommendedPrice: recommendedPrice,
+      minimumSuggestedPrice: minimumSuggestedPrice,
+      maximumSuggestedPrice: maximumSuggestedPrice,
+      discountPercent: discountPercent,
+      demandScore: demandScore.toDouble(),
+      demandLevel: demandLevel,
+      expectedReservations24h: expectedReservations24h,
+      marketSnapshot: MerchantMarketSnapshot(
+        views7d: views7d,
+        interests7d: interests7d,
+        dismissals7d: dismissals7d,
+        activeCategoryOffers: activeCategoryOffers,
+        averageDiscountRatio: averageDiscountPercent / 100,
+      ),
+      reasons: const [],
+    );
   }
 
   void _showSnackBar(String text) {
@@ -311,19 +404,39 @@ class _NewProductScreenState extends State<NewProductScreen> {
       if (widget.onSaveProduct != null) {
         await widget.onSaveProduct!(command);
       } else {
-        await ProductService().createProductWithOptionalImage(
-          name: command.name,
-          category: command.category,
-          originalPrice: command.originalPrice,
-          discountedPrice: command.discountedPrice,
-          quantity: command.quantity,
-          expiresAt: command.expiresAt,
-          pickupStartAt: command.pickupStartAt,
-          pickupEndAt: command.pickupEndAt,
-          location: command.location,
-          imageBytes: _selectedImageBytes,
-          pricingRecommendation: command.pricingRecommendation,
-        );
+        final productService = ProductService();
+        final initialProduct = widget.initialProduct;
+        if (initialProduct == null) {
+          await productService.createProductWithOptionalImage(
+            name: command.name,
+            category: command.category,
+            originalPrice: command.originalPrice,
+            discountedPrice: command.discountedPrice,
+            quantity: command.quantity,
+            expiresAt: command.expiresAt,
+            pickupStartAt: command.pickupStartAt,
+            pickupEndAt: command.pickupEndAt,
+            location: command.location,
+            imageBytes: _selectedImageBytes,
+            pricingRecommendation: command.pricingRecommendation,
+          );
+        } else {
+          await productService.updateProduct(
+            productId: initialProduct.id,
+            name: command.name,
+            category: command.category,
+            originalPrice: command.originalPrice,
+            discountedPrice: command.discountedPrice,
+            quantity: command.quantity,
+            expiresAt: command.expiresAt,
+            pickupStartAt: command.pickupStartAt,
+            pickupEndAt: command.pickupEndAt,
+            location: command.location,
+            imageBytes: _selectedImageBytes,
+            removeImage: _removeExistingImage,
+            pricingRecommendation: command.pricingRecommendation,
+          );
+        }
       }
 
       if (mounted) {
@@ -416,9 +529,49 @@ class _NewProductScreenState extends State<NewProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final initialProduct = widget.initialProduct;
+    final isEditing = initialProduct != null;
+    final hasExistingImage =
+        initialProduct?.hasImage == true &&
+        initialProduct?.imagePath != null &&
+        initialProduct!.imagePath!.isNotEmpty &&
+        !_removeExistingImage;
+    final Widget imagePreview;
+    if (_selectedImageBytes != null) {
+      imagePreview = ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.memory(
+          _selectedImageBytes!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: 180,
+        ),
+      );
+    } else if (hasExistingImage) {
+      imagePreview = ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: StorageImage(
+          imagePath: initialProduct.imagePath!,
+          width: double.infinity,
+          height: 180,
+          fit: BoxFit.cover,
+          maxSizeBytes: 512 * 1024,
+        ),
+      );
+    } else {
+      imagePreview = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.camera_alt_outlined, size: 36),
+          SizedBox(height: 8),
+          Text('Kep hozzaadasa'),
+        ],
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Uj termek hozzaadasa'),
+        title: Text(isEditing ? 'Termek szerkesztese' : 'Uj termek hozzaadasa'),
         actions: buildMerchantAppBarActions(
           context,
           onSelected: _openTopDestination,
@@ -442,24 +595,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                           color: Theme.of(context).colorScheme.surfaceVariant,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: _selectedImageBytes == null
-                            ? Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(Icons.camera_alt_outlined, size: 36),
-                                  SizedBox(height: 8),
-                                  Text('Kep hozzaadasa'),
-                                ],
-                              )
-                            : ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.memory(
-                                  _selectedImageBytes!,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: 180,
-                                ),
-                              ),
+                        child: imagePreview,
                       ),
                     ),
                     if (_imageLoading)
@@ -467,13 +603,14 @@ class _NewProductScreenState extends State<NewProductScreen> {
                         padding: EdgeInsets.only(top: 8),
                         child: LinearProgressIndicator(),
                       ),
-                    if (_selectedImage != null)
+                    if (_selectedImage != null || hasExistingImage)
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton.icon(
                           onPressed: () => setState(() {
                             _selectedImage = null;
                             _selectedImageBytes = null;
+                            _removeExistingImage = true;
                           }),
                           icon: const Icon(Icons.delete_outline),
                           label: const Text('Kep torlese'),
@@ -729,7 +866,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                       onPressed: _loading ? null : _save,
                       child: _loading
                           ? const CircularProgressIndicator()
-                          : const Text('Mentes'),
+                          : Text(isEditing ? 'Modositas mentese' : 'Mentes'),
                     ),
                   ],
                 ),

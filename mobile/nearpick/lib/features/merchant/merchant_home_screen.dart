@@ -88,6 +88,7 @@ class MerchantHomeScreen extends StatelessWidget {
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final product = products[index];
+                final canEdit = !product.hasReservations;
 
                 Future<void> archiveProduct() async {
                   final confirmed = await showDialog<bool>(
@@ -140,6 +141,16 @@ class MerchantHomeScreen extends StatelessWidget {
                     return ProductListTile(
                       product: product,
                       reservedCount: reservedCount,
+                      onEdit: canEdit
+                          ? () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      NewProductScreen(initialProduct: product),
+                                ),
+                              );
+                            }
+                          : null,
                       onArchive: archiveProduct,
                     );
                   },

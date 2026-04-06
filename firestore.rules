@@ -89,6 +89,7 @@ service cloud.firestore {
           'discountedPrice',
           'expiresAt',
           'hasImage',
+          'hasReservations',
           'imagePath',
           'imageUrl',
           'interestCount',
@@ -125,8 +126,65 @@ service cloud.firestore {
         && request.resource.data.interestCount == 0
         && request.resource.data.status == 'active'
         && request.resource.data.isDeleted == false
+        && request.resource.data.hasReservations == false
         && request.resource.data.archivedAt == null
         && request.resource.data.deletedAt == null
+        && hasValidProductImage(productId)
+        && hasValidPricingRecommendation();
+    }
+
+    function isValidProductOwnerUpdate(productId) {
+      return isSignedIn()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'archivedAt',
+          'category',
+          'createdAt',
+          'deletedAt',
+          'discountedPrice',
+          'expiresAt',
+          'hasImage',
+          'hasReservations',
+          'imagePath',
+          'imageUrl',
+          'interestCount',
+          'isDeleted',
+          'location',
+          'merchantName',
+          'name',
+          'originalPrice',
+          'ownerId',
+          'pickupEndAt',
+          'pickupStartAt',
+          'pricingRecommendation',
+          'quantity',
+          'quantityAvailable',
+          'status',
+        ])
+        && !(resource.data.hasReservations == true)
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.merchantName == resource.data.merchantName
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.interestCount == resource.data.interestCount
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.isDeleted == resource.data.isDeleted
+        && request.resource.data.archivedAt == resource.data.archivedAt
+        && request.resource.data.deletedAt == resource.data.deletedAt
+        && request.resource.data.name is string
+        && request.resource.data.category is string
+        && request.resource.data.originalPrice is int
+        && request.resource.data.originalPrice >= 0
+        && request.resource.data.discountedPrice is int
+        && request.resource.data.discountedPrice >= 0
+        && request.resource.data.quantity is int
+        && request.resource.data.quantity > 0
+        && request.resource.data.quantityAvailable is int
+        && request.resource.data.quantityAvailable == request.resource.data.quantity
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.pickupStartAt is timestamp
+        && request.resource.data.pickupEndAt is timestamp
+        && request.resource.data.pickupEndAt > request.resource.data.pickupStartAt
+        && request.resource.data.hasReservations == false
         && hasValidProductImage(productId)
         && hasValidPricingRecommendation();
     }
@@ -134,7 +192,8 @@ service cloud.firestore {
     match /products/{productId} {
       allow read: if isSignedIn();
       allow create: if isValidProductCreate(productId);
-      allow update: if isInterestCountUpdate();
+      allow update: if isInterestCountUpdate()
+        || isValidProductOwnerUpdate(productId);
       allow delete: if false;
     }
 

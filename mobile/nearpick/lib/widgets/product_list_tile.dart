@@ -10,12 +10,14 @@ import 'storage_image.dart';
 
 class ProductListTile extends StatelessWidget {
   final Product product;
+  final VoidCallback? onEdit;
   final VoidCallback? onArchive;
   final int reservedCount;
 
   const ProductListTile({
     super.key,
     required this.product,
+    this.onEdit,
     this.onArchive,
     this.reservedCount = 0,
   });
@@ -119,6 +121,11 @@ class ProductListTile extends StatelessWidget {
                       label: 'Status ${product.status}',
                       icon: Icons.flag_outlined,
                     ),
+                    if (product.hasReservations)
+                      _MetaChip(
+                        label: 'Szerkesztes zarolva',
+                        icon: Icons.lock_outline,
+                      ),
                     if (demandLevel != null)
                       _MetaChip(
                         label: 'Kereslet ${demandLevelLabel(demandLevel)}',
@@ -160,6 +167,12 @@ class ProductListTile extends StatelessWidget {
                       ],
                     ),
                     const Spacer(),
+                    if (onEdit != null)
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined),
+                        tooltip: 'Szerkesztes',
+                        onPressed: onEdit,
+                      ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline),
                       tooltip: 'Torles',

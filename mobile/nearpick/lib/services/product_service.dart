@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 import '../features/merchant/dynamic_pricing.dart';
+import '../models/product.dart';
 
 class ProductService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -94,6 +95,7 @@ class ProductService {
       'isDeleted': false,
       'archivedAt': null,
       'deletedAt': null,
+      'hasReservations': false,
     };
     if (location != null) {
       data['location'] = location;
@@ -122,6 +124,97 @@ class ProductService {
     }
 
     await docRef.set(data);
+  }
+
+  Future<void> updateProduct({
+    required String productId,
+    required String name,
+    required String category,
+    required int originalPrice,
+    required int discountedPrice,
+    required int quantity,
+    required DateTime expiresAt,
+    required DateTime pickupStartAt,
+    required DateTime pickupEndAt,
+    GeoPoint? location,
+    Uint8List? imageBytes,
+    bool removeImage = false,
+    DynamicPricingRecommendation? pricingRecommendation,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Nincs bejelentkezett felhasznalo.');
+    }
+
+    final productRef = _db.collection('products').doc(productId);
+    final productSnap = await productRef.get();
+    if (!productSnap.exists) {
+      throw Exception('A termek nem talalhato.');
+    }
+
+    final existingProduct = Product.fromDoc(productSnap);
+    if (existingProduct.ownerId != user.uid) {
+      throw Exception('Nincs jogosultsag.');
+    }
+    if (existingProduct.hasReservations) {
+      throw Exception(
+        'A termeket mar lefoglaltak, ezert tovabb nem modosithato.',
+      );
+    }
+
+    final data = <String, dynamic>{
+      'name': name,
+      'category': category,
+      'originalPrice': originalPrice,
+      'discountedPrice': discountedPrice,
+      'quantity': quantity,
+      'quantityAvailable': quantity,
+      'expiresAt': Timestamp.fromDate(expiresAt),
+      'pickupStartAt': Timestamp.fromDate(pickupStartAt),
+      'pickupEndAt': Timestamp.fromDate(pickupEndAt),
+      'hasReservations': false,
+    };
+
+    if (location != null) {
+      data['location'] = location;
+    } else {
+      data['location'] = FieldValue.delete();
+    }
+
+    if (pricingRecommendation != null) {
+      data['pricingRecommendation'] = {
+        ...pricingRecommendation.toProductSnapshot(),
+        'generatedAt': FieldValue.serverTimestamp(),
+      };
+    } else {
+      data['pricingRecommendation'] = FieldValue.delete();
+    }
+
+    if (imageBytes != null) {
+      final imageRef = _storage
+          .ref()
+          .child('products')
+          .child(user.uid)
+          .child(productId)
+          .child('main.jpg');
+      await imageRef.putData(imageBytes);
+      final downloadUrl = await imageRef.getDownloadURL();
+      data['imageUrl'] = downloadUrl;
+      data['imagePath'] = imageRef.fullPath;
+      data['hasImage'] = true;
+    } else if (removeImage) {
+      final imagePath = existingProduct.imagePath;
+      if (imagePath != null && imagePath.isNotEmpty) {
+        try {
+          await _storage.ref().child(imagePath).delete();
+        } catch (_) {}
+      }
+      data['hasImage'] = false;
+      data['imageUrl'] = FieldValue.delete();
+      data['imagePath'] = FieldValue.delete();
+    }
+
+    await productRef.update(data);
   }
 
   /// Az aktuális kereskedő saját termékei

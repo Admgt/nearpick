@@ -439,16 +439,20 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                             final name =
                                 product['name'] as String? ??
                                 'Ismeretlen termek';
+                            final hasReservations =
+                                product['hasReservations'] == true;
                             final action = insight.shouldLowerPrice
                                 ? 'Csokkentsd'
                                 : 'Emeld';
                             return ListTile(
                               title: Text(name),
                               subtitle: Text(
-                                '$action az arat ${insight.recommendedPrice} Ft kozelebe. '
-                                'Aktualis: ${insight.actualPrice} Ft, sav: '
-                                '${insight.minimumSuggestedPrice}-${insight.maximumSuggestedPrice} Ft. '
-                                'Kereslet: ${demandLevelLabel(insight.demandLevel)}.',
+                                hasReservations
+                                    ? 'A termekre mar erkezett foglalas, ezert az ar nem modosithato.'
+                                    : '$action az arat ${insight.recommendedPrice} Ft kozelebe. '
+                                          'Aktualis: ${insight.actualPrice} Ft, sav: '
+                                          '${insight.minimumSuggestedPrice}-${insight.maximumSuggestedPrice} Ft. '
+                                          'Kereslet: ${demandLevelLabel(insight.demandLevel)}.',
                               ),
                               trailing: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -459,7 +463,9 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                                   ),
                                   const SizedBox(height: 6),
                                   ElevatedButton(
-                                    onPressed: _repricingIds.contains(entry.key)
+                                    onPressed:
+                                        hasReservations ||
+                                            _repricingIds.contains(entry.key)
                                         ? null
                                         : () => _applyRecommendedPrice(
                                             context: context,
