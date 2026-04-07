@@ -84,15 +84,6 @@ void main() {
         find.byKey(const ValueKey('new_product_quantity_field')),
         '2',
       );
-      await tester.enterText(
-        find.byKey(const ValueKey('new_product_latitude_field')),
-        '47.4979',
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('new_product_longitude_field')),
-        '19.0402',
-      );
-
       final saveButton = find.byKey(const ValueKey('new_product_save_button'));
       await tester.ensureVisible(saveButton);
       await tester.tap(saveButton);

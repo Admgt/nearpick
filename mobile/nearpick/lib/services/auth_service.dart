@@ -38,6 +38,7 @@ class AuthService {
   Future<void> updateCurrentUserProfile({
     String? displayName,
     String? companyName,
+    GeoPoint? companyLocation,
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -61,6 +62,10 @@ class AuthService {
         throw Exception('A ceg neve nem lehet ures.');
       }
       updates['companyName'] = trimmedCompanyName;
+    }
+
+    if (companyLocation != null) {
+      updates['companyLocation'] = companyLocation;
     }
 
     if (updates.isEmpty) {

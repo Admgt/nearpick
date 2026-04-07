@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:nearpick/features/merchant/dynamic_pricing.dart';
 import 'package:nearpick/features/merchant/new_product_form_logic.dart';
 import 'package:nearpick/features/merchant/new_product_screen.dart';
@@ -43,8 +44,6 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(1), '1000');
     await tester.enterText(find.byType(TextFormField).at(2), '500');
     await tester.enterText(find.byType(TextFormField).at(3), '2');
-    await tester.enterText(find.byType(TextFormField).at(4), '47.5');
-    await tester.enterText(find.byType(TextFormField).at(5), '19.0');
     final saveButton = find.widgetWithText(ElevatedButton, 'Mentes');
     await tester.ensureVisible(saveButton);
     await tester.tap(saveButton);
@@ -55,8 +54,7 @@ void main() {
     expect(receivedCommand?.originalPrice, 1000);
     expect(receivedCommand?.discountedPrice, 500);
     expect(receivedCommand?.quantity, 2);
-    expect(receivedCommand?.location?.latitude, 47.5);
-    expect(receivedCommand?.location?.longitude, 19.0);
+    expect(receivedCommand?.location, isNull);
     expect(receivedCommand?.pickupStartAt, DateTime(2026, 3, 7, 9));
     expect(receivedCommand?.pickupEndAt, DateTime(2026, 3, 7, 18));
   });
@@ -151,7 +149,7 @@ void main() {
             pickupStartAt: DateTime(2026, 3, 7, 9),
             pickupEndAt: DateTime(2026, 3, 7, 18),
             createdAt: DateTime(2026, 3, 1),
-            location: null,
+            location: const GeoPoint(47.5, 19.0),
             interestCount: 0,
             status: 'active',
             isDeleted: false,
@@ -170,6 +168,7 @@ void main() {
 
     expect(find.text('Termek szerkesztese'), findsOneWidget);
     expect(find.text('Modositas mentese'), findsOneWidget);
+    expect(find.text('47.500000, 19.000000'), findsOneWidget);
 
     final nameField = tester.widget<TextFormField>(
       find.byKey(const ValueKey('new_product_name_field')),

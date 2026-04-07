@@ -1,13 +1,14 @@
+import 'dart:typed_data';
+
 // ignore_for_file: deprecated_member_use
 
-import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/error/app_error_message.dart';
 import '../../models/product.dart';
 import '../../services/dynamic_pricing_service.dart';
-import '../../services/location_service.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
 import '../../utils/date_time_formatters.dart';
@@ -54,15 +55,12 @@ class _NewProductScreenState extends State<NewProductScreen> {
   final _originalPriceCtrl = TextEditingController();
   final _discountedPriceCtrl = TextEditingController();
   final _quantityCtrl = TextEditingController(text: '1');
-  final _latCtrl = TextEditingController();
-  final _lngCtrl = TextEditingController();
 
   final ImagePicker _imagePicker = ImagePicker();
   XFile? _selectedImage;
   Uint8List? _selectedImageBytes;
   bool _imageLoading = false;
   bool _removeExistingImage = false;
-  bool _fetchingLocation = false;
   bool _pricingLoading = false;
 
   String _selectedCategory = _categories.first;
@@ -113,12 +111,6 @@ class _NewProductScreenState extends State<NewProductScreen> {
         ? initialProduct.category
         : _categories.first;
 
-    final location = initialProduct.location;
-    if (location != null) {
-      _latCtrl.text = location.latitude.toString();
-      _lngCtrl.text = location.longitude.toString();
-    }
-
     final pickupStartAt = initialProduct.pickupStartAt;
     if (pickupStartAt != null) {
       _selectedPickupStartTime = TimeOfDay.fromDateTime(pickupStartAt);
@@ -140,8 +132,6 @@ class _NewProductScreenState extends State<NewProductScreen> {
     _originalPriceCtrl.dispose();
     _discountedPriceCtrl.dispose();
     _quantityCtrl.dispose();
-    _latCtrl.dispose();
-    _lngCtrl.dispose();
     super.dispose();
   }
 
@@ -238,6 +228,14 @@ class _NewProductScreenState extends State<NewProductScreen> {
     return '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
   }
 
+  String _formatLocationLabel(GeoPoint? location) {
+    if (location == null) {
+      return 'Nincs mentett hely ehhez a termekhez.';
+    }
+    return '${location.latitude.toStringAsFixed(6)}, '
+        '${location.longitude.toStringAsFixed(6)}';
+  }
+
   void _clearPricingRecommendation() {
     if (_pricingRecommendation == null && _pricingError == null) {
       return;
@@ -302,46 +300,6 @@ class _NewProductScreenState extends State<NewProductScreen> {
     );
   }
 
-  void _showSnackBar(String text) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-  }
-
-  Future<void> _fetchLocation() async {
-    setState(() {
-      _fetchingLocation = true;
-    });
-
-    try {
-      final pos = await LocationService.getCurrentPosition();
-      _latCtrl.text = pos.latitude.toStringAsFixed(6);
-      _lngCtrl.text = pos.longitude.toStringAsFixed(6);
-      _showSnackBar('Hely meghatarozva.');
-    } on LocationServiceException catch (e) {
-      if (e.code == LocationServiceError.serviceDisabled) {
-        _showSnackBar('A helymeghatarozas ki van kapcsolva.');
-      } else if (e.code == LocationServiceError.reducedAccuracy) {
-        _showSnackBar(
-          'A pontos hely nincs engedelyezve. Kapcsold be a pontos helyet a '
-          'Beallitasokban.',
-        );
-      } else if (kIsWeb) {
-        _showSnackBar(
-          'A bongeszoben a helyhozzaferes le van tiltva. Engedelyezd a cimsor '
-          'melletti beallitasoknal.',
-        );
-      } else {
-        _showSnackBar('Hozzaferes megtagadva. Engedelyezd a Beallitasokban.');
-      }
-    } catch (_) {
-      _showSnackBar('Nem sikerult meghatarozni a helyet.');
-    } finally {
-      if (mounted) {
-        setState(() => _fetchingLocation = false);
-      }
-    }
-  }
-
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedExpiry == null) {
@@ -385,10 +343,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
           _quantityCtrl.text,
           fieldLabel: 'A mennyiseg',
         ),
-        location: parseOptionalLocation(
-          latitudeText: _latCtrl.text,
-          longitudeText: _lngCtrl.text,
-        ),
+        location: widget.initialProduct?.location,
         expiresAt: DateTime(
           _selectedExpiry!.year,
           _selectedExpiry!.month,
@@ -680,55 +635,34 @@ class _NewProductScreenState extends State<NewProductScreen> {
                       validator: validatePositiveQuantity,
                     ),
                     const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _fetchingLocation ? null : _fetchLocation,
-                        icon: _fetchingLocation
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.my_location),
-                        label: const Text('Aktualis hely meghatarozasa'),
+                    SurfaceCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.initialProduct == null
+                                ? 'Atveteli hely'
+                                : 'Termek helye',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            widget.initialProduct == null
+                                ? 'Az uj termek automatikusan a profilban '
+                                      'megadott ceges helyet kapja meg.'
+                                : 'A szerkesztes megtartja a termek korabban '
+                                      'mentett helyet.',
+                          ),
+                          if (widget.initialProduct != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              _formatLocationLabel(
+                                widget.initialProduct?.location,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            key: const ValueKey('new_product_latitude_field'),
-                            controller: _latCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Bolt latitude',
-                            ),
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                              signed: true,
-                            ),
-                            validator: validateLatitude,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            key: const ValueKey('new_product_longitude_field'),
-                            controller: _lngCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Bolt longitude',
-                            ),
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                              signed: true,
-                            ),
-                            validator: validateLongitude,
-                          ),
-                        ),
-                      ],
                     ),
                     const SizedBox(height: 12),
                     Row(

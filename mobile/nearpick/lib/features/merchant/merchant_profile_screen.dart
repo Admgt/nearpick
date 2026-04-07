@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/location_service.dart';
 import '../../ui/app_chrome.dart';
 import '../../widgets/profile_field_edit_dialog.dart';
 import 'merchant_dashboard_screen.dart';
@@ -21,18 +23,32 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AuthService _authService = AuthService();
+  final _locationFormKey = GlobalKey<FormState>();
+  final _latCtrl = TextEditingController();
+  final _lngCtrl = TextEditingController();
 
   bool _loading = true;
   bool _savingDisplayName = false;
   bool _savingCompanyName = false;
+  bool _savingLocation = false;
+  bool _fetchingLocation = false;
   String _displayName = '';
   String _email = '';
   String _companyName = '';
+  String? _locationMessage;
+  String? _locationError;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _latCtrl.dispose();
+    _lngCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProfile() async {
@@ -52,6 +68,9 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
           (data?['displayName'] as String?)?.trim() ?? user.displayName ?? '';
       _email = (data?['email'] as String?)?.trim() ?? (user.email ?? '');
       _companyName = (data?['companyName'] as String?)?.trim() ?? '';
+      final companyLocation = data?['companyLocation'] as GeoPoint?;
+      _latCtrl.text = companyLocation?.latitude.toStringAsFixed(6) ?? '';
+      _lngCtrl.text = companyLocation?.longitude.toStringAsFixed(6) ?? '';
       _loading = false;
     });
   }
@@ -134,6 +153,81 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
     }
   }
 
+  Future<void> _fetchLocation() async {
+    setState(() {
+      _fetchingLocation = true;
+      _locationMessage = null;
+      _locationError = null;
+    });
+
+    try {
+      final pos = await LocationService.getCurrentPosition();
+      if (!mounted) return;
+      setState(() {
+        _latCtrl.text = pos.latitude.toStringAsFixed(6);
+        _lngCtrl.text = pos.longitude.toStringAsFixed(6);
+      });
+      _showSnackBar('Hely meghatarozva.');
+    } on LocationServiceException catch (e) {
+      if (e.code == LocationServiceError.serviceDisabled) {
+        _showSnackBar('A helymeghatarozas ki van kapcsolva.');
+      } else if (e.code == LocationServiceError.reducedAccuracy) {
+        _showSnackBar(
+          'A pontos hely nincs engedelyezve. Kapcsold be a pontos helyet a '
+          'Beallitasokban.',
+        );
+      } else if (kIsWeb) {
+        _showSnackBar(
+          'A bongeszoben a helyhozzaferes le van tiltva. Engedelyezd a cimsor '
+          'melletti beallitasoknal.',
+        );
+      } else {
+        _showSnackBar('Hozzaferes megtagadva. Engedelyezd a Beallitasokban.');
+      }
+    } catch (_) {
+      _showSnackBar('Nem sikerult meghatarozni a helyet.');
+    } finally {
+      if (mounted) {
+        setState(() => _fetchingLocation = false);
+      }
+    }
+  }
+
+  Future<void> _saveLocation() async {
+    if (!_locationFormKey.currentState!.validate()) return;
+
+    final user = _auth.currentUser;
+    if (user == null) {
+      setState(() => _locationError = 'Nincs bejelentkezett felhasznalo.');
+      return;
+    }
+
+    setState(() {
+      _savingLocation = true;
+      _locationMessage = null;
+      _locationError = null;
+    });
+
+    try {
+      final location = GeoPoint(
+        double.parse(_latCtrl.text.trim()),
+        double.parse(_lngCtrl.text.trim()),
+      );
+      await _authService.updateCurrentUserProfile(companyLocation: location);
+      if (!mounted) return;
+      setState(() {
+        _savingLocation = false;
+        _locationMessage = 'Ceg helye mentve.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _savingLocation = false;
+        _locationError = e.toString();
+      });
+    }
+  }
+
   Widget _buildInfoCard() {
     return SurfaceCard(
       child: Column(
@@ -193,6 +287,106 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
     );
   }
 
+  Widget _buildLocationCard() {
+    return SurfaceCard(
+      child: Form(
+        key: _locationFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hely beallitasa',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _fetchingLocation ? null : _fetchLocation,
+                icon: _fetchingLocation
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location),
+                label: const Text('Aktualis hely meghatarozasa'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _latCtrl,
+              decoration: const InputDecoration(labelText: 'Latitude'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Kotelezo mezo';
+                }
+                final parsed = double.tryParse(value.trim());
+                if (parsed == null || parsed < -90 || parsed > 90) {
+                  return 'Adj meg -90 es 90 kozotti erteket';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _lngCtrl,
+              decoration: const InputDecoration(labelText: 'Longitude'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Kotelezo mezo';
+                }
+                final parsed = double.tryParse(value.trim());
+                if (parsed == null || parsed < -180 || parsed > 180) {
+                  return 'Adj meg -180 es 180 kozotti erteket';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Ez a hely automatikusan hozzaadodik az uj termekekhez.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            if (_locationError != null)
+              Text(
+                _locationError!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            if (_locationMessage != null)
+              Text(
+                _locationMessage!,
+                style: const TextStyle(color: Colors.green),
+              ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _savingLocation ? null : _saveLocation,
+                child: _savingLocation
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Mentes'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildLogoutCard() {
     return SurfaceCard(
       child: SizedBox(
@@ -230,6 +424,8 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildInfoCard(),
+                    const SizedBox(height: 16),
+                    _buildLocationCard(),
                     const SizedBox(height: 16),
                     _buildLogoutCard(),
                   ],

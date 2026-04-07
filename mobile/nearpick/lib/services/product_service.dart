@@ -38,9 +38,12 @@ class ProductService {
         .child('thumbnail.jpg');
   }
 
-  Future<String> _resolveMerchantName(User user) async {
+  Future<Map<String, dynamic>> _loadMerchantProfile(User user) async {
     final profile = await _db.collection('users').doc(user.uid).get();
-    final data = profile.data() ?? const <String, dynamic>{};
+    return profile.data() ?? const <String, dynamic>{};
+  }
+
+  String _resolveMerchantName(User user, Map<String, dynamic> data) {
     final companyName = (data['companyName'] as String?)?.trim() ?? '';
     if (companyName.isNotEmpty) {
       return companyName;
@@ -52,6 +55,10 @@ class ProductService {
     }
 
     return (user.email ?? user.uid).trim();
+  }
+
+  GeoPoint? _resolveMerchantLocation(Map<String, dynamic> data) {
+    return data['companyLocation'] as GeoPoint?;
   }
 
   /// Új termék hozzáadása az aktuálisan bejelentkezett kereskedőhöz
@@ -99,7 +106,14 @@ class ProductService {
     }
 
     final docRef = _db.collection('products').doc();
-    final merchantName = await _resolveMerchantName(user);
+    final profileData = await _loadMerchantProfile(user);
+    final merchantName = _resolveMerchantName(user, profileData);
+    final resolvedLocation = location ?? _resolveMerchantLocation(profileData);
+    if (resolvedLocation == null) {
+      throw Exception(
+        'A ceg helye nincs beallitva. Add meg a Profil ful alatt a ceg helyet.',
+      );
+    }
 
     final data = <String, dynamic>{
       'ownerId': user.uid,
@@ -121,9 +135,7 @@ class ProductService {
       'deletedAt': null,
       'hasReservations': false,
     };
-    if (location != null) {
-      data['location'] = location;
-    }
+    data['location'] = resolvedLocation;
     if (pricingRecommendation != null) {
       data['pricingRecommendation'] = {
         ...pricingRecommendation.toProductSnapshot(),
