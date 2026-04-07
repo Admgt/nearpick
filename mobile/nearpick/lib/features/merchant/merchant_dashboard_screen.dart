@@ -444,44 +444,37 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                             final action = insight.shouldLowerPrice
                                 ? 'Csokkentsd'
                                 : 'Emeld';
+                            final deviationLabel =
+                                '${insight.deviationPercent > 0 ? '+' : ''}${insight.deviationPercent}%';
                             return ListTile(
                               title: Text(name),
                               subtitle: Text(
                                 hasReservations
-                                    ? 'A termekre mar erkezett foglalas, ezert az ar nem modosithato.'
+                                    ? 'A termekre mar erkezett foglalas, ezert az ar nem modosithato. Elteres: $deviationLabel.'
                                     : '$action az arat ${insight.recommendedPrice} Ft kozelebe. '
                                           'Aktualis: ${insight.actualPrice} Ft, sav: '
                                           '${insight.minimumSuggestedPrice}-${insight.maximumSuggestedPrice} Ft. '
-                                          'Kereslet: ${demandLevelLabel(insight.demandLevel)}.',
+                                          'Kereslet: ${demandLevelLabel(insight.demandLevel)}. '
+                                          'Elteres: $deviationLabel.',
                               ),
-                              trailing: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    '${insight.deviationPercent > 0 ? '+' : ''}${insight.deviationPercent}%',
-                                  ),
-                                  const SizedBox(height: 6),
-                                  ElevatedButton(
-                                    onPressed:
-                                        hasReservations ||
-                                            _repricingIds.contains(entry.key)
-                                        ? null
-                                        : () => _applyRecommendedPrice(
-                                            context: context,
-                                            productId: entry.key,
-                                          ),
-                                    child: _repricingIds.contains(entry.key)
-                                        ? const SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : const Text('Alkalmaz'),
-                                  ),
-                                ],
+                              trailing: ElevatedButton(
+                                onPressed:
+                                    hasReservations ||
+                                        _repricingIds.contains(entry.key)
+                                    ? null
+                                    : () => _applyRecommendedPrice(
+                                        context: context,
+                                        productId: entry.key,
+                                      ),
+                                child: _repricingIds.contains(entry.key)
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text('Alkalmaz'),
                               ),
                             );
                           },

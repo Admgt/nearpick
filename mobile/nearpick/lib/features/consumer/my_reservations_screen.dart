@@ -163,28 +163,43 @@ class MyReservationsScreen extends StatelessWidget {
                         ),
                     ],
                   ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '$totalDiscounted Ft',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      if (reservation.qty > 1)
+                  trailing: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 140),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
                         Text(
-                          '$discounted Ft / db',
-                          style: const TextStyle(fontSize: 12),
+                          '$totalDiscounted Ft',
+                          textAlign: TextAlign.end,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                      if (totalOriginal > totalDiscounted)
-                        Text(
-                          '$totalOriginal Ft',
-                          style: const TextStyle(
-                            decoration: TextDecoration.lineThrough,
-                            fontSize: 12,
+                        if (reservation.qty > 1 ||
+                            totalOriginal > totalDiscounted)
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                if (reservation.qty > 1)
+                                  TextSpan(text: '$discounted Ft / db'),
+                                if (reservation.qty > 1 &&
+                                    totalOriginal > totalDiscounted)
+                                  const TextSpan(text: ' | '),
+                                if (totalOriginal > totalDiscounted)
+                                  TextSpan(
+                                    text: '$totalOriginal Ft',
+                                    style: const TextStyle(
+                                      decoration: TextDecoration.lineThrough,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
+                            style: const TextStyle(fontSize: 11, height: 1.1),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                   onTap: () {
                     Navigator.of(context).push(
