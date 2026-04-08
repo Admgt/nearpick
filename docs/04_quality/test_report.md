@@ -1,6 +1,6 @@
 # Teszt riport
 
-## Aktuális állapot 2026-04-07
+## Aktuális állapot 2026-04-08
 
 ### Jelenlegi repo-állapot
 
@@ -57,36 +57,38 @@ Ezek forrásai:
 Megjegyzés:
 - a [ci_evidence.md](../06_release/ci_evidence.md) már az aktuálisan dokumentált HEAD-hez tartozó zöld runra mutat
 
-### Utolsó ténylegesen rögzített Flutter evidence
+### Utolsó ténylegesen rögzített runtime evidence
 
-Az utolsó repo-ban rögzített, lokális Flutter futási evidence továbbra is:
-- dátum: `2026-03-06`
-- futási mód: lokális terminál futás, Flutter suite
-- parancs: `flutter test --reporter expanded`
-- eredmény: `All tests passed!`
+A 2026-04-08-i lokális újrafuttatás alapján:
 
-Rögzített összegzés:
-- összes teszt: `45`
-- sikeres: `45`
+Flutter unit/widget/workflow réteg:
+- parancs: `powershell -ExecutionPolicy Bypass -File scripts/test_all.ps1`
+- primer artifact: [`../../mobile/nearpick/reports/junit-flutter.xml`](../../mobile/nearpick/reports/junit-flutter.xml)
+- összes JUnit teszteset: `84`
 - sikertelen: `0`
-- unit: `33`
-- integration: `6`
-- widget: `6`
-- negatív tesztek: `9+`
+- errors: `0`
+- tesztsuite-ok: `25`
 
-Primer evidence:
-- [docs/assets/logs/flutter_test_latest.log](../assets/logs/flutter_test_latest.log)
+Valódi Android emulatoros `integration_test` evidence:
+- parancs: `flutter test integration_test/flows/auth_and_product_flow_test.dart -d emulator-5554`
+- eredmény: `1/1` passed
+- primer artifact: [`../../mobile/nearpick/reports/flutter-integration-test.txt`](../../mobile/nearpick/reports/flutter-integration-test.txt)
+
+Functions quality gate:
+- `npm.cmd run lint`: passed
+- `npm.cmd test`: `54/54` passed
+- `npm.cmd run scan:deps`: passed
+- megjegyzés: az `npm.cmd ci` közben az npm általános audit összegzést jelzett, de a repository dedikált dependency audit scriptje végül `Functions dependency audit rendben` eredményt adott a dokumentált suppressions mellett
 
 ### Mit NEM állít ez a riport
 
-Ez a dokumentumfrissítés nem futtatott új teszteket. Emiatt:
-- a 2026-04-07-es kódállapothoz csak statikus inventory áll rendelkezésre
-- a frissebb feature-k megléte kódból és tesztfájlokból auditált, nem friss runtime futásból
-- a következő release-közeli körben érdemes újra futtatni a Flutter és functions suite-okat, majd frissíteni kell ezt a riportot a friss runtime eredményekkel
+- A 2026-04-08-as runtime evidence ellenére az `integration_test/**` réteg továbbra is csak egy validált core flow-t fed le.
+- A statikus repo-inventory továbbra sem azonos egyetlen teljes, minden réteget egyben mérő futási összesítéssel.
+- A Functions dependency audit pass nem jelenti azt, hogy a teljes npm advisory ökoszisztéma zajmentes; a projekt jelenleg célzott, dokumentált auditkezelésre támaszkodik.
 
 ### Nyitott korlátok
 
 - A jelenlegi integration szint in-memory workflow / adaptor alapú, nem Firebase emulátor alapú.
-- Az `integration_test/` réteg még nem teljes suite, jelenleg egy validált core flow áll rendelkezésre.
-- Az új account/profile, review, refund és QR flow-khoz még nincs teljes UI/E2E evidence.
-- A CI generál JUnit XML-t (`reports/junit-flutter.xml`), de a lokális dokumentációs evidence itt jelenleg elsősorban a normalizált logfájlra támaszkodik.
+- Az `integration_test/` réteg most már validált Android emulatoros evidence-del rendelkezik, de még nem teljes suite.
+- Az új account/profile, review, refund és QR flow-khoz még nincs külön teljes UI/E2E evidence.
+- A Functions quality gate lokálisan zöld, de a dependency advisories hosszabb távú karbantartása külön backlog-feladat marad.

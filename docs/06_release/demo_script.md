@@ -2,7 +2,7 @@
 
 ## 0. Előkészítés
 
-- Javasolt környezet: webes futtatás `flutter run -d edge --web-port 49904`
+- Javasolt környezet: webes futtatás `flutter run -d edge --web-port 49914`
 - Demo fiókok:
   - fogyasztó: `demo.user@nearpick.local`
   - kereskedő: `demo.merchant@nearpick.local`

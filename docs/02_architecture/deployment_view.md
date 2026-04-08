@@ -70,7 +70,7 @@ Az opcionális lokális emulátoros útvonal a verziókezelt `firebase.json` ala
 | Auth | `9099` |
 | Storage | `9199` |
 
-A Flutter kliens ajánlott helyi webes portja `49904`, és emulátoros módban `--dart-define=USE_FIREBASE_EMULATORS=true` kapcsolóval futtatható.
+A Flutter kliens ajánlott helyi webes portja `49914`, és emulátoros módban `--dart-define=USE_FIREBASE_EMULATORS=true` kapcsolóval futtatható.
 
 ## Release áramlás
 

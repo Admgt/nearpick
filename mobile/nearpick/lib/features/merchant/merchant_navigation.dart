@@ -35,6 +35,42 @@ List<Widget> buildMerchantAppBarActions(
   MerchantTopDestination? current,
   required ValueChanged<MerchantTopDestination> onSelected,
 }) {
+  final isCompact = MediaQuery.sizeOf(context).width < 900;
+
+  if (isCompact) {
+    return [
+      PopupMenuButton<MerchantTopDestination>(
+        tooltip: 'Kereskedoi menü',
+        icon: const Icon(Icons.more_vert),
+        onSelected: onSelected,
+        itemBuilder: (context) =>
+            MerchantTopDestination.values.map((destination) {
+              final isCurrent = destination == current;
+              return PopupMenuItem<MerchantTopDestination>(
+                value: destination,
+                enabled: !isCurrent,
+                child: Row(
+                  children: [
+                    Icon(destination.icon, size: 18),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        destination.label,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isCurrent) ...[
+                      const SizedBox(width: 12),
+                      const Icon(Icons.check, size: 18),
+                    ],
+                  ],
+                ),
+              );
+            }).toList(),
+      ),
+    ];
+  }
+
   return [
     Padding(
       padding: const EdgeInsets.only(right: 12),

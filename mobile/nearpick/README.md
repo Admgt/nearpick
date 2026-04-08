@@ -82,30 +82,30 @@ Megjegyzés:
 ## Futtatás weben
 
 ```bash
-flutter run -d edge --web-port 49904
+flutter run -d edge --web-port 49914
 ```
 
 Web push teszthez:
 
 ```bash
-flutter run -d edge --web-port 49904 --dart-define=FIREBASE_WEB_VAPID_KEY=<your-web-push-vapid-public-key>
+flutter run -d edge --web-port 49914 --dart-define=FIREBASE_WEB_VAPID_KEY=<your-web-push-vapid-public-key>
 ```
 
 Firebase Emulator Suite mód:
 
 ```bash
-flutter run -d edge --web-port 49904 --dart-define=USE_FIREBASE_EMULATORS=true
+flutter run -d edge --web-port 49914 --dart-define=USE_FIREBASE_EMULATORS=true
 ```
 
 Ha egyedi emulator host kell:
 
 ```bash
-flutter run -d edge --web-port 49904 --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1
+flutter run -d edge --web-port 49914 --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1
 ```
 
 Megjegyzés:
 
-- A fix `49904` port nem véletlen; a repo több ponton erre a lokális webes futásra hivatkozik.
+- A fix `49914` port nem véletlen; a repo több ponton erre a lokális webes futásra hivatkozik.
 - Ha más portot használsz, a Firebase Auth webes domain beállítását is ellenőrizned kell.
 
 ## Futtatás Androidon
@@ -179,6 +179,6 @@ powershell -ExecutionPolicy Bypass -File scripts/test_all.ps1
 - Hiányzó `firebase_options.dart`
   - Hozd létre az example fájlból.
 - Webes auth vagy messaging hiba
-  - Ellenőrizd a `49904` portot és a webes Firebase configot.
+  - Ellenőrizd a `49914` portot és a webes Firebase configot.
 - Android `google-services` hiba
   - Ellenőrizd, hogy a `google-services.json` a helyén van-e.

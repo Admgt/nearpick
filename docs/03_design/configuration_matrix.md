@@ -37,7 +37,7 @@ Ez a dokumentum a NearPick jelenlegi konfigurációs modelljét foglalja össze 
 
 ## Port- és útvonal-konvenciók
 
-- Ajánlott helyi Flutter web port: `49904`
+- Ajánlott helyi Flutter web port: `49914`
 - Emulátor portok: a verziókezelt [`../../firebase.json`](../../firebase.json) fájl rögzíti
 - Ajánlott emulátor indulási parancs:
 
@@ -48,7 +48,7 @@ firebase emulators:start --only auth,firestore,functions,storage,hosting
 ## Gyors validációs lista
 
 1. A szükséges lokális config fájlok léteznek.
-2. A helyi webes futás `49904` porton indul.
+2. A helyi webes futás `49914` porton indul.
 3. Emulátoros módban a `USE_FIREBASE_EMULATORS` flag át van adva.
 4. A valódi lokális config fájlok nincsenek verziókezelve.
 

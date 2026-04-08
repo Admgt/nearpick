@@ -36,7 +36,7 @@ A repository jelenlegi állapotában a leggyorsabb bírálói útvonal továbbra
 ```bash
 firebase emulators:start --only auth,firestore,functions,storage,hosting
 cd mobile/nearpick
-flutter run -d edge --web-port 49904 --dart-define=USE_FIREBASE_EMULATORS=true
+flutter run -d edge --web-port 49914 --dart-define=USE_FIREBASE_EMULATORS=true
 ```
 
 Ha csak háttérlogokra van szükség, marad a szűkebb Functions emulátor útvonal:

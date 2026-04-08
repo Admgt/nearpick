@@ -41,7 +41,14 @@ flutter test --machine | tojunit > reports/junit-flutter.xml
 
 echo "==> integration_test ellenorzes"
 if [ -d "integration_test" ] && find integration_test -type f -name "*.dart" | grep -q .; then
-  flutter test integration_test
+  mkdir -p reports
+  flutter devices | tee reports/flutter-integration-devices.txt
+  device_id="$(flutter devices | awk -F '•' '/android/ {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' || true)"
+  if [ -z "$device_id" ]; then
+    echo "Skipping integration_test locally: no Android emulator/device is configured on this machine." | tee reports/flutter-integration-test.txt
+  else
+    flutter test integration_test -d "$device_id" | tee reports/flutter-integration-test.txt
+  fi
 else
   echo "Nincs integration_test fajl, integration lepes kihagyva."
 fi

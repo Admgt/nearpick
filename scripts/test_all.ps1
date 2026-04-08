@@ -52,12 +52,46 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "flutter test --machine | tojunit failed" }
 
     Write-Host "==> integration_test ellenorzes"
-    $hasIntegrationTests = Test-Path "integration_test" -PathType Container -and
-        (Get-ChildItem "integration_test" -Recurse -Filter *.dart -File | Measure-Object).Count -gt 0
+    $hasIntegrationTests = (Test-Path "integration_test" -PathType Container) -and
+        ((Get-ChildItem "integration_test" -Recurse -Filter *.dart -File | Measure-Object).Count -gt 0)
 
     if ($hasIntegrationTests) {
-        & flutter test integration_test
-        if ($LASTEXITCODE -ne 0) { throw "flutter test integration_test failed" }
+        $devicesReportPath = Join-Path $reportsDir "flutter-integration-devices.txt"
+        $integrationReportPath = Join-Path $reportsDir "flutter-integration-test.txt"
+
+        $devicesOutput = & flutter devices
+        $devicesExitCode = $LASTEXITCODE
+        $devicesOutput | Out-File -Encoding utf8 $devicesReportPath
+        if ($devicesExitCode -ne 0) { throw "flutter devices failed" }
+
+        $androidDeviceId = $null
+        $devicesJson = & flutter devices --machine
+        if ($LASTEXITCODE -eq 0 -and $devicesJson) {
+            try {
+                $parsedDevices = $devicesJson | ConvertFrom-Json
+                $androidDevice = $parsedDevices | Where-Object {
+                    $_.targetPlatform -like "android-*"
+                } | Select-Object -First 1
+                if ($androidDevice) {
+                    $androidDeviceId = $androidDevice.id
+                }
+            } catch {
+                Write-Host "Nem sikerult a flutter devices --machine kimenetet feldolgozni."
+            }
+        }
+
+        if (-not $androidDeviceId) {
+            $skipMessage = "Skipping integration_test locally: no Android emulator/device is configured on this machine."
+            Write-Host $skipMessage
+            $skipMessage | Out-File -Encoding utf8 $integrationReportPath
+        } else {
+            Write-Host "==> integration_test futtatasa android device-en: $androidDeviceId"
+            $integrationOutput = & flutter test integration_test -d $androidDeviceId 2>&1
+            $integrationExitCode = $LASTEXITCODE
+            $integrationOutput | Out-File -Encoding utf8 $integrationReportPath
+            $integrationOutput | ForEach-Object { Write-Host $_ }
+            if ($integrationExitCode -ne 0) { throw "flutter test integration_test failed" }
+        }
     } else {
         Write-Host "Nincs integration_test fajl, integration lepes kihagyva."
     }
@@ -69,23 +103,24 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "secret scan failed" }
 
     $functionsDir = Join-Path $rootDir "functions"
+    $npmCommand = "npm.cmd"
     Write-Host "==> Functions quality gate futtatasa: $functionsDir"
     Push-Location $functionsDir
 
     Write-Host "==> npm ci"
-    & npm ci
+    & $npmCommand ci
     if ($LASTEXITCODE -ne 0) { throw "npm ci failed" }
 
     Write-Host "==> npm run lint"
-    & npm run lint
+    & $npmCommand run lint
     if ($LASTEXITCODE -ne 0) { throw "npm run lint failed" }
 
     Write-Host "==> npm test"
-    & npm test
+    & $npmCommand test
     if ($LASTEXITCODE -ne 0) { throw "npm test failed" }
 
     Write-Host "==> npm run scan:deps"
-    & npm run scan:deps
+    & $npmCommand run scan:deps
     if ($LASTEXITCODE -ne 0) { throw "npm run scan:deps failed" }
 
     Write-Host "==> Kesz. Flutter JUnit: mobile/nearpick/reports/junit-flutter.xml"

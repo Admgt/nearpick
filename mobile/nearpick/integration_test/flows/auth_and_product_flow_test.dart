@@ -40,6 +40,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('register_company_name_field')),
+        'Demo Bakery Ltd',
+      );
       await tester.tap(find.byKey(const ValueKey('register_submit_button')));
       await tester.pumpAndSettle();
 
