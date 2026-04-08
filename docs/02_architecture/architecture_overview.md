@@ -1,6 +1,29 @@
 # Architektúra áttekintés
 
-![Rendszer architektúra](../assets/architecture/system_overview.png)
+```mermaid
+flowchart LR
+    user1[Vásárló]
+    user2[Kereskedő]
+    app[Flutter kliens]
+    auth[Firebase Auth]
+    fs[Cloud Firestore]
+    storage[Firebase Storage]
+    fn[Cloud Functions]
+    fcm[Firebase Cloud Messaging]
+    ci[GitHub Actions CI]
+
+    user1 --> app
+    user2 --> app
+    app --> auth
+    app --> fs
+    app --> storage
+    app --> fn
+    fn --> fs
+    fn --> storage
+    fn --> fcm
+    ci --> app
+    ci --> fn
+```
 
 ## Rendszer célja
 
@@ -10,16 +33,18 @@ A NearPick célja, hogy a közeli, időérzékeny kedvezményes termékeket gyor
 
 - Flutter kliensalkalmazás
   - auth, consumer és merchant képernyők
+  - account/profile, location, favorites, review és dashboard UI-k
   - ajánlási logika és kliensoldali szűrés
   - Firebase SDK integrációk
 - Firebase Auth
   - email/jelszó azonosítás és session alapú hozzáférés
 - Cloud Firestore
-  - felhasználók, termékek, érdeklődések, foglalások és preferenciaadatok
+  - felhasználók, termékek, érdeklődések, foglalások, review-k és preferenciaadatok
 - Firebase Storage
   - termékképek tárolása
 - Cloud Functions
-  - eseményvezérelt értesítési és kiegészítő backend logika
+  - foglalási, refund, review, archiválási és repricing callable műveletek
+  - eseményvezérelt értesítési és thumbnail-generáló logika
 - Firebase Cloud Messaging
   - push értesítések
 - GitHub Actions CI
@@ -42,11 +67,12 @@ A Firebase serverless backend választás indoka az volt, hogy a hitelesítés, 
 
 1. A felhasználó bejelentkezik a Flutter kliensen keresztül Firebase Auth segítségével.
 2. A kliens a `users/{uid}` dokumentumból kiolvassa a szerepkört és a preferenciákat.
-3. A fogyasztói nézet a Firestore aktív termékadataiból feedet épít, majd kliensoldalon szűri és pontozza az ajánlatokat.
-4. A kereskedő új terméket hoz létre, amely a Firestore-ban és opcionálisan a Storage-ban jelenik meg.
-5. Új termék létrehozásakor Cloud Function indulhat, amely értesítéseket küld a releváns fogyasztóknak.
-6. Foglaláskor a kliens tranzakciós logikával csökkenti a készletet és létrehozza a foglalási rekordot.
-7. A fogyasztó és a kereskedő a foglalási életciklust külön képernyőkön követi.
+3. A fogyasztói nézet a Firestore aktív termékadataiból feedet épít, majd kliensoldalon szűri és pontozza az ajánlatokat a location és preferencia adatok alapján.
+4. A kereskedő profiloldalon cégnevet és céghelyet állít be; ezt az új termék flow alapértelmezetten felhasználja.
+5. A kereskedő új terméket hoz létre vagy szerkeszt, amely a Firestore-ban és opcionálisan a Storage-ban jelenik meg, a fő képhez pedig thumbnail generálódik.
+6. Új termék létrehozásakor Cloud Function indulhat, amely szegmentált értesítéseket küld a releváns fogyasztóknak.
+7. Foglaláskor a backend callable tranzakció csökkenti a készletet, létrehozza a foglalási rekordot, pickup code-ot és pickup tokent generál.
+8. A kereskedő QR vagy pickup input alapján teljesíti a foglalást, a refund státuszt kezeli, a completed foglalás után pedig review érkezhet.
 
 ## Authorization modell röviden
 
@@ -54,6 +80,7 @@ Az authorization modell három pillérre épül:
 
 - Firebase Auth alapú hitelesítés
 - Firestore és Storage security rules alapú backend jogosultságkikényszerítés
+- Cloud Functions oldali üzleti szabály-ellenőrzés a kritikus reservation és product műveletekhez
 - ownership és role mezők használata (`ownerId`, `merchantId`, `buyerId`, `role`)
 
 A kliensoldali tiltások és gombállapotok UX célúak, de nem helyettesítik a backend kontrollt. A biztonsági modell lényege, hogy a felhasználó csak a saját adataihoz és a szerepkörének megfelelő erőforrásokhoz férjen hozzá.
@@ -62,12 +89,13 @@ A kliensoldali tiltások és gombállapotok UX célúak, de nem helyettesítik a
 
 - Lokális fejlesztés és demó
   - Flutter kliens + külön demo Firebase projekt
-  - opcionálisan Functions emulátor helyi logolási célra
+  - opcionálisan teljes Firebase Emulator Suite vagy Functions emulátor helyi logolási célra
 - CI
   - GitHub Actions futtatja a format, analyze, build és test lépéseket
 - Backend kiadási modell
   - Firebase alapú deployment szemlélet
   - szabályok, functions és kapcsolódó konfigurációk verziókezelten élnek a repositoryban
+  - a CI evidence és a reviewer demó külön release artefaktumokban követett
 
 ## Kapcsolódó dokumentumok
 

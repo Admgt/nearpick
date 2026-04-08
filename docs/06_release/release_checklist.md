@@ -32,7 +32,7 @@ Kapcsolódó CI evidence hely: [`ci_evidence.md`](ci_evidence.md)
 - [x] A fő felhasználói folyamatok leírása elkészült.
 - [x] A demóscript a bemutatási sorrendet és fallback lépéseket is tartalmazza.
 - [x] A UX evidence asset könyvtár struktúrája elő van készítve.
-- [x] A végleges képernyőképek evidence assetként be vannak illesztve.
+- [x] Az új account/profile/pricing/refund/QR flow-khoz tartozó végleges képernyőképek evidence assetként is be vannak illesztve.
 
 ## AI dokumentáció teljessége
 
@@ -59,5 +59,5 @@ Kapcsolódó CI evidence hely: [`ci_evidence.md`](ci_evidence.md)
 ## CI evidence rögzítés
 
 - [x] Van külön hely előkészítve a konkrét GitHub Actions run link rögzítésére.
-- [x] A legutóbbi main/default branch zöld run URL-je ténylegesen be van írva a [`ci_evidence.md`](ci_evidence.md) fájlba.
-- [x] A kapcsolódó commit SHA és futási dátum is rögzítve van.
+- [x] A legutóbbi main/default branch zöld run URL-je ténylegesen be van írva a [`ci_evidence.md`](ci_evidence.md) fájlba az aktuális HEAD-hez.
+- [x] A kapcsolódó commit SHA és futási dátum is az aktuális HEAD-hez rögzítve van.

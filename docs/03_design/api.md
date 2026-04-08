@@ -1,6 +1,6 @@
 # API és interfészszerződés
 
-A NearPick jelenleg Firebase SDK-alapú adatelérést használ a kliensből, valamint egy Cloud Function triggert.
+A NearPick hibrid szerződést használ: az olvasási és egyszerűbb írási útvonalak egy része közvetlen Firebase SDK-alapú, a kritikus reservation és product lifecycle műveletek pedig Cloud Functions callable végpontokon mennek át.
 
 ## Alapkörnyezet
 
@@ -19,22 +19,36 @@ A NearPick jelenleg Firebase SDK-alapú adatelérést használ a kliensből, val
 
 | Felület | Művelet | Fő bemenetek | Fő kimenetek |
 |---|---|---|---|
-| `products` | create/read/update/archive | item mezők, ownerId, quantity, expiry | aktív feed dokumentumok és kereskedői lista |
-| `reservations` | create/read/update status | productId, buyerId, merchantId, status | foglalási életciklus rekordok |
+| `products` | read + merchant-owned write | product mezők, ownerId, quantity, expiry, location | aktív feed dokumentumok és kereskedői lista |
+| `reservations` | read | productId, buyerId, merchantId, status, qty, pickup metaadatok | foglalási életciklus rekordok |
 | `interests` | create/delete | userId + productId kulcs | kedvencjel és rangsorolási jel |
-| `merchantStats` | merge updates | kereskedői számlálók | kereskedői dashboard aggregátumok |
-| `users` + `fcmTokens` | profile + token persistence | role, preferenciák, tokenek | auth routing + értesítési célzás |
+| `merchantStats` | read | kereskedői számlálók és rating aggregátum | kereskedői dashboard aggregátumok |
+| `reviews` | read | reservation / merchant review adatok | merchant review lista és reservation detail |
+| `users` + `fcmTokens` | profile + token persistence | role, preferenciák, company metaadatok, tokenek | auth routing + értesítési célzás |
 
-### 2) Cloud Function trigger szerződés
+### 2) Cloud Functions callable szerződések
 
-- Function: `notifyOnNewProduct`
-- Forrás: Firestore dokumentum létrehozási esemény `products/{productId}`
-- Bemeneti feltételezések:
-  - `category`, `ownerId`, termékmegjelenítési mezők.
-- Mellékhatások:
-  - fogyasztói userek lekérdezése kategóriapreferencia alapján
-  - token alkollekciók beolvasása
-  - FCM multicast batch-ek küldése
+| Function | Cél | Fő bemenet | Fő kimenet |
+|---|---|---|---|
+| `reserveProduct` | készletcsökkentés + reservation létrehozás | `productId`, `quantity` | `reservationId` |
+| `completeReservation` | pickup code / token alapú teljesítés | `reservationId`, `pickupInput` | state change |
+| `cancelReservation` | reservation lemondása | `reservationId`, `reasonCode`, `reasonNote`, `refundRequested` | state change |
+| `updateRefundStatus` | merchant refund workflow | `reservationId`, `refundStatus` | state change |
+| `submitReview` | merchant review rögzítése | `reservationId`, `rating`, `comment` | review write |
+| `archiveProduct` | product archiválás | `productId` | state change |
+| `repriceProduct` | pricing recommendation alkalmazása | `productId` | `discountedPrice` |
+
+### 3) Cloud Functions trigger / scheduler szerződések
+
+- `notifyOnNewProduct`
+  - Forrás: Firestore dokumentum létrehozási esemény `products/{productId}`
+  - Mellékhatás: szegmentált fogyasztói push értesítések küldése
+- `generateProductThumbnail`
+  - Forrás: Storage objektum véglegesítése `products/{ownerId}/{productId}/main.jpg`
+  - Mellékhatás: `thumbnail.jpg` generálása és `products.thumbnailPath` frissítése
+- `expireReservations`
+  - Forrás: ütemezett futás
+  - Mellékhatás: lejárt reservationök állapotfrissítése és készletvisszaállítás
 
 Hivatkozás: [`../../functions/index.js`](../../functions/index.js)
 
@@ -49,14 +63,17 @@ A célmodell:
   - validation
   - auth
   - permission
-  - conflict/sold_out
+  - conflict / sold_out / insufficient_quantity
+  - invalid_state / invalid_pickup
   - transient network
   - internal
 
 ## Retry és idempotencia
 
-- A foglalás tranzakciós szemantikát használ a mennyiségcsökkentéshez és konfliktuskezeléshez.
+- A foglalás callable tranzakciós szemantikát használ a mennyiségcsökkentéshez és konfliktuskezeléshez.
 - Az érdeklődés létrehozása idempotens az összetett doc id minta (`uid_productId`) és a létezésellenőrzés miatt.
+- A review reservation-szinten egyszeri műveletnek tekintendő.
+- A `repriceProduct` csak létező pricing recommendation esetén hajtható végre.
 - A retry policy jelenleg implicit; az explicit retry mátrix a [`error_handling.md`](error_handling.md) fájlban követhető.
 
 ## Rate limiting / visszaélésvédelem

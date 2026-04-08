@@ -3,14 +3,14 @@
 Ez a fájl a main/default branch legutóbbi igazolt zöld CI futásának release-evidence helye.
 Kitöltése minden olyan push után szükséges, amelyet release-közeli állapotként akarsz hivatkozni.
 
-## Kitöltendő adatok
+## Jelenleg rögzített adatok
 
 - Branch: `main`
 - Workflow: [`ci.yml`](../../.github/workflows/ci.yml)
-- Legutóbbi zöld run URL: `https://github.com/SZTE-SZF/1-sprint-Admgt/actions/runs/23404984466`
-- Commit SHA: `b0790f1`
-- Run dátuma: `2026-03-22`
-- Rövid megjegyzés: a release-readiness dokumentáció, a Flutter dependency audit és a lokális quality gate frissítések utáni állapotot igazolja
+- Legutóbbi zöld run URL: `https://github.com/SZTE-SZF/1-sprint-Admgt/actions/runs/24095328668`
+- Commit SHA: `2b474e1`
+- Run dátuma: `2026-04-07`
+- Rövid megjegyzés: az aktuális `main` HEAD-hez tartozó zöld CI futás, amely a release-dokumentáció frissített állapotát igazolja
 
 ## Elvárt minimális evidence
 
@@ -21,5 +21,6 @@ Kitöltése minden olyan push után szükséges, amelyet release-közeli állapo
 
 ## Jelenlegi állapot
 
-- Státusz: `passing`
-- Megjegyzés: a konkrét GitHub Actions run URL, commit SHA és futási dátum rögzítve van ehhez a release-közeli állapothoz.
+- Státusz: `current for recorded HEAD`
+- Megjegyzés: a rögzített run az aktuálisan dokumentált HEAD-hez tartozik, ezért release-evidenceként használható.
+- Következő teendő: a következő release-közeli push után ismét frissíteni kell a run URL-t, a commit SHA-t és a dátumot.

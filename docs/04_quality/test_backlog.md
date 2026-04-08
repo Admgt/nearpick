@@ -1,11 +1,11 @@
 # Teszt backlog (30+ terv)
 
 ## Célmix összesítés
-- Összes tesztterv: 30
-- Unit: 18
-- Integration: 6
-- E2E/Contract: 6
-- Negatív teszt: 9 (`negative` tipus)
+- Összes tesztterv: 40
+- Unit: 22
+- Integration: 10
+- E2E/Contract: 8
+- Negatív teszt: 15 (`negative` tipus)
 
 Evidence referencia:
 - CI workflow: [.github/workflows/ci.yml](../../.github/workflows/ci.yml)
@@ -45,6 +45,16 @@ Evidence referencia:
 | T-28 | e2e-contract | happy | Merchant `Átadva` művelet után a reservation státus `completed` lesz és a merchant listában is frissül. | `mobile/nearpick/integration_test/flows/merchant_complete_reservation_test.dart` | `Flutter integration tests (if present)` / CI step log |
 | T-29 | e2e-contract | negative | Firestore contract: consumer ne tudja más merchant terméket archiválni (`permission-denied`). | `mobile/nearpick/integration_test/contracts/firestore_product_archive_rule_test.dart` | `Flutter integration tests (if present)` / CI step log |
 | T-30 | e2e-contract | negative | Firestore/Storage contract: user csak saját profil helyzetét és saját FCM token alkollekciót írhassa. | `mobile/nearpick/integration_test/contracts/user_data_ownership_rules_test.dart` | `Flutter integration tests (if present)` / CI step log |
+| T-31 | unit | happy | Ellenőrizze, hogy a `LocationPreferences` city mode-ban a városközpontot használja effektív home locationként. | `mobile/nearpick/test/unit/consumer/location_preferences_city_mode_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
+| T-32 | unit | negative | Ellenőrizze, hogy a password reset üres emaillel validációs hibát ad. | `mobile/nearpick/test/widget/auth/password_reset_validation_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
+| T-33 | unit | edge | Ellenőrizze, hogy a `Product.fromDoc` kezeli a `thumbnailPath`, `pricingRecommendation` és `hasReservations` mezőket. | `mobile/nearpick/test/unit/models/product_extended_fields_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
+| T-34 | unit | edge | Ellenőrizze, hogy a `Reservation.fromDoc` kezeli a `pickupToken`, `refund*` és `reviewSubmittedAt` mezőket. | `mobile/nearpick/test/unit/models/reservation_extended_fields_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
+| T-35 | integration | happy | Ellenőrizze, hogy a merchant profile-ban mentett `companyLocation` automatikusan bekerül az új termékbe. | `mobile/nearpick/test/integration/product/company_location_applied_to_product_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
+| T-36 | integration | negative | Ellenőrizze, hogy céghely nélkül az új termék mentése hibát ad. | `mobile/nearpick/test/integration/product/create_product_requires_company_location_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
+| T-37 | integration | happy | Ellenőrizze, hogy a refundot kérő lemondás `pending` refund státusszal jön létre és visszaállítja a készletet. | `mobile/nearpick/test/integration/reservation/cancel_with_refund_pending_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
+| T-38 | integration | happy | Ellenőrizze, hogy `submitReview` completed reservation után létrehozza a review rekordot és frissíti a merchant statot. | `mobile/nearpick/test/integration/reservation/submit_review_updates_stats_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
+| T-39 | e2e-contract | happy | Fogyasztói account flow: kategória, city mode és preferred radius mentése után a feed helyesen frissül. | `mobile/nearpick/integration_test/flows/consumer_account_and_location_flow_test.dart` | `Flutter integration tests (if present)` / CI step log |
+| T-40 | e2e-contract | happy | Merchant flow: QR vagy pickup input alapján a reservation `completed` lesz, majd a completed foglalás review-t kaphat. | `mobile/nearpick/integration_test/flows/merchant_qr_complete_and_review_flow_test.dart` | `Flutter integration tests (if present)` / CI step log |
 
 ## Refaktor pontok a backloghoz
 - `new_product_screen.dart`: validációs logika UI-ból kiemelése tiszta helperbe (`test/unit/validation/**`), hogy gyors unit tesztek irhatók legyenek.

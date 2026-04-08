@@ -15,6 +15,7 @@ A projekt indításához és futtatási parancsaihoz használd a [`../README.md`
 
 - C4 kontextus és konténerek: [`02_architecture/c4_context_container.md`](02_architecture/c4_context_container.md)
 - C4 komponensnézet: [`02_architecture/c4_component.md`](02_architecture/c4_component.md)
+- Deployment view: [`02_architecture/deployment_view.md`](02_architecture/deployment_view.md)
 - Minőségi attribútumok: [`02_architecture/quality_attributes.md`](02_architecture/quality_attributes.md)
 - Meglévő ADR hivatkozások:
   - [`../sprints/01/architecture/adr/0001-first-tech-choice.md`](../sprints/01/architecture/adr/0001-first-tech-choice.md)
@@ -27,6 +28,7 @@ A projekt indításához és futtatási parancsaihoz használd a [`../README.md`
 - API és szerződések: [`03_design/api.md`](03_design/api.md)
 - Adatmodell: [`03_design/data_model.md`](03_design/data_model.md)
 - Hibakezelés: [`03_design/error_handling.md`](03_design/error_handling.md)
+- Konfigurációs mátrix: [`03_design/configuration_matrix.md`](03_design/configuration_matrix.md)
 
 ## Minőség
 

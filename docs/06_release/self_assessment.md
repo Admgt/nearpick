@@ -1,6 +1,6 @@
 # Önértékelés és készültségi scorecard
 
-Dátum: `2026-03-16`
+Dátum: `2026-04-08`
 
 Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő melléklet. Az állapotok jelentése:
 
@@ -9,11 +9,15 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 - `1.0`: kész
 - `N/A`: nem releváns
 
+Megjegyzés:
+- Ez egy köztes, dokumentációfrissítés utáni önértékelés.
+- A pontozás a jelenlegi kód + dokumentáció auditjára támaszkodik; friss CI evidence már rögzítve van, de új lokális, kézzel dokumentált teljes tesztfuttatást ez a kör még nem adott hozzá.
+
 ## 6.1 Gyors ellenőrzés 15 perc alatt
 
 - [x] A repo klónozás után a `README` quickstart alapján elindítható demóútvonalat ír le.
 - [x] A tesztek futtatása dokumentált.
-- [x] A main/default branch legutóbbi zöld CI futásának konkrét linkje rögzítve van a [`ci_evidence.md`](ci_evidence.md) fájlban.
+- [x] A main/default branch aktuálisan rögzített zöld CI futásának konkrét linkje rögzítve van a [`ci_evidence.md`](ci_evidence.md) fájlban.
 - [x] A secret hygiene dokumentált (`.env.example`, secret scan, gitignore).
 - [x] A UX screenshot evidence a `docs/assets/ux/` alatt elérhető.
 
@@ -22,35 +26,35 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 | Kapu feltétel | Státusz | Evidence / link | Megjegyzés |
 |---|---|---|---|
 | Futtathatóság: Quickstart alapján indul | Igen | [`README.md`](../../README.md), [`demo_environment.md`](demo_environment.md) | Demo Firebase projekt alapú reviewer útvonal dokumentálva |
-| CI zöld a main/default branch-en | Igen | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`ci_evidence.md`](ci_evidence.md) | Workflow és a konkrét zöld run evidence is rögzítve |
+| CI zöld a main/default branch-en | Igen | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`ci_evidence.md`](ci_evidence.md) | Az aktuálisan dokumentált HEAD-hez tartozó zöld run link rögzítve van |
 | Nincs secret a repo-ban | Igen | [`.env.example`](../../.env.example), [`scripts/secret_scan.sh`](../../scripts/secret_scan.sh), [`scripts/secret_scan.ps1`](../../scripts/secret_scan.ps1), [`.gitignore`](../../.gitignore) | Secret scan és gitignore szabályok megvannak |
-| Minimum tesztmix: 30+ automata teszt | Igen | [`test_strategy.md`](../04_quality/test_strategy.md), [`test_report.md`](../04_quality/test_report.md) | 73 automata teszt dokumentálva |
+| Minimum tesztmix: 30+ automata teszt | Igen | [`test_strategy.md`](../04_quality/test_strategy.md), [`test_report.md`](../04_quality/test_report.md) | A statikus inventory jelenleg 139 automata tesztdefiníciót jelez |
 | AI átláthatóság: manifest + prompt + verification | Igen | [`ai_manifest.md`](../07_ai/ai_manifest.md), [`prompt_log.md`](../07_ai/prompt_log.md), [`verification_log.md`](../07_ai/verification_log.md) | Megvannak, de mélységben még nem véglegesek |
 
 ## 6.3 100 pontos készültségi scorecard
 
-### A) Product és scope - 9/12
+### A) Product és scope - 10/12
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
 | 2 | Vision kész és konkrét | 1.0 | [`vision.md`](../01_product/vision.md) |
 | 2 | Scope Contract: MVP story-k + elfogadási kritériumok + scope fegyelem | 1.0 | [`scope_contract.md`](../01_product/scope_contract.md) |
-| 2 | Capability Map kitöltve 6+ képességgel, státusszal és evidence linkekkel | 0.5 | [`capability_map.md`](../01_product/capability_map.md) |
+| 2 | Capability Map kitöltve 6+ képességgel, státusszal és evidence linkekkel | 1.0 | [`capability_map.md`](../01_product/capability_map.md) |
 | 2 | UX flow-k dokumentáltak: 2-3 fő flow + error/empty state | 1.0 | [`ux_flows.md`](../01_product/ux_flows.md), [`../assets/ux`](../assets/ux) |
 | 2 | Mérőszámok/metrics: mit mérnél és miért | 1.0 | [`metrics.md`](../01_product/metrics.md) |
 | 2 | Ismert korlátok + roadmap/tech debt | 1.0 | [`scope_contract.md`](../01_product/scope_contract.md), [`test_backlog.md`](../04_quality/test_backlog.md) |
 
-### B) Képesség-szélesség - 8/10
+### B) Képesség-szélesség - 9/10
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
 | 2 | Legalább 6 capability, ebből minimum 3 termékesítő | 1.0 | [`capability_map.md`](../01_product/capability_map.md) |
-| 2 | Minden Done capability-hez van konkrét evidence link | 0.5 | [`capability_map.md`](../01_product/capability_map.md) |
-| 2 | Minden Done capability-hez van kapcsolt teszt vagy teszt bizonyíték | 0.5 | [`capability_map.md`](../01_product/capability_map.md), [`test_report.md`](../04_quality/test_report.md) |
+| 2 | Minden Done capability-hez van konkrét evidence link | 1.0 | [`capability_map.md`](../01_product/capability_map.md) |
+| 2 | Minden Done capability-hez van kapcsolt teszt vagy teszt bizonyíték | 1.0 | [`capability_map.md`](../01_product/capability_map.md), [`test_report.md`](../04_quality/test_report.md) |
 | 2 | Edge case-ek és hibák capability szinten kezeltek | 1.0 | [`ux_flows.md`](../01_product/ux_flows.md), [`error_handling.md`](../03_design/error_handling.md) |
 | 2 | A Planned/Partial elemek őszintén jelöltek | 1.0 | [`capability_map.md`](../01_product/capability_map.md) |
 
-### C) Architektúra és döntések - 12/13
+### C) Architektúra és döntések - 13/13
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
@@ -58,15 +62,15 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 | 3 | Component/modul nézet dokumentált | 1.0 | [`c4_component.md`](../02_architecture/c4_component.md) |
 | 3 | Minimum 8 ADR | 1.0 | [`00_index.md`](../02_architecture/adr/00_index.md) |
 | 2 | Quality attributes + legalább 2 quality scenario | 1.0 | [`quality_attributes.md`](../02_architecture/quality_attributes.md) |
-| 2 | Deployment view dokumentált | 0.5 | [`c4_context_container.md`](../02_architecture/c4_context_container.md), [`deploy_runbook.md`](../05_security_ops/deploy_runbook.md) |
+| 2 | Deployment view dokumentált | 1.0 | [`deployment_view.md`](../02_architecture/deployment_view.md), [`deploy_runbook.md`](../05_security_ops/deploy_runbook.md) |
 
-### D) Engineering minőség - 10.5/15
+### D) Engineering minőség - 11.5/15
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
 | 3 | Kódszerkezet és moduláris felépítés | 1.0 | [`c4_component.md`](../02_architecture/c4_component.md), [`mobile/nearpick/lib`](../../mobile/nearpick/lib) |
 | 3 | Egységes hibakezelés + input validáció + konzisztens hibamodel | 0.5 | [`error_handling.md`](../03_design/error_handling.md), [`api.md`](../03_design/api.md) |
-| 2 | Konfiguráció és környezetek | 0.5 | [`README.md`](../../README.md), [`demo_environment.md`](demo_environment.md) |
+| 2 | Konfiguráció és környezetek | 1.0 | [`configuration_matrix.md`](../03_design/configuration_matrix.md), [`README.md`](../../README.md), [`demo_environment.md`](demo_environment.md) |
 | 3 | Teljesítmény baseline + 1 szűk keresztmetszet mérése és javítása | 0.5 | [`performance.md`](../04_quality/performance.md), [`quality_attributes.md`](../02_architecture/quality_attributes.md) |
 | 2 | Statikus minőségi kapuk CI-ban | 1.0 | [`quality_gates_summary.md`](../04_quality/quality_gates_summary.md), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) |
 | 2 | Platform-specifikus minőség | 0.5 | [`ux_flows.md`](../01_product/ux_flows.md), [`mobile/nearpick/README.md`](../../mobile/nearpick/README.md) |
@@ -82,13 +86,13 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 | 2 | E2E/contract jellegű teszt a core flow-ra | 1.0 | [`auth_and_product_flow_test.dart`](../../mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart), [`test_report.md`](../04_quality/test_report.md) |
 | 2 | Plusz minőségi teszt | 1.0 | [`functions/test/firestore_rules_policy.test.js`](../../functions/test/firestore_rules_policy.test.js), [`functions/test/observability.test.js`](../../functions/test/observability.test.js) |
 
-### F) DevOps és üzemeltetés - 12/15
+### F) DevOps és üzemeltetés - 11/15
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
 | 3 | CI pipeline komplett | 1.0 | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) |
 | 2 | Reprodukálható build/dependency kezelés | 1.0 | [`pubspec.lock`](../../mobile/nearpick/pubspec.lock), [`package-lock.json`](../../functions/package-lock.json) |
-| 3 | Deploy leírás + környezetek | 0.5 | [`deploy_runbook.md`](../05_security_ops/deploy_runbook.md), [`demo_environment.md`](demo_environment.md) |
+| 3 | Deploy leírás + környezetek | 1.0 | [`deploy_runbook.md`](../05_security_ops/deploy_runbook.md), [`demo_environment.md`](demo_environment.md) |
 | 2 | Rollback terv | 1.0 | [`deploy_runbook.md`](../05_security_ops/deploy_runbook.md) |
 | 3 | Observability baseline: log + healthcheck + 3 metrika | 1.0 | [`observability.md`](../05_security_ops/observability.md), [`functions/index.js`](../../functions/index.js) |
 | 2 | Runbook: 2 incident scenario + teendők | 1.0 | [`deploy_runbook.md`](../05_security_ops/deploy_runbook.md) |
@@ -115,20 +119,20 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 
 ## Összesítés
 
-- A) Product és scope: `9/12`
-- B) Képesség-szélesség: `8/10`
-- C) Architektúra és döntések: `12/13`
-- D) Engineering minőség: `10.5/15`
+- A) Product és scope: `10/12`
+- B) Képesség-szélesség: `9/10`
+- C) Architektúra és döntések: `13/13`
+- D) Engineering minőség: `11.5/15`
 - E) Tesztelés és minőségi kapuk: `12/15`
-- F) DevOps és üzemeltetés: `12/15`
+- F) DevOps és üzemeltetés: `11/15`
 - G) Security, privacy, licenc: `9/10`
 - H) AI engineering érettség: `9/10`
 
-Összpontszám: `81.5/100`
+Összpontszám: `84.5/100`
 
 ## Következő legnagyobb pontnyereségek
 
 1. A performance benchmark optimalizálás utáni újrafuttatása és az eredmény rögzítése.
-2. A következő sikeres push után a [`ci_evidence.md`](ci_evidence.md) kitöltése a konkrét GitHub Actions run linkkel.
-3. További `integration_test` flow-k hozzáadása reservation és completion utakra.
-4. Egységesebb error-handling és konfigurációs baseline lezárása.
+2. További `integration_test` flow-k hozzáadása account/location, reservation/refund/review és QR utakra.
+3. Friss lokális vagy release-közeli teljes teszt evidence rögzítése a bővült suite-hoz.
+4. Az auth/rules allow-deny coverage további bővítése, hogy az AuthN/AuthZ score is 1.0-ra emelhető legyen.

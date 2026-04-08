@@ -9,6 +9,8 @@ flowchart LR
     prod[ProductService]
     resv[ReservationService]
     notif[NotificationService]
+    report[MerchantReportService]
+    pricing[DynamicPricingService]
     inter[UserInteractionService]
     neg[NegativeFeedbackService]
     reco[Recommendation Engine]
@@ -17,6 +19,8 @@ flowchart LR
     root --> notif
     root --> prod
     root --> resv
+    root --> report
+    root --> pricing
     root --> inter
     root --> neg
     root --> reco
@@ -24,11 +28,13 @@ flowchart LR
 
 ### Felelősségek
 
-- `RootRouter`: auth state kezelés és szerepalapú navigáció.
-- `AuthService`: regisztráció/bejelentkezés/kijelentkezés és user profile bootstrap.
-- `ProductService`: termék létrehozási/archiválási/érdeklődési műveletek.
-- `ReservationService`: foglalási és foglalásteljesítési tranzakciós folyamat.
+- `RootRouter`: auth state kezelés, role routing és notification bootstrap.
+- `AuthService`: regisztráció/bejelentkezés/kijelentkezés, password reset és user profile bootstrap / update.
+- `ProductService`: termék létrehozási, szerkesztési, archiválási, repricing és érdeklődési műveletek.
+- `ReservationService`: foglalási, foglalásteljesítési, lemondási, refund és review folyamat.
 - `NotificationService`: token regisztráció és tokenfrissítés perzisztálása.
+- `MerchantReportService`: merchant dashboard CSV export előállítása és letöltés / clipboard fallback.
+- `DynamicPricingService`: pricing recommendation lekérés és a merchant flow támogatása.
 - `UserInteractionService`: implicit preferencia- és interakciónaplózás.
 - `NegativeFeedbackService`: elutasításalapú negatív preferenciakezelés.
 - `Recommendation Engine`: pontszámítás és ajánlási indokok.
@@ -37,21 +43,37 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    trigger[notifyOnNewProduct trigger]
-    query[Fogyasztók lekérdezése kedvenc kategória szerint]
-    token[FCM tokenek beolvasása]
-    send[Multicast küldés]
+    notify[notifyOnNewProduct trigger]
+    thumb[generateProductThumbnail trigger]
+    reserve[reserveProduct callable]
+    complete[completeReservation callable]
+    cancel[cancelReservation callable]
+    refund[updateRefundStatus callable]
+    review[submitReview callable]
+    archive[archiveProduct callable]
+    reprice[repriceProduct callable]
+    expire[expireReservations schedule]
+    health[healthcheck endpoint]
 
-    trigger --> query --> token --> send
+    notify --> reserve
+    reserve --> complete
+    complete --> review
+    cancel --> refund
 ```
 
 ### Felelősségek
 
-- A függvénytrigger reagál a `products/{productId}` létrehozási eseményeire.
-- Lekérdezi a fogyasztói usereket kategóriapreferencia alapján.
-- Beolvassa a token alkollekciót és kötegelt FCM multicast értesítéseket küld.
+- `notifyOnNewProduct`: új termékekhez szegmentált push értesítést küld.
+- `generateProductThumbnail`: a feltöltött főképből stabil thumbnail képet generál.
+- `reserveProduct`: szerveroldali foglalási tranzakció mennyiségellenőrzéssel.
+- `completeReservation`: pickup input alapján teljesíti a foglalást.
+- `cancelReservation` és `updateRefundStatus`: lemondás és refund állapotok kezelése.
+- `submitReview`: completed reservation után review-t rögzít és merchant statot frissít.
+- `archiveProduct` és `repriceProduct`: product lifecycle és pricing műveletek.
+- `expireReservations`: időzített lejáratkezelés.
+- `healthcheck`: operációs diagnosztikai végpont.
 
 ## Ismert határok és hiányok
 
-- A tranzakcióintenzív foglalási és számlálási logika jelenleg kliensvezérelt, és meg van jelölve lehetséges function-oldali megerősítésre.
-- Egyes validációs logikák UI-hoz kötöttek, és tervben van a kiszervezésük tesztelhető tiszta helper függvényekbe.
+- A legtöbb kritikus foglalási és product lifecycle művelet már function-oldalon fut, de a kliens továbbra is vastag és közvetlen Firestore olvasásokat használ.
+- Egyes validációs logikák még UI-hoz kötöttek, és tervben van a kiszervezésük tesztelhető tiszta helper függvényekbe.

@@ -4,9 +4,20 @@ Ez a mappa tartalmazza a NearPick Flutter kliensalkalmazását. A kliens Firebas
 
 ## Mire való ez az app
 
-- vásárlói oldalon közeli ajánlatok böngészése, szűrése és foglalása
-- kereskedői oldalon termékek feltöltése és foglalások kezelése
-- push értesítések új ajánlatokra
+- vásárlói oldalon közeli ajánlatok böngészése, térképes megjelenítése, szűrése és foglalása
+- vásárlói account és profil adatok kezelése, városalapú vagy pontos helyalapú preferenciákkal
+- több darabos foglalás, QR-alapú átvétel, refund állapotkövetés és értékelés
+- kereskedői oldalon profil- és cégadat-kezelés, termékek feltöltése és szerkesztése az első foglalásig
+- kereskedői dashboard, árazási ajánlás, foglaláskezelés, CSV export és értékelési visszajelzés
+- push értesítések új ajánlatokra és foglalási életciklusokra
+
+## Jelenlegi feature snapshot
+
+- Auth: email/jelszó bejelentkezés, regisztráció, elfelejtett jelszó flow
+- Consumer: feed + map nézet, location preference, multi-quantity foglalás, review megtekintés és beküldés
+- Merchant: company name és company location mentése, pricing recommendation, reservation lifecycle kezelés
+- Fulfillment: pickup token / QR ellenőrzés, manuális token fallback, refund státuszok
+- Reporting: merchant dashboard és CSV export
 
 ## Előfeltételek
 

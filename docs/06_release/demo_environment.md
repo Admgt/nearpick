@@ -24,7 +24,10 @@ Ajánlott seed adatok:
 
 - legalább 1 pékáru, 1 tejtermék és 1 készétel kategóriájú aktív termék
 - legalább 1 olyan termék, amelyhez tartozik kép
-- legalább 1 korábbi foglalás a foglalási részletképernyő demonstrálásához
+- legalább 1 olyan merchant profil, ahol `companyName` és `companyLocation` is ki van töltve
+- legalább 1 korábbi `completed` foglalás a review flow demonstrálásához
+- legalább 1 `cancelled` foglalás `pending` refund státusszal
+- legalább 1 olyan aktív termék, ahol `quantityAvailable > 1`, hogy a mennyiségválasztó flow kipróbálható legyen
 
 ## Emulátor ajánlás
 
@@ -49,11 +52,13 @@ Ez a lépés hasznos akkor, ha a reviewer vagy az oktató helyi logokat akar lá
 ## Mit teszteljen a reviewer?
 
 - Bejelentkezés és szerepkör alapú beléptetés.
-- Kereskedői új termék létrehozása és annak megjelenése a saját listában.
-- Fogyasztói ajánlatlista betöltése és kategóriaszűrés.
-- Termékrészlet megnyitása és foglalás indítása.
-- Foglalás részletképernyő megnyitása.
-- Alapvető hibaállapotok, például kötelező mező hiánya vagy sold-out üzenet.
+- Kereskedői profiloldal megnyitása, céghely ellenőrzése és új termék létrehozása / szerkesztése.
+- Fogyasztói ajánlatlista betöltése, kategóriaszűrés és helyalapú böngészés.
+- Termékrészlet megnyitása és foglalás indítása akár több darabra.
+- Foglalás részletképernyő megnyitása pickup code / QR token megjelenítéssel.
+- Completed demo foglalás review részének megmutatása.
+- Cancelled demo foglalás refund státuszának megmutatása.
+- Alapvető hibaállapotok, például kötelező mező hiánya vagy sold-out / insufficient quantity üzenet.
 
 ## Ismert korlátok
 

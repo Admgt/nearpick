@@ -4,8 +4,11 @@
 
 ### users/{uid}
 
-- Cél: profil + szerepkör + preferenciák.
-- Fő mezők: `email`, `displayName`, `role`, `favoriteCategories`, `homeLocation`, `createdAt`.
+- Cél: profil + szerepkör + preferenciák + account / merchant metaadatok.
+- Fő mezők:
+  - identity: `email`, `displayName`, `role`, `createdAt`
+  - consumer prefs: `favoriteCategories`, `homeLocation`, `homeLocationMode`, `homeLocationCityId`, `preferredRadiusKm`
+  - merchant profile: `companyName`, `companyLocation`
 
 ### users/{uid}/fcmTokens/{tokenId}
 
@@ -17,11 +20,12 @@
 - Cél: kereskedői terméklista.
 - Fő mezők:
   - ownership: `ownerId`
-  - content: `name`, `category`, `imageUrl`, `imagePath`
-  - pricing: `originalPrice`, `discountedPrice`
+  - content: `merchantName`, `name`, `category`, `imageUrl`, `imagePath`, `thumbnailPath`
+  - pricing: `originalPrice`, `discountedPrice`, `pricingRecommendation`
   - inventory: `quantity`, `quantityAvailable`
-  - lifecycle: `status`, `isDeleted`, `expiresAt`, `archivedAt`, `deletedAt`
+  - lifecycle: `status`, `isDeleted`, `hasReservations`, `expiresAt`, `pickupStartAt`, `pickupEndAt`, `archivedAt`, `deletedAt`
   - signals: `interestCount`, `createdAt`
+  - geo: `location`
 
 ### reservations/{reservationId}
 
@@ -29,9 +33,16 @@
 - Fő mezők:
   - refs: `productId`, `merchantId`, `buyerId`
   - state: `status`, `qty`
-  - timing: `createdAt`, `expiresAt`, `completedAt`
-  - fulfillment: `pickupCode`
+  - timing: `createdAt`, `expiresAt`, `completedAt`, `cancelledAt`, `expiredAt`
+  - fulfillment: `pickupCode`, `pickupToken`
+  - cancellation/refund: `cancelReasonCode`, `cancelReasonNote`, `cancelledBy`, `refundStatus`, `refundRequestedAt`, `refundReviewedAt`, `refundCompletedAt`, `refundReviewedBy`
+  - review marker: `reviewSubmittedAt`
   - denormalized snapshot: `productSnapshot`
+
+### reviews/{reservationId}
+
+- Cél: completed reservation után beküldött merchant review.
+- Fő mezők: `reservationId`, `merchantId`, `buyerId`, `buyerDisplayName`, `productId`, `productName`, `rating`, `comment`, `createdAt`.
 
 ### interests/{interestId}
 
@@ -41,7 +52,7 @@
 ### merchantStats/{merchantId}
 
 - Cél: aggregált kereskedői számlálók.
-- Fő mezők: `reservedCount`, `soldOutCount`, `completedCount`, `updatedAt`.
+- Fő mezők: `reservedCount`, `soldOutCount`, `completedCount`, `averageRating`, `reviewCount`, `updatedAt`.
 
 ### userInteractions/{interactionId}
 
@@ -65,11 +76,13 @@
 - `users (consumer) (1) -> (N) reservations` a `buyerId` alapján.
 - `users (merchant) (1) -> (N) reservations` a `merchantId` alapján.
 - `users (1) -> (N) interests` a `userId` alapján.
+- `reservations (1) -> (0..1) reviews` a reservation azonosító alapján.
 
 Integritási mechanizmusok:
 - A Firestore rule-ok kikényszerítik a tulajdonosi/user korlátokat.
-- A foglalási tranzakció kikényszeríti a mennyiségcsökkentést és a sold_out átmenetet.
+- A foglalási tranzakció kikényszeríti a mennyiségcsökkentést, a sold_out átmenetet és a többdarabos foglalás konzisztenciáját.
 - Az érdeklődés-létrehozási útvonal elkerüli a duplikált számlálást.
+- A review flow reservation-szintű egyediségre és completed státuszra támaszkodik.
 
 ## Sémaevolúciós stratégia
 
@@ -91,7 +104,8 @@ A jelenlegi lekérdezési minták az alábbi indexeket indokolják:
 - `products.isDeleted + ownerId + status + expiresAt`
 - `reservations.buyerId + createdAt`
 - `reservations.merchantId + status + createdAt`
+- `reservations.pickupCode + merchantId`
 - `userInteractions.ownerId + createdAt`
 - `interests.userId` (single-field, automatikus index elegendo)
 
-Az indexkészlet verziokezelve van a repo-ban a [`../../firestore.indexes.json`](../../firestore.indexes.json) fajlban, es azt osszhangban kell tartani az aktiv lekerdezesi mintakkal es a CI/deploy folyamattal.
+Az indexkészlet verziókezelve van a repo-ban a [`../../firestore.indexes.json`](../../firestore.indexes.json) fájlban, és azt összhangban kell tartani az aktív lekérdezési mintákkal és a CI/deploy folyamattal.

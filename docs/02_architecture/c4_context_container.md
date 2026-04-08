@@ -62,5 +62,6 @@ flowchart TB
 - Lokális/dev: Flutter app + Firebase projektelérés vagy emulátoros útvonal.
 - CI: a GitHub Actions futtatja a lint/build/test pipeline-t.
 - A cél hosting/telepítési megközelítés dokumentálva van itt:
+  - [`deployment_view.md`](deployment_view.md)
   - [`../../sprints/02/docs/adr/0001-deployment-target.md`](../../sprints/02/docs/adr/0001-deployment-target.md)
   - [`../../sprints/02/docs/adr/0003-iac-deploy-strategy.md`](../../sprints/02/docs/adr/0003-iac-deploy-strategy.md)

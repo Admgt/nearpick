@@ -1,10 +1,16 @@
 # Performance baseline
 
 Datum: `2026-03-19`
+Felulvizsgalva: `2026-04-07`
 
 ## Cel
 
 Ez az artefakt a PDF engineering quality kovetelmenyenek megfelelo, kicsi, reprodukalhato performance baseline-t rogziti.
+
+Megjegyzes a jelenlegi allapothoz:
+- ez az artefakt tovabbra is egy szuk, reprodukalhato mikrobenchmarkot rogzit
+- a 2026-04-07-es dokumentaciofrissites soran nem futott ujrameres
+- azota a mobilapp scope bovult location-aware browse, multi-quantity foglalas, QR pickup, refund es review flow-kkal, de ezekre nincs kulon performance evidence rogzitve
 
 Valasztott kritikus utvonal:
 - a recommendation pipeline-ben hasznalt `GeoUtils.haversineKm`
@@ -106,3 +112,4 @@ Ertelmezes:
 - Ugyanezt a benchmarkot erdemes tobbszor, azonos gepen megismetelni es median vagy atlag alapon rogziteni.
 - Ha a `nearby_points` romlas reprodukalhato, a mostani optimalizalast tovabb kell finomitani vagy vissza kell venni.
 - A scorecardban ez a tetel tovabbra is reszleges (`0.5`) teljesitesnek tekintheto, mert a meres es a javitasi probalkozas megvan, de a javulas nem altalanos.
+- Kulon, felhasznaloi flow-kozelibb meres kell legalabb a location-aware ajanlatlista es a merchant dashboard aggregaciok korul.
