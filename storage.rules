@@ -1,9 +1,33 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function hasUserProfile() {
+      return isSignedIn()
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid));
+    }
+
+    function currentUserData() {
+      return firestore.get(
+        /databases/(default)/documents/users/$(request.auth.uid)
+      ).data;
+    }
+
+    function isActiveMerchant() {
+      return hasUserProfile()
+        && currentUserData().role == 'merchant'
+        && (
+          currentUserData().accountStatus == null
+          || currentUserData().accountStatus == 'active'
+        );
+    }
+
     match /products/{ownerId}/{productId}/{fileName} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == ownerId;
+      allow write: if isActiveMerchant() && request.auth.uid == ownerId;
     }
   }
 }

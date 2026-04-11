@@ -51,4 +51,63 @@ void main() {
       expect(notificationInitCalls, 1);
     },
   );
+
+  testWidgets('RootRouter opens admin home for admin session', (tester) async {
+    final userIdController = StreamController<String?>();
+    final sessionController = StreamController<SessionAccess?>();
+
+    addTearDown(userIdController.close);
+    addTearDown(sessionController.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RootRouter(
+          userIdChanges: () => userIdController.stream,
+          sessionChanges: (_) => sessionController.stream,
+          loginScreenBuilder: (_) => const Text('login'),
+          adminHomeBuilder: (_) => const Text('admin-home'),
+          notificationInitializer: () async {},
+        ),
+      ),
+    );
+
+    userIdController.add('admin-user');
+    await tester.pump();
+    sessionController.add(
+      const SessionAccess(role: 'admin', accountStatus: 'active'),
+    );
+    await tester.pump();
+
+    expect(find.text('admin-home'), findsOneWidget);
+  });
+
+  testWidgets('RootRouter shows restricted screen for blocked account', (
+    tester,
+  ) async {
+    final userIdController = StreamController<String?>();
+    final sessionController = StreamController<SessionAccess?>();
+
+    addTearDown(userIdController.close);
+    addTearDown(sessionController.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RootRouter(
+          userIdChanges: () => userIdController.stream,
+          sessionChanges: (_) => sessionController.stream,
+          accountStatusScreenBuilder: (_, status) => Text('restricted-$status'),
+          notificationInitializer: () async {},
+        ),
+      ),
+    );
+
+    userIdController.add('blocked-user');
+    await tester.pump();
+    sessionController.add(
+      const SessionAccess(role: 'consumer', accountStatus: 'blocked'),
+    );
+    await tester.pump();
+
+    expect(find.text('restricted-blocked'), findsOneWidget);
+  });
 }

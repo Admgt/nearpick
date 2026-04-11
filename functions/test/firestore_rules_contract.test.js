@@ -11,7 +11,7 @@ const rules = fs.readFileSync(
 test("merchantStats remain readable for signed-in clients while writes stay denied", () => {
   assert.match(
       rules,
-      /match \/merchantStats\/\{merchantId\} \{[\s\S]*allow read: if isSignedIn\(\);[\s\S]*allow create, update, delete: if false;/,
+      /match \/merchantStats\/\{merchantId\} \{[\s\S]*allow read: if canReadProtectedData\(\);[\s\S]*allow create, update, delete: if false;/,
   );
 });
 
@@ -32,7 +32,28 @@ test("review client writes remain denied", () => {
 test("reviews remain readable for signed-in clients", () => {
   assert.match(
       rules,
-      /match \/reviews\/\{reviewId\} \{[\s\S]*allow read: if isSignedIn\(\);[\s\S]*allow create, update, delete: if false;/,
+      /match \/reviews\/\{reviewId\} \{[\s\S]*allow read: if canReadProtectedData\(\);[\s\S]*allow create, update, delete: if false;/,
+  );
+});
+
+test("users write policy now restricts self-updates to safe profile fields", () => {
+  assert.match(
+      rules,
+      /match \/users\/\{userId\} \{[\s\S]*allow create: if request\.auth != null[\s\S]*isValidUserCreate\(\);[\s\S]*allow update: if isValidUserSelfUpdate\(userId\);[\s\S]*allow delete: if false;/,
+  );
+});
+
+test("adminMessages allow owner or admin reads while client-side create stays denied", () => {
+  assert.match(
+      rules,
+      /match \/users\/\{userId\}\/adminMessages\/\{messageId\} \{[\s\S]*allow read: if isAdmin\(\)[\s\S]*request\.auth\.uid == userId[\s\S]*allow create: if false;[\s\S]*allow update: if isValidAdminMessageReadUpdate\(userId\);[\s\S]*allow delete: if false;/,
+  );
+});
+
+test("admin helper is available for protected reads", () => {
+  assert.match(
+      rules,
+      /function isAdmin\(\) \{[\s\S]*request\.auth\.token\.admin == true/,
   );
 });
 

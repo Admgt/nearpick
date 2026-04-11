@@ -5,10 +5,109 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function hasUserProfile() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function currentUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.admin == true
+        && (!hasUserProfile()
+          || currentUserData().accountStatus == null
+          || currentUserData().accountStatus == 'active');
+    }
+
+    function isActiveUser() {
+      return hasUserProfile()
+        && (currentUserData().accountStatus == null
+          || currentUserData().accountStatus == 'active');
+    }
+
+    function isActiveMerchant() {
+      return isActiveUser() && currentUserData().role == 'merchant';
+    }
+
+    function canReadProtectedData() {
+      return isAdmin() || isActiveUser();
+    }
+
+    function hasValidUserDocKeys() {
+      return request.resource.data.keys().hasOnly([
+        'accountStatus',
+        'companyLocation',
+        'companyName',
+        'createdAt',
+        'displayName',
+        'email',
+        'favoriteCategories',
+        'homeLocation',
+        'homeLocationCityId',
+        'homeLocationMode',
+        'preferredRadiusKm',
+        'role',
+        'statusUpdatedAt',
+        'statusUpdatedBy',
+      ]);
+    }
+
+    function isValidUserCreate() {
+      return isSignedIn()
+        && hasValidUserDocKeys()
+        && request.resource.data.email is string
+        && request.resource.data.displayName is string
+        && request.resource.data.role in ['consumer', 'merchant']
+        && request.resource.data.accountStatus == 'active'
+        && request.resource.data.createdAt is timestamp
+        && (!request.resource.data.keys().hasAny(['companyName'])
+          || request.resource.data.companyName is string);
+    }
+
+    function isValidUserSelfUpdate(userId) {
+      return isActiveUser()
+        && request.auth.uid == userId
+        && hasValidUserDocKeys()
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'companyLocation',
+          'companyName',
+          'displayName',
+          'favoriteCategories',
+          'homeLocation',
+          'homeLocationCityId',
+          'homeLocationMode',
+          'preferredRadiusKm',
+        ])
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.accountStatus == resource.data.accountStatus
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (!request.resource.data.keys().hasAny(['statusUpdatedAt'])
+          || request.resource.data.statusUpdatedAt == resource.data.statusUpdatedAt)
+        && (!request.resource.data.keys().hasAny(['statusUpdatedBy'])
+          || request.resource.data.statusUpdatedBy == resource.data.statusUpdatedBy)
+        && request.resource.data.displayName is string
+        && (!request.resource.data.keys().hasAny(['companyName'])
+          || request.resource.data.companyName is string);
+    }
+
+    function isValidAdminMessageReadUpdate(userId) {
+      return isActiveUser()
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'readAt',
+        ])
+        && resource.data.readAt == null
+        && request.resource.data.readAt is timestamp;
+    }
+
     function isInterestCountUpdate() {
       let before = resource.data.interestCount;
       let after = request.resource.data.interestCount;
-      return isSignedIn()
+      return canReadProtectedData()
         && request.resource.data.ownerId == resource.data.ownerId
         && request.resource.data.diff(resource.data).changedKeys()
           .hasOnly(['interestCount'])
@@ -80,7 +179,7 @@ service cloud.firestore {
     }
 
     function isValidProductCreate(productId) {
-      return isSignedIn()
+      return isActiveMerchant()
         && request.resource.data.keys().hasOnly([
           'archivedAt',
           'category',
@@ -134,7 +233,7 @@ service cloud.firestore {
     }
 
     function isValidProductOwnerUpdate(productId) {
-      return isSignedIn()
+      return isActiveMerchant()
         && resource.data.ownerId == request.auth.uid
         && request.resource.data.keys().hasOnly([
           'archivedAt',
@@ -190,7 +289,7 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow read: if isSignedIn();
+      allow read: if canReadProtectedData();
       allow create: if isValidProductCreate(productId);
       allow update: if isInterestCountUpdate()
         || isValidProductOwnerUpdate(productId);
@@ -199,46 +298,63 @@ service cloud.firestore {
 
     match /reservations/{reservationId} {
       allow create: if false;
-      allow read: if isSignedIn()
+      allow read: if isAdmin()
+        || (
+          isActiveUser()
         && (resource.data.buyerId == request.auth.uid
-          || resource.data.merchantId == request.auth.uid);
+          || resource.data.merchantId == request.auth.uid)
+        );
       allow update: if false;
       allow delete: if false;
     }
 
     match /merchantStats/{merchantId} {
-      allow read: if isSignedIn();
+      allow read: if canReadProtectedData();
       allow create, update, delete: if false;
     }
 
     match /reviews/{reviewId} {
-      allow read: if isSignedIn();
+      allow read: if canReadProtectedData();
       allow create, update, delete: if false;
     }
 
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isAdmin()
+        || (request.auth != null && request.auth.uid == userId);
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && isValidUserCreate();
+      allow update: if isValidUserSelfUpdate(userId);
+      allow delete: if false;
+    }
+
+    match /users/{userId}/adminMessages/{messageId} {
+      allow read: if isAdmin()
+        || (isActiveUser() && request.auth.uid == userId);
+      allow create: if false;
+      allow update: if isValidAdminMessageReadUpdate(userId);
+      allow delete: if false;
     }
 
     match /users/{userId}/fcmTokens/{tokenId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isActiveUser() && request.auth.uid == userId;
     }
 
     match /interests/{interestId} {
-      allow read: if request.auth != null
+      allow read: if isActiveUser()
         && (
           resource.data.userId == request.auth.uid
           || interestId.matches('^' + request.auth.uid + '_.*')
         );
-      allow create: if request.auth != null
+      allow create: if isActiveUser()
         && request.resource.data.userId == request.auth.uid;
-      allow update: if request.auth != null
+      allow update: if isActiveUser()
         && (
           resource.data.userId == request.auth.uid
           || interestId.matches('^' + request.auth.uid + '_.*')
         )
         && request.resource.data.userId == resource.data.userId;
-      allow delete: if request.auth != null
+      allow delete: if isActiveUser()
         && (
           resource.data.userId == request.auth.uid
           || interestId.matches('^' + request.auth.uid + '_.*')
@@ -246,19 +362,22 @@ service cloud.firestore {
     }
 
     match /userInteractions/{interactionId} {
-      allow create: if request.auth != null
+      allow create: if isActiveUser()
         && request.resource.data.userId == request.auth.uid;
-      allow read: if request.auth != null
+      allow read: if isAdmin()
+        || (
+          isActiveUser()
         && (resource.data.ownerId == request.auth.uid
-          || resource.data.userId == request.auth.uid);
+          || resource.data.userId == request.auth.uid)
+        );
     }
 
     match /userImplicitPrefs/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isActiveUser() && request.auth.uid == userId;
     }
 
     match /userNegativePrefs/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isActiveUser() && request.auth.uid == userId;
     }
   }
 }

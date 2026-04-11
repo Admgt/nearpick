@@ -99,6 +99,18 @@ class Product {
     return Product.fromMap(doc.id, data);
   }
 
+  bool get isExpiredNow =>
+      expiresAt != null && !expiresAt!.isAfter(DateTime.now());
+
+  String get effectiveStatus {
+    if (status == 'active' && isExpiredNow) {
+      return 'expired';
+    }
+    return status;
+  }
+
+  bool get isEffectivelyActive => !isDeleted && effectiveStatus == 'active';
+
   Map<String, dynamic> toMap() {
     return {
       'ownerId': ownerId,

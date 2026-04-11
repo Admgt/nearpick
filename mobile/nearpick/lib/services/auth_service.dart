@@ -5,6 +5,8 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  FirebaseAuth get auth => _auth;
+
   Stream<User?> authStateChanges() => _auth.authStateChanges();
 
   Future<void> register({
@@ -25,6 +27,7 @@ class AuthService {
       'email': email,
       'displayName': trimmedDisplayName,
       'role': role,
+      'accountStatus': 'active',
       'createdAt': FieldValue.serverTimestamp(),
     };
     if (trimmedCompanyName.isNotEmpty) {

@@ -5,8 +5,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/error/app_error_message.dart';
+import '../../models/admin_message.dart';
+import '../../services/admin_message_service.dart';
 import '../../services/merchant_report_service.dart';
 import '../../services/product_service.dart';
+import '../../utils/date_time_formatters.dart';
 import 'dashboard_metrics.dart';
 import 'dynamic_pricing.dart';
 import 'merchant_home_screen.dart';
@@ -25,6 +28,8 @@ class MerchantDashboardScreen extends StatefulWidget {
 }
 
 class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
+  final AdminMessageService _adminMessageService = AdminMessageService();
+  final Set<String> _markingAdminMessageIds = {};
   final Set<String> _repricingIds = {};
   bool _exportingCsv = false;
 
@@ -105,6 +110,39 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
     }
   }
 
+  Future<void> _markAdminMessageRead({
+    required String userId,
+    required String messageId,
+  }) async {
+    setState(() => _markingAdminMessageIds.add(messageId));
+    try {
+      await _adminMessageService.markMessageRead(
+        userId: userId,
+        messageId: messageId,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(appErrorMessage(e))));
+    } finally {
+      if (mounted) {
+        setState(() => _markingAdminMessageIds.remove(messageId));
+      }
+    }
+  }
+
+  String _adminMessageTopicLabel(String topic) {
+    switch (topic) {
+      case 'rating':
+        return 'Rating';
+      case 'moderation':
+        return 'Moderacio';
+      default:
+        return 'Altalanos';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -142,6 +180,9 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
         .collection('merchantStats')
         .doc(user.uid)
         .snapshots();
+    final adminMessagesStream = _adminMessageService.watchMessagesForUser(
+      user.uid,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -286,6 +327,117 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                                     ),
                                   ],
                                 ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      StreamBuilder<List<AdminMessage>>(
+                        stream: adminMessagesStream,
+                        builder: (context, adminMessagesSnap) {
+                          if (adminMessagesSnap.connectionState ==
+                              ConnectionState.waiting) {
+                            return const SurfaceCard(
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+
+                          if (adminMessagesSnap.hasError) {
+                            return SurfaceCard(
+                              child: Text(
+                                'Hiba az admin uzenetek betoltese soran: ${adminMessagesSnap.error}',
+                              ),
+                            );
+                          }
+
+                          final messages =
+                              adminMessagesSnap.data ?? const <AdminMessage>[];
+                          final unreadCount = messages
+                              .where((message) => !message.isRead)
+                              .length;
+
+                          return SurfaceCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Admin uzenetek',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  children: [
+                                    InfoBadge(
+                                      icon: Icons.mail_outline,
+                                      label: 'Osszes uzenet',
+                                      value: messages.length.toString(),
+                                    ),
+                                    InfoBadge(
+                                      icon: Icons.mark_email_unread_outlined,
+                                      label: 'Olvasatlan',
+                                      value: unreadCount.toString(),
+                                      tint: unreadCount == 0
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.primary
+                                          : Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                if (messages.isEmpty)
+                                  const Text(
+                                    'Jelenleg nincs admin uzenet a fiokodhoz.',
+                                  )
+                                else
+                                  ...messages.take(5).map((message) {
+                                    return ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      leading: Icon(
+                                        message.isRead
+                                            ? Icons.mark_email_read_outlined
+                                            : Icons.mark_email_unread_outlined,
+                                      ),
+                                      title: Text(message.subject),
+                                      subtitle: Text(
+                                        '${_adminMessageTopicLabel(message.topic)} | ${message.createdAt == null ? 'Nincs datum' : formatDateTime(message.createdAt!)}\n${message.body}',
+                                      ),
+                                      isThreeLine: true,
+                                      trailing: message.isRead
+                                          ? const Text('Olvasva')
+                                          : TextButton(
+                                              onPressed:
+                                                  _markingAdminMessageIds
+                                                      .contains(message.id)
+                                                  ? null
+                                                  : () => _markAdminMessageRead(
+                                                      userId: user.uid,
+                                                      messageId: message.id,
+                                                    ),
+                                              child:
+                                                  _markingAdminMessageIds
+                                                      .contains(message.id)
+                                                  ? const SizedBox(
+                                                      width: 16,
+                                                      height: 16,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                            strokeWidth: 2,
+                                                          ),
+                                                    )
+                                                  : const Text(
+                                                      'Olvasottra jelol',
+                                                    ),
+                                            ),
+                                    );
+                                  }),
                               ],
                             ),
                           );

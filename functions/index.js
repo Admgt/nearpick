@@ -48,9 +48,51 @@ const VALID_REFUND_STATUSES = new Set([
   "completed",
   "not_required",
 ]);
+const VALID_ACCOUNT_STATUSES = new Set(["active", "suspended", "blocked"]);
+const VALID_ADMIN_MESSAGE_TOPICS = new Set(["general", "rating", "moderation"]);
 
 const MIN_REVIEW_COMMENT_LENGTH = 3;
 const MAX_REVIEW_COMMENT_LENGTH = 280;
+
+async function getUserProfile(uid) {
+  if (typeof uid !== "string" || uid.trim().length === 0) {
+    return {};
+  }
+
+  const snap = await admin.firestore().collection("users").doc(uid.trim()).get();
+  return snap.data() ?? {};
+}
+
+async function assertActiveCaller(request, contextId) {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Bejelentkezes szukseges.", {
+      contextId,
+    });
+  }
+
+  const profile = await getUserProfile(request.auth.uid);
+  const accountStatus =
+    typeof profile.accountStatus === "string" ? profile.accountStatus : "active";
+  if (accountStatus !== "active") {
+    throw new HttpsError(
+        "permission-denied",
+        "A fiok allapota nem engedi a muveletet.",
+        {contextId},
+    );
+  }
+
+  return profile;
+}
+
+async function assertAdminRequest(request, contextId) {
+  await assertActiveCaller(request, contextId);
+
+  if (request.auth?.token?.admin !== true) {
+    throw new HttpsError("permission-denied", "Admin jogosultsag szukseges.", {
+      contextId,
+    });
+  }
+}
 
 function normalizeOptionalText(value, {maxLength = 250} = {}) {
   if (typeof value !== "string") {
@@ -251,6 +293,35 @@ async function expireDueReservations({limit = 50, contextId}) {
   return {expiredCount};
 }
 
+async function expireDueProducts({limit = 50, contextId}) {
+  const db = admin.firestore();
+  const now = admin.firestore.Timestamp.now();
+  const query = await db
+      .collection("products")
+      .where("status", "==", "active")
+      .where("expiresAt", "<=", now)
+      .limit(limit)
+      .get();
+
+  if (query.empty) {
+    return {expiredCount: 0};
+  }
+
+  const batch = db.batch();
+  for (const doc of query.docs) {
+    batch.update(doc.ref, {
+      status: "expired",
+    });
+  }
+  await batch.commit();
+
+  logInfo("product.expire.completed", {
+    contextId,
+    expiredCount: query.docs.length,
+  });
+  return {expiredCount: query.docs.length};
+}
+
 exports.healthcheck = onRequest(async (request, response) => {
   const contextId = createContextId(request);
   const startedAt = Date.now();
@@ -351,6 +422,7 @@ exports.reserveProduct = onCall(async (request) => {
       contextId,
     });
   }
+  await assertActiveCaller(request, contextId);
 
   const productId = request.data?.productId;
   const quantity = request.data?.quantity;
@@ -493,6 +565,7 @@ exports.completeReservation = onCall(async (request) => {
       contextId,
     });
   }
+  await assertActiveCaller(request, contextId);
 
   const reservationId = request.data?.reservationId;
   const pickupInput = request.data?.pickupInput;
@@ -565,6 +638,7 @@ exports.cancelReservation = onCall(async (request) => {
       contextId,
     });
   }
+  await assertActiveCaller(request, contextId);
 
   const reservationId = request.data?.reservationId;
   const reasonCode = request.data?.reasonCode;
@@ -697,6 +771,7 @@ exports.updateRefundStatus = onCall(async (request) => {
       contextId,
     });
   }
+  await assertActiveCaller(request, contextId);
 
   const reservationId = request.data?.reservationId;
   const refundStatus = normalizeOptionalText(request.data?.refundStatus, {
@@ -770,6 +845,7 @@ exports.submitReview = onCall(async (request) => {
       contextId,
     });
   }
+  await assertActiveCaller(request, contextId);
 
   const reservationId = request.data?.reservationId;
   const rating = request.data?.rating;
@@ -899,6 +975,7 @@ exports.archiveProduct = onCall(async (request) => {
       contextId,
     });
   }
+  await assertActiveCaller(request, contextId);
 
   const productId = request.data?.productId;
   if (typeof productId !== "string" || productId.trim().length === 0) {
@@ -966,6 +1043,7 @@ exports.repriceProduct = onCall(async (request) => {
       contextId,
     });
   }
+  await assertActiveCaller(request, contextId);
 
   const productId = request.data?.productId;
   if (typeof productId !== "string" || productId.trim().length === 0) {
@@ -1017,6 +1095,305 @@ exports.repriceProduct = onCall(async (request) => {
   };
 });
 
+exports.setUserAccountStatus = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("admin.user_status.started", {contextId});
+
+  await assertAdminRequest(request, contextId);
+
+  const userId = request.data?.userId;
+  const accountStatus = normalizeOptionalText(request.data?.accountStatus, {
+    maxLength: 24,
+  });
+  if (typeof userId !== "string" || userId.trim().length === 0) {
+    throw new HttpsError("invalid-argument", "Ervenytelen userId.", {
+      contextId,
+    });
+  }
+  if (!VALID_ACCOUNT_STATUSES.has(accountStatus)) {
+    throw new HttpsError("invalid-argument", "Ervenytelen accountStatus.", {
+      contextId,
+    });
+  }
+  if (userId.trim() === request.auth.uid && accountStatus !== "active") {
+    throw new HttpsError(
+        "failed-precondition",
+        "A sajat admin fiok nem tilthato vagy fuggesztheto fel innen.",
+        {contextId},
+    );
+  }
+
+  await admin.auth().updateUser(userId.trim(), {
+    disabled: accountStatus === "blocked",
+  });
+  await admin.firestore().collection("users").doc(userId.trim()).set({
+    accountStatus,
+    statusUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    statusUpdatedBy: request.auth.uid,
+  }, {merge: true});
+
+  logInfo("admin.user_status.completed", {
+    accountStatus,
+    contextId,
+    targetUserId: userId.trim(),
+    userId: request.auth.uid,
+  });
+  return {
+    accountStatus,
+    contextId,
+    updated: true,
+  };
+});
+
+exports.sendAdminMessageToMerchant = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("admin.message_to_merchant.started", {contextId});
+
+  await assertAdminRequest(request, contextId);
+
+  const merchantId = request.data?.merchantId;
+  if (typeof merchantId !== "string" || merchantId.trim().length === 0) {
+    throw new HttpsError("invalid-argument", "Ervenytelen merchantId.", {
+      contextId,
+    });
+  }
+
+  const subject = normalizeOptionalText(request.data?.subject, {maxLength: 120});
+  if (!subject) {
+    throw new HttpsError("invalid-argument", "A targy kotelezo.", {
+      contextId,
+    });
+  }
+
+  const body = normalizeOptionalText(request.data?.body, {maxLength: 1000});
+  if (!body) {
+    throw new HttpsError("invalid-argument", "Az uzenet torzse kotelezo.", {
+      contextId,
+    });
+  }
+
+  const topic = normalizeOptionalText(request.data?.topic, {maxLength: 40}) || "general";
+  if (!VALID_ADMIN_MESSAGE_TOPICS.has(topic)) {
+    throw new HttpsError("invalid-argument", "Ervenytelen uzenettipus.", {
+      contextId,
+    });
+  }
+
+  const merchantRef = admin.firestore().collection("users").doc(merchantId.trim());
+  const merchantSnap = await merchantRef.get();
+  if (!merchantSnap.exists) {
+    throw new HttpsError("not-found", "A kereskedo nem talalhato.", {contextId});
+  }
+
+  const merchantProfile = merchantSnap.data() ?? {};
+  if (merchantProfile.role !== "merchant") {
+    throw new HttpsError(
+        "failed-precondition",
+        "Admin uzenet csak kereskedonek kuldheto.",
+        {contextId},
+    );
+  }
+
+  const adminProfile = await getUserProfile(request.auth.uid);
+  const createdByLabel = normalizeOptionalText(
+      adminProfile.displayName || adminProfile.email || "Admin",
+      {maxLength: 80},
+  ) || "Admin";
+
+  const messageRef = merchantRef.collection("adminMessages").doc();
+  await messageRef.set({
+    body,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdBy: request.auth.uid,
+    createdByLabel,
+    readAt: null,
+    recipientUserId: merchantId.trim(),
+    subject,
+    topic,
+  });
+
+  const tokenSnap = await merchantRef.collection("fcmTokens").get();
+  const tokens = tokenSnap.docs
+      .map((doc) => doc.data().token)
+      .filter((token) => typeof token === "string" && token.length > 0);
+
+  if (tokens.length > 0) {
+    const pushBody = body.length > 140 ? `${body.slice(0, 137)}...` : body;
+    await admin.messaging().sendEachForMulticast({
+      notification: {
+        title: `Admin uzenet: ${subject}`,
+        body: pushBody,
+      },
+      data: {
+        messageId: messageRef.id,
+        topic,
+        type: "admin_message",
+      },
+      tokens,
+    });
+  }
+
+  logInfo("admin.message_to_merchant.completed", {
+    contextId,
+    merchantId: merchantId.trim(),
+    messageId: messageRef.id,
+    topic,
+    tokenCount: tokens.length,
+    userId: request.auth.uid,
+  });
+  return {
+    contextId,
+    messageId: messageRef.id,
+    notified: tokens.length > 0,
+    sent: true,
+  };
+});
+
+exports.hideProductForAdmin = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("admin.product_hide.started", {contextId});
+
+  await assertAdminRequest(request, contextId);
+
+  const productId = request.data?.productId;
+  if (typeof productId !== "string" || productId.trim().length === 0) {
+    throw new HttpsError("invalid-argument", "Ervenytelen productId.", {
+      contextId,
+    });
+  }
+
+  const productRef = admin.firestore().collection("products").doc(productId.trim());
+  const snap = await productRef.get();
+  if (!snap.exists) {
+    throw new HttpsError("not-found", "A termek nem talalhato.", {contextId});
+  }
+
+  const product = snap.data() ?? {};
+  const currentStatus =
+    typeof product.status === "string" && product.status.trim().length > 0 ?
+      product.status.trim() :
+      "active";
+  const statusBeforeHidden =
+    currentStatus === "hidden" ?
+      (typeof product.statusBeforeHidden === "string" &&
+      product.statusBeforeHidden.trim().length > 0 ?
+        product.statusBeforeHidden.trim() :
+        "active") :
+      currentStatus;
+
+  await productRef.set({
+    status: "hidden",
+    statusBeforeHidden,
+  }, {merge: true});
+
+  logInfo("admin.product_hide.completed", {
+    contextId,
+    productId: productId.trim(),
+    userId: request.auth.uid,
+  });
+  return {
+    contextId,
+    hidden: true,
+  };
+});
+
+exports.restoreProductForAdmin = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("admin.product_restore.started", {contextId});
+
+  await assertAdminRequest(request, contextId);
+
+  const productId = request.data?.productId;
+  if (typeof productId !== "string" || productId.trim().length === 0) {
+    throw new HttpsError("invalid-argument", "Ervenytelen productId.", {
+      contextId,
+    });
+  }
+
+  const productRef = admin.firestore().collection("products").doc(productId.trim());
+  const snap = await productRef.get();
+  if (!snap.exists) {
+    throw new HttpsError("not-found", "A termek nem talalhato.", {contextId});
+  }
+
+  const product = snap.data() ?? {};
+  const restoreStatus =
+    typeof product.statusBeforeHidden === "string" &&
+      product.statusBeforeHidden.trim().length > 0 ?
+      product.statusBeforeHidden.trim() :
+      "active";
+
+  await productRef.set({
+    status: restoreStatus,
+    statusBeforeHidden: admin.firestore.FieldValue.delete(),
+  }, {merge: true});
+
+  logInfo("admin.product_restore.completed", {
+    contextId,
+    productId: productId.trim(),
+    restoredStatus: restoreStatus,
+    userId: request.auth.uid,
+  });
+  return {
+    contextId,
+    restored: true,
+    status: restoreStatus,
+  };
+});
+
+exports.deleteProductForAdmin = onCall(async (request) => {
+  const contextId = createContextId(request);
+  logInfo("admin.product_delete.started", {contextId});
+
+  await assertAdminRequest(request, contextId);
+
+  const productId = request.data?.productId;
+  if (typeof productId !== "string" || productId.trim().length === 0) {
+    throw new HttpsError("invalid-argument", "Ervenytelen productId.", {
+      contextId,
+    });
+  }
+
+  const productRef = admin.firestore().collection("products").doc(productId.trim());
+  const snap = await productRef.get();
+  if (!snap.exists) {
+    throw new HttpsError("not-found", "A termek nem talalhato.", {contextId});
+  }
+
+  const product = snap.data() ?? {};
+  const safeOwnerId =
+    typeof product.ownerId === "string" ? product.ownerId.trim() : "";
+  const imagePath = getSafeArchiveImagePath(
+      product,
+      productId.trim(),
+      safeOwnerId || request.auth.uid,
+  );
+
+  await productRef.set({
+    archivedAt: admin.firestore.FieldValue.serverTimestamp(),
+    deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+    hasImage: false,
+    isDeleted: true,
+    imagePath: admin.firestore.FieldValue.delete(),
+    imageUrl: admin.firestore.FieldValue.delete(),
+    status: "archived",
+  }, {merge: true});
+
+  if (imagePath) {
+    await admin.storage().bucket().file(imagePath).delete({ignoreNotFound: true});
+  }
+
+  logInfo("admin.product_delete.completed", {
+    contextId,
+    productId: productId.trim(),
+    userId: request.auth.uid,
+  });
+  return {
+    archived: true,
+    contextId,
+  };
+});
+
 exports.expireReservations = onSchedule("every 5 minutes", async (event) => {
   const contextId = createContextId(event);
   logInfo("reservation.expire.started", {contextId});
@@ -1025,6 +1402,18 @@ exports.expireReservations = onSchedule("every 5 minutes", async (event) => {
     await expireDueReservations({contextId, limit: 50});
   } catch (error) {
     logError("reservation.expire.failed", {contextId}, error);
+    throw error;
+  }
+});
+
+exports.expireProducts = onSchedule("every 10 minutes", async (event) => {
+  const contextId = createContextId(event);
+  logInfo("product.expire.started", {contextId});
+
+  try {
+    await expireDueProducts({contextId, limit: 100});
+  } catch (error) {
+    logError("product.expire.failed", {contextId}, error);
     throw error;
   }
 });
