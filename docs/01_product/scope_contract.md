@@ -65,7 +65,7 @@ Sztori hivatkozások:
 
 ## Stretch célok (opcionális, ha marad idő)
 
-- További `integration_test` flow-k a reservation, refund, review és QR útvonalakra.
+- További `integration_test` flow-k az account/location, merchant pickup-completion és admin dashboard/üzenetküldés útvonalakra.
 - Determinisztikus integrációs tesztcsomag Firebase Emulatoron.
 - E2E contract tesztek a rule deny/allow útvonalakra.
 - Coverage gate vagy flaky-lista a CI-ban.

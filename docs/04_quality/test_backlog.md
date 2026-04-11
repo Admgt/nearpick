@@ -1,10 +1,10 @@
 # Teszt backlog (30+ terv)
 
 ## Célmix összesítés
-- Összes tesztterv: 45
+- Összes tesztterv: 47
 - Unit: 24
 - Integration: 10
-- E2E/Contract: 11
+- E2E/Contract: 13
 - Negatív teszt: 17 (`negative` tipus)
 
 Evidence referencia:
@@ -62,6 +62,8 @@ Evidence referencia:
 
 ## Lezárt backlog tétel
 - T-45: az admin callable functions-test alapú negatív és happy path fedése elkészült a `functions/test/admin_callables_policy.test.js` fájlban. A 2026-04-11-i `npm.cmd test` futásban a teljes Functions suite `68/68` passed eredménnyel zárt.
+- T-46: a consumer reservation detail UI/E2E flow elkészült a `mobile/nearpick/integration_test/flows/reservation_refund_review_flow_test.dart` fájlban. A 2026-04-11-i Android emulatoros futtatás `All tests passed` eredménnyel zárt, és lefedi a pickup/QR token megjelenítést, a refundot kérő lemondást és a completed reservation review beküldését.
+- T-47: az admin product moderation UI/E2E flow elkészült a `mobile/nearpick/integration_test/flows/admin_product_moderation_flow_test.dart` fájlban. A 2026-04-11-i Android emulatoros futtatás `All tests passed` eredménnyel zárt, és lefedi az elrejtés, archivált törlés és visszaállítás képernyőszintű útját.
 
 ## Refaktor pontok a backloghoz
 - `new_product_screen.dart`: validációs logika UI-ból kiemelése tiszta helperbe (`test/unit/validation/**`), hogy gyors unit tesztek irhatók legyenek.

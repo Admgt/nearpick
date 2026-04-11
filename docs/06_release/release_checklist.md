@@ -17,7 +17,7 @@ Kapcsolódó CI evidence hely: [`ci_evidence.md`](ci_evidence.md)
 - [x] Létezik tesztriport dokumentum összesített eredménnyel.
 - [x] A repository tartalmaz unit, widget és workflow-szintű teszteket.
 - [x] A CI JUnit artifactot generál Flutter tesztekhez.
-- [x] Legalább egy `integration_test/` alapú mobil E2E demóflow evidence rendelkezésre áll.
+- [x] Több `integration_test/` alapú mobil E2E demóflow evidence rendelkezésre áll: auth/product, reservation QR + refund + review, valamint admin product moderation flow.
 
 ## Biztonsági evidence
 

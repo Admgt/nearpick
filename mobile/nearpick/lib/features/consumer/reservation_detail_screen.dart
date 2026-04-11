@@ -13,10 +13,43 @@ import '../../ui/app_chrome.dart';
 import '../../utils/date_time_formatters.dart';
 import '../../widgets/merchant_reviews_section.dart';
 
+typedef ReservationStreamFactory =
+    Stream<Reservation?> Function(String reservationId);
+
+typedef ReviewStreamFactory = Stream<Review?> Function(String reservationId);
+
+typedef CancelReservationAction =
+    Future<void> Function({
+      required String reservationId,
+      required String reasonCode,
+      required String reasonNote,
+      required bool refundRequested,
+    });
+
+typedef SubmitReviewAction =
+    Future<void> Function({
+      required String reservationId,
+      required int rating,
+      required String comment,
+    });
+
 class ReservationDetailScreen extends StatefulWidget {
   final String reservationId;
+  final ReservationStreamFactory? watchReservation;
+  final ReviewStreamFactory? watchReview;
+  final CancelReservationAction? onCancelReservation;
+  final SubmitReviewAction? onSubmitReview;
+  final bool showMerchantReviews;
 
-  const ReservationDetailScreen({super.key, required this.reservationId});
+  const ReservationDetailScreen({
+    super.key,
+    required this.reservationId,
+    this.watchReservation,
+    this.watchReview,
+    this.onCancelReservation,
+    this.onSubmitReview,
+    this.showMerchantReviews = true,
+  });
 
   @override
   State<ReservationDetailScreen> createState() =>
@@ -26,6 +59,42 @@ class ReservationDetailScreen extends StatefulWidget {
 class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
   bool _cancelling = false;
   bool _submittingReview = false;
+
+  Stream<Reservation?> _reservationStream() {
+    final watchReservation = widget.watchReservation;
+    if (watchReservation != null) {
+      return watchReservation(widget.reservationId);
+    }
+
+    return FirebaseFirestore.instance
+        .collection('reservations')
+        .doc(widget.reservationId)
+        .snapshots()
+        .map((snapshot) {
+          if (!snapshot.exists) {
+            return null;
+          }
+          return Reservation.fromDoc(snapshot);
+        });
+  }
+
+  Stream<Review?> _reviewStream(String reservationId) {
+    final watchReview = widget.watchReview;
+    if (watchReview != null) {
+      return watchReview(reservationId);
+    }
+
+    return FirebaseFirestore.instance
+        .collection('reviews')
+        .doc(reservationId)
+        .snapshots()
+        .map((snapshot) {
+          if (!snapshot.exists) {
+            return null;
+          }
+          return Review.fromDoc(snapshot);
+        });
+  }
 
   Future<_CancelReservationFormResult?> _showCancelReservationDialog() {
     String selectedReason = cancellationReasonOptions.first.code;
@@ -110,7 +179,22 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
 
     setState(() => _cancelling = true);
     try {
-      await ReservationService().cancelReservation(
+      final cancelReservation =
+          widget.onCancelReservation ??
+          ({
+            required String reservationId,
+            required String reasonCode,
+            required String reasonNote,
+            required bool refundRequested,
+          }) {
+            return ReservationService().cancelReservation(
+              reservationId: reservationId,
+              reasonCode: reasonCode,
+              reasonNote: reasonNote,
+              refundRequested: refundRequested,
+            );
+          };
+      await cancelReservation(
         reservationId: reservationId,
         reasonCode: formResult.reasonCode,
         reasonNote: formResult.reasonNote,
@@ -224,7 +308,20 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
 
     setState(() => _submittingReview = true);
     try {
-      await ReservationService().submitReview(
+      final submitReview =
+          widget.onSubmitReview ??
+          ({
+            required String reservationId,
+            required int rating,
+            required String comment,
+          }) {
+            return ReservationService().submitReview(
+              reservationId: reservationId,
+              rating: rating,
+              comment: comment,
+            );
+          };
+      await submitReview(
         reservationId: reservation.id,
         rating: formResult.rating,
         comment: formResult.comment,
@@ -246,15 +343,10 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
   }
 
   Widget _buildReviewSection(Reservation reservation) {
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance
-          .collection('reviews')
-          .doc(reservation.id)
-          .snapshots(),
+    return StreamBuilder<Review?>(
+      stream: _reviewStream(reservation.id),
       builder: (context, snapshot) {
-        final review = snapshot.hasData && snapshot.data!.exists
-            ? Review.fromDoc(snapshot.data!)
-            : null;
+        final review = snapshot.data;
         final canReview =
             reservation.isCompleted && !reservation.hasReview && review == null;
 
@@ -330,15 +422,10 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final reservationStream = FirebaseFirestore.instance
-        .collection('reservations')
-        .doc(widget.reservationId)
-        .snapshots();
-
     return Scaffold(
       appBar: AppBar(title: const Text('Foglalas reszletei')),
-      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: reservationStream,
+      body: StreamBuilder<Reservation?>(
+        stream: _reservationStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -346,11 +433,11 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
           if (snapshot.hasError) {
             return Center(child: Text('Hiba: ${snapshot.error}'));
           }
-          if (!snapshot.hasData || !snapshot.data!.exists) {
+          final reservation = snapshot.data;
+          if (!snapshot.hasData || reservation == null) {
             return const Center(child: Text('A foglalas nem talalhato.'));
           }
 
-          final reservation = Reservation.fromDoc(snapshot.data!);
           final product = reservation.productSnapshot;
           final name = product['name'] as String? ?? 'Ismeretlen termek';
           final imageUrl = product['imageUrl'] as String?;
@@ -534,14 +621,16 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                     if (reservation.isCompleted || reservation.hasReview) ...[
                       const SizedBox(height: 16),
                       _buildReviewSection(reservation),
-                      const SizedBox(height: 16),
-                      MerchantReviewsSection(
-                        merchantId: reservation.merchantId,
-                        title: 'A kereskedo velemenyei',
-                        emptyMessage:
-                            'Ehhez a kereskedohoz meg nincs megjelenitheto velemeny.',
-                        currentUserId: reservation.buyerId,
-                      ),
+                      if (widget.showMerchantReviews) ...[
+                        const SizedBox(height: 16),
+                        MerchantReviewsSection(
+                          merchantId: reservation.merchantId,
+                          title: 'A kereskedo velemenyei',
+                          emptyMessage:
+                              'Ehhez a kereskedohoz meg nincs megjelenitheto velemeny.',
+                          currentUserId: reservation.buyerId,
+                        ),
+                      ],
                     ],
                   ],
                 ),

@@ -4,8 +4,12 @@ Ez a mappa a Flutter `integration_test` csomaggal futó, valódi UI/E2E tesztek 
 
 Jelenlegi állapot:
 - már van futtatható `integration_test` suite
-- az első validált flow: `flows/auth_and_product_flow_test.dart`
-- a réteg még nem teljes; jelenleg egy core user flow van lefedve
+- validált flow-k:
+  - `flows/auth_and_product_flow_test.dart`
+  - `flows/reservation_refund_review_flow_test.dart`
+  - `flows/admin_product_moderation_flow_test.dart`
+- a réteg még nem teljes; több core user/admin flow már lefedett, de nem teljes E2E suite
+- 2026-04-11-en a `reservation_refund_review_flow_test.dart` és az `admin_product_moderation_flow_test.dart` Android emulatoron `All tests passed` eredménnyel futott
 
 CI viselkedés:
 - a GitHub Actions csak akkor futtatja ezt a szintet, ha tényleges `mobile/nearpick/integration_test/**/*_test.dart` fájl létezik
@@ -24,6 +28,8 @@ Jelenleg validált, célzott futtatás:
 ```bash
 cd mobile/nearpick
 flutter test integration_test/flows/auth_and_product_flow_test.dart -d <android-emulator-device-id>
+flutter test integration_test/flows/reservation_refund_review_flow_test.dart -d <android-emulator-device-id>
+flutter test integration_test/flows/admin_product_moderation_flow_test.dart -d <android-emulator-device-id>
 ```
 
 Javasolt szerkezet:

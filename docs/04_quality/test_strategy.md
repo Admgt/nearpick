@@ -18,9 +18,9 @@ A 2026-04-11-es statikus repo-audit alapján:
 
 | Kategória | Darab | Megjegyzés |
 |---|---:|---|
-| Flutter test definíció | 85 | `test/**` és `integration_test/**` |
+| Flutter test definíció | 91 | `test/**` és `integration_test/**` |
 | Functions / rules JS teszt | 68 | `functions/test/**` |
-| Összes automata tesztdefiníció | 153 | statikus inventory, nem egyetlen futás eredménye |
+| Összes automata tesztdefiníció | 159 | statikus inventory, nem egyetlen futás eredménye |
 
 A mix továbbra is megfelel a minimum `30+` automata tesztelvárásnak, de a minőségi fókusz most már nem a darabszám, hanem az új mobilflow-k következetes védelme.
 
@@ -29,11 +29,11 @@ A mix továbbra is megfelel a minimum `30+` automata tesztelvárásnak, de a min
 - Unit: ajánlási logika, geó számítás, modellek, pricing, dashboard aggregáció, location preference, pickup token és error mapping.
 - Widget: login, register, root routing és új termék képernyő validáció / pricing javaslat.
 - Integration/workflow: regisztráció, login, terméklétrehozás, browse/detail adatok, érdeklődés, többdarabos foglalás, refund állapotok.
-- Integration_test UI/E2E: jelenleg egy validált core flow létezik (`auth_and_product_flow_test.dart`), ezért ez még nem teljes release-gate mélység.
+- Integration_test UI/E2E: jelenleg három validált flow létezik: `auth_and_product_flow_test.dart`, `reservation_refund_review_flow_test.dart` és `admin_product_moderation_flow_test.dart`.
 
 Az integration szint ebben a repo-ban két részre vált:
 - `test/integration/**`: workflow / adaptor szintű automatizálás, gyors és determinisztikus, in-memory fake gateway-ekkel
-- `integration_test/**`: valódi UI / E2E jellegű Flutter futás, jelenleg egy stabil core flow-val
+- `integration_test/**`: valódi UI / E2E jellegű Flutter futás Android emulatoron, jelenleg három stabil flow-val
 
 ### Frissített lefedési fókusz
 
@@ -46,11 +46,13 @@ Már van explicit teszt- vagy kódszintű védelem az alábbi újabb területekr
 - pickup token parsing
 - refund adatok modellezése
 - review modellezés
+- reservation detail QR token, refund kérés és completed reservation review UI/E2E flow Android emulatoron
 - merchant CSV export
 - product edit constraint az első foglalás előtt / után
 - admin role routing
 - adminMessages Firestore read/read receipt rule modell
 - admin callable permission-deny, validációs és happy path esetek a fiókstátusz, termékmoderáció és admin üzenetküldés útvonalakra
+- admin product detail moderációs UI/E2E flow Android emulatoron: elrejtés, archivált törlés és visszaállítás
 
 ### Firestore és Functions stratégia
 
@@ -69,13 +71,13 @@ Lefedett rules / helper esetek:
 
 Admin területen még célzottan bővítendő:
 - admin dashboard stat aggregáció és admin message modell unit tesztek
-- admin felület UI smoke / integration_test flow legalább a dashboard és egy moderációs művelet ellenőrzésére
+- admin dashboard, fiókstátusz-kezelés és admin üzenetküldés UI smoke / integration_test flow
 
 ### Automatizált és manuális scope
 
 Automatizált:
 - Flutter unit, widget és workflow integration tesztek
-- legalább egy valódi `integration_test` alapú mobil UI flow
+- három valódi `integration_test` alapú mobil UI flow Android emulatoron
 - Functions és rules tesztek
 - külön performance smoke benchmark a recommendation distance helperre
 - Flutter format és analyze
@@ -111,9 +113,10 @@ npm run scan:deps
 
 ### Ismert rések
 
-- A `mobile/nearpick/integration_test/**/*_test.dart` réteg még csak egy core flow-t fed le, nem teljes E2E suite.
-- Az új account/profile, review, refund és QR flow-khoz még nincs teljes UI/E2E fedés.
-- Az admin felület UI/E2E fedése még hiányzik; az admin callable-ök alap negatív és happy path Functions evidence-e már elkészült.
+- A `mobile/nearpick/integration_test/**/*_test.dart` réteg már három core flow-t fed le, de még nem teljes E2E suite.
+- Az account/profile/location flow-khoz még nincs teljes UI/E2E fedés.
+- A QR scanner valós kamerás és merchant pickup-completion útja még nem teljes UI/E2E fedésű; a consumer reservation detail QR token megjelenítés már külön emulatoros flow-ban fedett.
+- Az admin felület UI/E2E fedése részleges: product moderation detail flow már van, de a dashboard, fiókstátusz-kezelés és admin üzenetküldés még nem teljes UI/E2E suite.
 - A Firestore rules ellenőrzése még nem emulatoros allow/deny futás, hanem szerződés + viselkedésmodell.
 - A manuális acceptance feature-k még nem kapcsolódnak automata runnerhez.
 - A Flutter dependency audit advisory feed-alapú, ezért hálózati elérhetőséget igényel.

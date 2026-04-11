@@ -9,18 +9,26 @@ import '../../ui/app_chrome.dart';
 import '../../utils/date_time_formatters.dart';
 import 'admin_support.dart';
 
+typedef AdminProductAction = Future<void> Function(String productId);
+
 class AdminProductDetailScreen extends StatefulWidget {
   final Product product;
   final AppUserProfile? merchant;
   final List<Reservation> reservations;
-  final AdminService adminService;
+  final AdminService? adminService;
+  final AdminProductAction? onHideProduct;
+  final AdminProductAction? onRestoreProduct;
+  final AdminProductAction? onDeleteProduct;
 
   const AdminProductDetailScreen({
     super.key,
     required this.product,
     required this.merchant,
     required this.reservations,
-    required this.adminService,
+    this.adminService,
+    this.onHideProduct,
+    this.onRestoreProduct,
+    this.onDeleteProduct,
   });
 
   @override
@@ -34,7 +42,12 @@ class _AdminProductDetailScreenState extends State<AdminProductDetailScreen> {
   Future<void> _hideProduct() async {
     setState(() => _actionLoading = true);
     try {
-      await widget.adminService.hideProduct(productId: widget.product.id);
+      final hideProduct =
+          widget.onHideProduct ??
+          (String productId) {
+            return widget.adminService!.hideProduct(productId: productId);
+          };
+      await hideProduct(widget.product.id);
       if (!mounted) {
         return;
       }
@@ -58,7 +71,12 @@ class _AdminProductDetailScreenState extends State<AdminProductDetailScreen> {
   Future<void> _restoreProduct() async {
     setState(() => _actionLoading = true);
     try {
-      await widget.adminService.restoreProduct(productId: widget.product.id);
+      final restoreProduct =
+          widget.onRestoreProduct ??
+          (String productId) {
+            return widget.adminService!.restoreProduct(productId: productId);
+          };
+      await restoreProduct(widget.product.id);
       if (!mounted) {
         return;
       }
@@ -82,7 +100,12 @@ class _AdminProductDetailScreenState extends State<AdminProductDetailScreen> {
   Future<void> _deleteProduct() async {
     setState(() => _actionLoading = true);
     try {
-      await widget.adminService.deleteProduct(productId: widget.product.id);
+      final deleteProduct =
+          widget.onDeleteProduct ??
+          (String productId) {
+            return widget.adminService!.deleteProduct(productId: productId);
+          };
+      await deleteProduct(widget.product.id);
       if (!mounted) {
         return;
       }

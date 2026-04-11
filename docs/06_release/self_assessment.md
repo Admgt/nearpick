@@ -1,6 +1,6 @@
 # Önértékelés és készültségi scorecard
 
-Dátum: `2026-04-08`
+Dátum: `2026-04-11`
 
 Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő melléklet. Az állapotok jelentése:
 
@@ -11,7 +11,7 @@ Ez a dokumentum a PDF 4.5 és 6. fejezetének megfelelő önértékelő mellékl
 
 Megjegyzés:
 - Ez egy köztes, dokumentációfrissítés utáni önértékelés.
-- A pontozás a jelenlegi kód + dokumentáció auditjára támaszkodik; friss CI evidence és 2026-04-08-as lokális runtime tesztevidence is rögzítve van.
+- A pontozás a jelenlegi kód + dokumentáció auditjára támaszkodik; friss lokális runtime tesztevidence és 2026-04-11-es Android emulatoros `integration_test` evidence is rögzítve van. A CI evidence-t minden release-közeli push után külön frissíteni kell.
 
 ## 6.1 Gyors ellenőrzés 15 perc alatt
 
@@ -28,7 +28,7 @@ Megjegyzés:
 | Futtathatóság: Quickstart alapján indul | Igen | [`README.md`](../../README.md), [`demo_environment.md`](demo_environment.md) | Demo Firebase projekt alapú reviewer útvonal dokumentálva |
 | CI zöld a main/default branch-en | Igen | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`ci_evidence.md`](ci_evidence.md) | Az aktuálisan dokumentált HEAD-hez tartozó zöld run link rögzítve van |
 | Nincs secret a repo-ban | Igen | [`.env.example`](../../.env.example), [`scripts/secret_scan.sh`](../../scripts/secret_scan.sh), [`scripts/secret_scan.ps1`](../../scripts/secret_scan.ps1), [`.gitignore`](../../.gitignore) | Secret scan és gitignore szabályok megvannak |
-| Minimum tesztmix: 30+ automata teszt | Igen | [`test_strategy.md`](../04_quality/test_strategy.md), [`test_report.md`](../04_quality/test_report.md) | A statikus inventory 153 definíciót jelez, a friss runtime evidence pedig Flutter + Functions futást is alátámaszt |
+| Minimum tesztmix: 30+ automata teszt | Igen | [`test_strategy.md`](../04_quality/test_strategy.md), [`test_report.md`](../04_quality/test_report.md) | A statikus inventory 159 definíciót jelez, a friss runtime evidence pedig Flutter + Functions futást és három Android emulatoros `integration_test` flow-t is alátámaszt |
 | AI átláthatóság: manifest + prompt + verification | Igen | [`ai_manifest.md`](../07_ai/ai_manifest.md), [`prompt_log.md`](../07_ai/prompt_log.md), [`verification_log.md`](../07_ai/verification_log.md) | Megvannak, de mélységben még nem véglegesek |
 
 ## 6.3 100 pontos készültségi scorecard
@@ -75,15 +75,15 @@ Megjegyzés:
 | 2 | Statikus minőségi kapuk CI-ban | 1.0 | [`quality_gates_summary.md`](../04_quality/quality_gates_summary.md), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) |
 | 2 | Platform-specifikus minőség | 0.5 | [`ux_flows.md`](../01_product/ux_flows.md), [`mobile/nearpick/README.md`](../../mobile/nearpick/README.md) |
 
-### E) Tesztelés és minőségi kapuk - 13/15
+### E) Tesztelés és minőségi kapuk - 14/15
 
 | Pont | Követelmény | Állapot | Evidence / link |
 |---|---:|---:|---|
 | 2 | Teszt stratégia és teszt riport kitöltve | 1.0 | [`test_strategy.md`](../04_quality/test_strategy.md), [`test_report.md`](../04_quality/test_report.md) |
 | 4 | 30+ automata teszt értelmes mixben | 1.0 | [`test_report.md`](../04_quality/test_report.md), [`test_strategy.md`](../04_quality/test_strategy.md) |
 | 3 | CI gating: tesztek kötelezően futnak | 1.0 | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) |
-| 2 | Integrációs tesztek valós függőségekkel | 1.0 | [`integration_test/README.md`](../../mobile/nearpick/integration_test/README.md), [`auth_and_product_flow_test.dart`](../../mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart), [`test_report.md`](../04_quality/test_report.md) |
-| 2 | E2E/contract jellegű teszt a core flow-ra | 1.0 | [`auth_and_product_flow_test.dart`](../../mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart), [`test_report.md`](../04_quality/test_report.md) |
+| 2 | Integrációs tesztek valós függőségekkel | 0.5 | [`integration_test/README.md`](../../mobile/nearpick/integration_test/README.md), [`test_report.md`](../04_quality/test_report.md) | Valódi Android emulatoros Flutter UI runtime evidence van, de a flow-k izolált harness/fake action réteget használnak, nem teljes Firebase emulatoros backend útvonalat |
+| 2 | E2E/contract jellegű teszt a core flow-ra | 1.0 | [`auth_and_product_flow_test.dart`](../../mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart), [`reservation_refund_review_flow_test.dart`](../../mobile/nearpick/integration_test/flows/reservation_refund_review_flow_test.dart), [`admin_product_moderation_flow_test.dart`](../../mobile/nearpick/integration_test/flows/admin_product_moderation_flow_test.dart), [`test_report.md`](../04_quality/test_report.md) |
 | 2 | Plusz minőségi teszt | 1.0 | [`functions/test/firestore_rules_policy.test.js`](../../functions/test/firestore_rules_policy.test.js), [`functions/test/observability.test.js`](../../functions/test/observability.test.js) |
 
 ### F) DevOps és üzemeltetés - 11/15
@@ -123,16 +123,16 @@ Megjegyzés:
 - B) Képesség-szélesség: `9/10`
 - C) Architektúra és döntések: `13/13`
 - D) Engineering minőség: `11.5/15`
-- E) Tesztelés és minőségi kapuk: `13/15`
+- E) Tesztelés és minőségi kapuk: `14/15`
 - F) DevOps és üzemeltetés: `11/15`
 - G) Security, privacy, licenc: `9/10`
 - H) AI engineering érettség: `9/10`
 
-Összpontszám: `85.5/100`
+Összpontszám: `86.5/100`
 
 ## Következő legnagyobb pontnyereségek
 
 1. A performance benchmark optimalizálás utáni újrafuttatása és az eredmény rögzítése.
-2. További `integration_test` flow-k hozzáadása account/location, reservation/refund/review, QR és admin utakra.
+2. További `integration_test` flow-k hozzáadása account/location és merchant pickup-completion utakra.
 3. Az auth/rules allow-deny coverage további bővítése, hogy az AuthN/AuthZ score is 1.0-ra emelhető legyen.
-4. További admin UI/E2E smoke flow hozzáadása a dashboard és legalább egy moderációs művelet ellenőrzésére.
+4. További admin UI/E2E smoke flow hozzáadása a dashboard, fiókstátusz-kezelés és admin üzenetküldés ellenőrzésére.

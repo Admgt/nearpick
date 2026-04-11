@@ -241,6 +241,15 @@ flutter test test/widget
 flutter test test/integration
 ```
 
+Android emulatoros UI/E2E `integration_test` flow-k:
+
+```bash
+cd mobile/nearpick
+flutter test integration_test/flows/auth_and_product_flow_test.dart -d <android-device-id>
+flutter test integration_test/flows/reservation_refund_review_flow_test.dart -d <android-device-id>
+flutter test integration_test/flows/admin_product_moderation_flow_test.dart -d <android-device-id>
+```
+
 Flutter dependency audit:
 
 ```bash

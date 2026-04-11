@@ -31,15 +31,15 @@
   - [scripts/secret_scan.ps1](../../scripts/secret_scan.ps1)
 
 ## Jelenlegi maradó kockázatok
-- A mobil UI/E2E rétegben már van tényleges `integration_test/**/*_test.dart` suite, de még csak egy core flow-val.
-- Az admin felülethez jelenleg nincs külön teljes UI/E2E quality gate; role routing, adminMessages rule modell és admin callable-level Functions evidence érhető el.
+- A mobil UI/E2E rétegben már van tényleges `integration_test/**/*_test.dart` suite három Android emulatoron validált flow-val, de még nem teljes E2E suite.
+- Az admin felülethez jelenleg részleges UI/E2E quality gate van: product moderation detail flow, role routing, adminMessages rule modell és admin callable-level Functions evidence érhető el; dashboard, fiókstátusz és admin üzenetküldés UI/E2E még bővítendő.
 - A Firestore rules ellenőrzése reprezentatív és hasznos, de nem teljes emulatoros allow/deny bizonyítás.
 - A secret scan mintaalapú, ezért nem helyettesít teljes SAST vagy fejlett DLP eszközt.
 - A Flutter dependency audit OSV advisory feedtől és hálózati elérhetőségtől függ; ez nem helyettesít teljes SBOM vagy SCA platformot.
 
 ## Következő ajánlott lépések
 - Firebase Emulator alapú rules teszt bootstrap bevezetése a legkritikusabb kollekciókra.
-- További `integration_test` UI-flow-k hozzáadása a reservation és completion utakra.
-- Admin UI smoke flow hozzáadása.
+- További `integration_test` UI-flow-k hozzáadása az account/location és merchant pickup-completion utakra.
+- Admin UI smoke flow hozzáadása dashboard, fiókstátusz-kezelés és admin üzenetküldés útvonalakra.
 - SBOM vagy fejlettebb SCA ellenőrzés hozzáadása a meglévő OSV audit mellé.
 - Acceptance feature-k automata összekötése smoke vagy BDD runnerrel.
