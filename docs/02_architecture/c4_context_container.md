@@ -6,12 +6,14 @@
 flowchart LR
     consumer[Fogyasztói felhasználó]
     merchant[Kereskedői felhasználó]
+    adminUser[Admin felhasználó]
     app[NearPick mobilalkalmazás]
     firebase[(Firebase platform)]
     fcm[Firebase Cloud Messaging]
 
     consumer --> app
     merchant --> app
+    adminUser --> app
     app --> firebase
     firebase --> fcm
     fcm --> app
@@ -19,8 +21,9 @@ flowchart LR
 
 ### Kontextus megjegyzések
 
-- Az elsődleges szereplők a `consumer` és a `merchant`.
+- Az elsődleges szereplők a `consumer`, a `merchant` és az admin claimmel védett `admin`.
 - Az alkalmazás kezeli a UI-t, a kliensoldali szűrést/rangsorolást és a közvetlen Firebase SDK hívásokat.
+- Az admin felület ugyanabban a Flutter kliensben fut, de Firebase Auth custom claimhez és aktív fiókstátuszhoz kötött.
 - A backend platform Firebase (Auth, Firestore, Storage, Functions, Messaging).
 
 ## C4 konténerek

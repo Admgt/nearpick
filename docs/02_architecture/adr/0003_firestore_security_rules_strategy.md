@@ -13,9 +13,11 @@ A hozzáférés-vezérlés elsődleges backend mechanizmusa a Firebase security 
 
 - a `request.auth.uid` az alapazonosító
 - a szerepkör és tulajdonosi modell (`ownerId`, `merchantId`, `buyerId`) a rule-okban is megjelenik
+- az admin jogosultság Firebase Auth custom claimmel (`request.auth.token.admin == true`) és aktív `accountStatus` feltétellel érvényes
 - a kliensoldali tiltások csak UX célúak, nem tekinthetők biztonsági kontrollnak
 - a védett kollekciókra explicit allow/deny logika tartozik
 - a kritikus módosításoknál a rules a megengedett mezőváltozásokat is korlátozzák
+- az admin írási műveletek nem közvetlen kliensoldali Firestore write-ok, hanem admin claimet ellenőrző Cloud Functions callable-ökön keresztül futnak
 
 ## Következmények
 
@@ -24,12 +26,14 @@ Pozitív következmények:
 - a backend jogosultsági döntések nem a kliens jóindulatától függenek
 - a security modell auditálható és verziókezelhető
 - a szakdolgozati értékeléshez konkrét, kézzelfogható védelmi artefakt keletkezik
+- az admin felület kaphat szélesebb olvasási jogosultságot anélkül, hogy a nem admin kliensek hozzáférési modellje lazulna
 
 Negatív vagy vállalt tradeoffok:
 
 - a rule-logika összetettebbé válik, különösen ownership és mezőszintű korlátozásoknál
 - a rules tesztelése és review-ja külön fegyelmet igényel
 - a szabályok nem helyettesítenek minden szerveroldali invariánst
+- az admin custom claim provisioning külön operációs lépés, ezért runbookban és demo környezetben is dokumentálni kell
 
 ## Alternatívák
 

@@ -19,7 +19,7 @@ Megjegyzés:
 - [x] A tesztek futtatása dokumentált.
 - [x] A main/default branch aktuálisan rögzített zöld CI futásának konkrét linkje rögzítve van a [`ci_evidence.md`](ci_evidence.md) fájlban.
 - [x] A secret hygiene dokumentált (`.env.example`, secret scan, gitignore).
-- [x] A UX screenshot evidence a `docs/assets/ux/` alatt elérhető.
+- [x] A UX screenshot evidence a `docs/assets/ux/` alatt elérhető a fő consumer, merchant és admin flow-khoz.
 
 ## 6.2 Kapu checklist
 
@@ -133,6 +133,6 @@ Megjegyzés:
 ## Következő legnagyobb pontnyereségek
 
 1. A performance benchmark optimalizálás utáni újrafuttatása és az eredmény rögzítése.
-2. További `integration_test` flow-k hozzáadása account/location, reservation/refund/review és QR utakra.
+2. További `integration_test` flow-k hozzáadása account/location, reservation/refund/review, QR és admin utakra.
 3. Az auth/rules allow-deny coverage további bővítése, hogy az AuthN/AuthZ score is 1.0-ra emelhető legyen.
-4. A performance benchmark újramérése és az eredmény dokumentálása a bővült mobil scope mellett.
+4. Admin callable negatív és happy path tesztek hozzáadása a fiókstátusz, termékmoderáció és admin üzenetküldés útvonalakra.

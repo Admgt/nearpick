@@ -23,6 +23,9 @@
 7. Merchant insights and reporting
 - A kereskedő dashboardon látja a fő metrikákat, pricing recommendation lefedettséget, review összesítőt, és CSV exportot tud indítani.
 
+8. Admin monitoring and moderation
+- Az admin claimmel rendelkező felhasználó admin kezdőképernyőre kerül, látja a rendszer fő felhasználói, termék- és foglalási mutatóit, keresni tud a felhasználók/kereskedők/vásárlók/termékek/foglalások között, fiókstátuszt tud kezelni, terméket tud elrejteni/visszaállítani/archiválni, és admin üzenetet tud küldeni kereskedőnek.
+
 Sztori hivatkozások:
 - [`sprints/02/docs/stories/user_stories.md`](../../sprints/02/docs/stories/user_stories.md)
 - [`sprints/02/docs/spec/product_spec_v0.2.md`](../../sprints/02/docs/spec/product_spec_v0.2.md)
@@ -52,6 +55,13 @@ Sztori hivatkozások:
 - Adott, hogy a foglalás a kereskedőé, amikor QR tokennel vagy pickup kóddal végrehajtja a teljesítést, akkor a foglalás állapota `completed` lesz.
 - Adott egy refundot igénylő cancelled foglalás, amikor a kereskedő frissíti a refund státuszt, akkor az új állapot látható a részletoldalakon.
 - Adott egy completed foglalás, amikor a fogyasztó review-t küld, akkor a `reviews` kollekcióban megjelenik az értékelés és a merchant stat frissül.
+
+6. Admin monitoring és moderáció
+- Adott egy `admin: true` custom claimmel rendelkező aktív felhasználó, amikor belép, akkor az admin home nyílik meg.
+- Adott egy admin felhasználó, amikor megnyitja a dashboardot, akkor látja az összes felhasználó, kereskedő, vásárló, aktív termék, foglalás és completed foglalás számát.
+- Adott egy admin felhasználó és egy cél user, amikor az admin `active`, `suspended` vagy `blocked` státuszt állít, akkor a `users/{uid}.accountStatus` és a Firebase Auth disabled állapot a szabálynak megfelelően frissül.
+- Adott egy admin felhasználó és egy termék, amikor az admin elrejtést, visszaállítást vagy törlést indít, akkor a termék státusza `hidden`/korábbi státusz/`archived` irányba módosul, és a kliens ezt visszajelzi.
+- Adott egy admin felhasználó és egy merchant célprofil, amikor az admin üzenetet küld, akkor a `users/{merchantId}/adminMessages/{messageId}` rekord létrejön, és a kereskedő a dashboardon látja és olvasottra jelölheti.
 
 ## Stretch célok (opcionális, ha marad idő)
 

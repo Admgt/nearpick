@@ -9,7 +9,7 @@
 - Nincs hitelesített user a védett műveletekhez.
 
 3. Jogosultsági hibák
-- A hozzáférést rule-ok vagy ownership ellenőrzések tiltják.
+- A hozzáférést rule-ok, ownership ellenőrzések vagy admin custom claim hiánya tiltja.
 
 4. Konfliktus/üzleti állapot hibák
 - A tétel már elfogyott, a kért mennyiség nem érhető el, érvénytelen állapotátmenet, már lefoglalt termék szerkesztése.
@@ -20,10 +20,13 @@
 6. Pickup / review / refund hibák
 - Érvénytelen pickup input, nem review-zható foglalás, érvénytelen refund státusz.
 
-7. Átmeneti platform/network hibák
+7. Admin/moderációs hibák
+- Érvénytelen `accountStatus`, admin saját fiók tiltási kísérlete, nem merchant célzott admin üzenet, hiányzó üzenettárgy vagy törzs, hiányzó cél user/termék.
+
+8. Átmeneti platform/network hibák
 - Kapcsolati problémák és átmeneti backend hibák.
 
-8. Belső/nem várt hibák
+9. Belső/nem várt hibák
 - Nem besorolt futásidejű kivételek.
 
 ## Felhasználó felé megjelenő üzenetek alapelvei
@@ -36,12 +39,12 @@
 ## Retry stratégia
 
 - Retry engedett átmeneti hibákra (network timeout, ideiglenes backend probléma).
-- Nincs vak retry validációs/auth/jogosultsági/pickup/refund státusz hibákra.
+- Nincs vak retry validációs/auth/jogosultsági/pickup/refund/admin státusz hibákra.
 - A tranzakciós konfliktusoknak explicit felhasználói visszajelzésként kell megjelenniük, és lehetővé kell tenniük az újrapróbálást.
 
 ## Backend/contract hibastruktúra
 
-A jelenlegi forma még nem teljesen egységes, de a fő UI flow-kon már közös kliensoldali error mapper normalizálja a Firebase auth/functions és az általános kivételek egy részét. A reservation és product lifecycle callable hibák a Functions oldali `HttpsError` -> kliensoldali üzenet leképezésre támaszkodnak.
+A jelenlegi forma még nem teljesen egységes, de a fő UI flow-kon már közös kliensoldali error mapper normalizálja a Firebase auth/functions és az általános kivételek egy részét. A reservation, product lifecycle és admin callable hibák a Functions oldali `HttpsError` -> kliensoldali üzenet leképezésre támaszkodnak.
 
 Célforma:
 - `code`

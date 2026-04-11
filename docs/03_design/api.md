@@ -12,6 +12,7 @@ A NearPick hibrid szerződést használ: az olvasási és egyszerűbb írási ú
 
 - Hitelesítés: Firebase Auth email/jelszó.
 - Jogosultságkezelés: Firestore/Storage security rule-ok `request.auth.uid`, role mezők és ownership korlátok alapján.
+- Admin jogosultság: Firebase Auth custom claim `admin: true` és aktív `users/{uid}.accountStatus` szükséges. A kliens `RootRouter` a claim alapján admin home-ra routol, a Cloud Functions admin callable-ek pedig `assertAdminRequest` ellenőrzést használnak.
 
 ## Szerződési felületek
 
@@ -19,12 +20,13 @@ A NearPick hibrid szerződést használ: az olvasási és egyszerűbb írási ú
 
 | Felület | Művelet | Fő bemenetek | Fő kimenetek |
 |---|---|---|---|
-| `products` | read + merchant-owned write | product mezők, ownerId, quantity, expiry, location | aktív feed dokumentumok és kereskedői lista |
-| `reservations` | read | productId, buyerId, merchantId, status, qty, pickup metaadatok | foglalási életciklus rekordok |
+| `products` | read + merchant-owned write + admin read | product mezők, ownerId, quantity, expiry, location, lifecycle státusz | aktív feed dokumentumok, kereskedői lista és admin termékmoderációs lista |
+| `reservations` | read | productId, buyerId, merchantId, status, qty, pickup metaadatok | foglalási életciklus rekordok és admin áttekintés |
 | `interests` | create/delete | userId + productId kulcs | kedvencjel és rangsorolási jel |
 | `merchantStats` | read | kereskedői számlálók és rating aggregátum | kereskedői dashboard aggregátumok |
 | `reviews` | read | reservation / merchant review adatok | merchant review lista és reservation detail |
-| `users` + `fcmTokens` | profile + token persistence | role, preferenciák, company metaadatok, tokenek | auth routing + értesítési célzás |
+| `users` + `fcmTokens` | profile + token persistence + admin read | role, `accountStatus`, preferenciák, company metaadatok, tokenek | auth routing, fiókstátusz-kezelés + értesítési célzás |
+| `users/{uid}/adminMessages` | read + read receipt update | `subject`, `body`, `topic`, `createdBy`, `readAt` | admin üzenetlista a merchant dashboardon |
 
 ### 2) Cloud Functions callable szerződések
 
@@ -37,6 +39,11 @@ A NearPick hibrid szerződést használ: az olvasási és egyszerűbb írási ú
 | `submitReview` | merchant review rögzítése | `reservationId`, `rating`, `comment` | review write |
 | `archiveProduct` | product archiválás | `productId` | state change |
 | `repriceProduct` | pricing recommendation alkalmazása | `productId` | `discountedPrice` |
+| `setUserAccountStatus` | admin fiókstátusz-kezelés | `userId`, `accountStatus` (`active`, `suspended`, `blocked`) | `updated`, `accountStatus` |
+| `sendAdminMessageToMerchant` | admin üzenet küldése kereskedőnek | `merchantId`, `subject`, `body`, `topic` (`general`, `rating`, `moderation`) | `messageId`, `sent`, `notified` |
+| `hideProductForAdmin` | termék admin elrejtése | `productId` | `hidden` |
+| `restoreProductForAdmin` | admin által elrejtett termék visszaállítása | `productId` | `restored`, `status` |
+| `deleteProductForAdmin` | admin soft-delete / archiválás | `productId` | `archived` |
 
 ### 3) Cloud Functions trigger / scheduler szerződések
 
@@ -74,6 +81,7 @@ A célmodell:
 - Az érdeklődés létrehozása idempotens az összetett doc id minta (`uid_productId`) és a létezésellenőrzés miatt.
 - A review reservation-szinten egyszeri műveletnek tekintendő.
 - A `repriceProduct` csak létező pricing recommendation esetén hajtható végre.
+- Az admin callable-ek nem idempotens API-ként vannak publikálva, de ismételt hide/restore/status beállítás esetén a célállapot determinisztikusan az utolsó sikeres hívást tükrözi.
 - A retry policy jelenleg implicit; az explicit retry mátrix a [`error_handling.md`](error_handling.md) fájlban követhető.
 
 ## Rate limiting / visszaélésvédelem

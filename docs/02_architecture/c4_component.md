@@ -10,6 +10,8 @@ flowchart LR
     resv[ReservationService]
     notif[NotificationService]
     report[MerchantReportService]
+    adminSvc[AdminService]
+    adminMsg[AdminMessageService]
     pricing[DynamicPricingService]
     inter[UserInteractionService]
     neg[NegativeFeedbackService]
@@ -20,6 +22,8 @@ flowchart LR
     root --> prod
     root --> resv
     root --> report
+    root --> adminSvc
+    root --> adminMsg
     root --> pricing
     root --> inter
     root --> neg
@@ -34,6 +38,8 @@ flowchart LR
 - `ReservationService`: foglalási, foglalásteljesítési, lemondási, refund és review folyamat.
 - `NotificationService`: token regisztráció és tokenfrissítés perzisztálása.
 - `MerchantReportService`: merchant dashboard CSV export előállítása és letöltés / clipboard fallback.
+- `AdminService`: admin dashboard olvasások, fiókstátusz-kezelés és termékmoderációs callable-ek kliensoldali adaptere.
+- `AdminMessageService`: admin üzenetek küldése, kereskedői admin üzenetlista és olvasási visszaigazolás kezelése.
 - `DynamicPricingService`: pricing recommendation lekérés és a merchant flow támogatása.
 - `UserInteractionService`: implicit preferencia- és interakciónaplózás.
 - `NegativeFeedbackService`: elutasításalapú negatív preferenciakezelés.
@@ -52,6 +58,11 @@ flowchart TB
     review[submitReview callable]
     archive[archiveProduct callable]
     reprice[repriceProduct callable]
+    userStatus[setUserAccountStatus callable]
+    adminMessage[sendAdminMessageToMerchant callable]
+    adminHide[hideProductForAdmin callable]
+    adminRestore[restoreProductForAdmin callable]
+    adminDelete[deleteProductForAdmin callable]
     expire[expireReservations schedule]
     health[healthcheck endpoint]
 
@@ -59,6 +70,9 @@ flowchart TB
     reserve --> complete
     complete --> review
     cancel --> refund
+    userStatus --> adminMessage
+    adminHide --> adminRestore
+    adminRestore --> adminDelete
 ```
 
 ### Felelősségek
@@ -70,6 +84,9 @@ flowchart TB
 - `cancelReservation` és `updateRefundStatus`: lemondás és refund állapotok kezelése.
 - `submitReview`: completed reservation után review-t rögzít és merchant statot frissít.
 - `archiveProduct` és `repriceProduct`: product lifecycle és pricing műveletek.
+- `setUserAccountStatus`: admin által kezelt `active` / `suspended` / `blocked` fiókállapot és Auth disabled mező frissítése.
+- `sendAdminMessageToMerchant`: admin üzenet létrehozása merchant alkollekcióban, opcionális FCM értesítéssel.
+- `hideProductForAdmin`, `restoreProductForAdmin`, `deleteProductForAdmin`: admin termékmoderáció, elrejtés, visszaállítás és soft-delete / archiválás.
 - `expireReservations`: időzített lejáratkezelés.
 - `healthcheck`: operációs diagnosztikai végpont.
 

@@ -1,4 +1,4 @@
-# Demóscript (6-7 perc)
+# Demóscript (7-8 perc)
 
 ## 0. Előkészítés
 
@@ -6,13 +6,17 @@
 - Demo fiókok:
   - fogyasztó: `demo.user@nearpick.local`
   - kereskedő: `demo.merchant@nearpick.local`
+  - admin: `demo.admin@nearpick.local`, jelszó: `NearPick123!`, admin custom claimmel
 - Legyen előkészítve legalább egy demo termék, egy `completed` és egy `cancelled` reservation, vagy ezeket a kereskedői flow során hozd létre élőben.
+- Admin bemutatóhoz legyen legalább egy merchant, egy consumer, egy aktív termék, egy elrejthető/visszaállítható teszttermék és legalább egy foglalás.
 
 ## 1. Nyitás és problémafelvetés (0:00-0:30)
 
 Mondható szöveg:
 
 "A NearPick egy közeli, időérzékeny kedvezményes ajánlatokra épülő piactér. A kereskedő gyorsan feltölt vagy szerkeszt egy megmaradó terméket, a fogyasztó pedig néhány lépésben megtalálja, lefoglalja, majd átveszi vagy értékeli azt."
+
+"A jelenlegi verzióban ehhez egy admin felület is tartozik, ahol a rendszerállapot, a felhasználók, termékek és foglalások áttekinthetők, és szükség esetén moderációs művelet indítható."
 
 Mutasd meg:
 
@@ -80,7 +84,22 @@ Mutasd meg:
 - `.github/workflows/ci.yml`
 - opcionálisan a kereskedő dashboardot és a CSV export gombot
 
-## 6. Fallback lépések hálózati hiba esetére (6:30-7:00)
+## 6. Admin felület rövid bemutatása (6:30-7:30)
+
+Mondható szöveg:
+
+"Admin szerepkörrel a rendszer nem a fogyasztói vagy kereskedői kezdőképernyőre visz, hanem egy külön admin dashboardra. Itt a fő rendszerállapot, a felhasználók, kereskedők, vásárlók, termékek és foglalások áttekinthetők."
+
+Lépések:
+
+1. Jelentkezz ki, majd lépj be az admin demo fiókkal.
+2. Mutasd meg az admin dashboard fő metrikáit.
+3. Nyisd meg a felhasználók vagy kereskedők listáját, majd egy kereskedő részletoldalát.
+4. Mutasd meg a fiókstátusz műveleteket, de éles demo adaton csak előre kijelölt tesztfiókon használd.
+5. Nyiss meg egy terméket, és mutasd meg az elrejtés/visszaállítás műveletet előre kijelölt tesztterméken.
+6. Küldj egy rövid admin üzenetet a kereskedőnek, majd merchant fiókkal mutasd meg, hogy az üzenet a dashboardon látható és olvasottra jelölhető.
+
+## 7. Fallback lépések hálózati hiba esetére (7:30-8:00)
 
 Ha a Firebase vagy a hálózat éppen nem elérhető:
 

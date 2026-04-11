@@ -48,6 +48,8 @@ Már van explicit teszt- vagy kódszintű védelem az alábbi újabb területekr
 - review modellezés
 - merchant CSV export
 - product edit constraint az első foglalás előtt / után
+- admin role routing
+- adminMessages Firestore read/read receipt rule modell
 
 ### Firestore és Functions stratégia
 
@@ -61,6 +63,12 @@ Lefedett rules / helper esetek:
 - anonim terméklétrehozás tiltott
 - reservation olvasás csak buyer vagy merchant számára engedett
 - review, refund és archíválási helper döntések külön security helper tesztekkel támogatottak
+- admin helper jelenléte és `adminMessages` olvasási / olvasottra jelölési szabályai
+
+Admin területen még célzottan bővítendő:
+- `setUserAccountStatus`, `sendAdminMessageToMerchant`, `hideProductForAdmin`, `restoreProductForAdmin`, `deleteProductForAdmin` callable negatív és happy path tesztek
+- admin dashboard stat aggregáció és admin message modell unit tesztek
+- admin felület UI smoke / integration_test flow legalább a dashboard és egy moderációs művelet ellenőrzésére
 
 ### Automatizált és manuális scope
 
@@ -104,6 +112,7 @@ npm run scan:deps
 
 - A `mobile/nearpick/integration_test/**/*_test.dart` réteg még csak egy core flow-t fed le, nem teljes E2E suite.
 - Az új account/profile, review, refund és QR flow-khoz még nincs teljes UI/E2E fedés.
+- Az admin dashboard, admin moderációs callable-ök és admin üzenetküldés UI/E2E fedése még hiányzik.
 - A Firestore rules ellenőrzése még nem emulatoros allow/deny futás, hanem szerződés + viselkedésmodell.
 - A manuális acceptance feature-k még nem kapcsolódnak automata runnerhez.
 - A Flutter dependency audit advisory feed-alapú, ezért hálózati elérhetőséget igényel.

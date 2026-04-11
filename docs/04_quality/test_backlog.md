@@ -1,11 +1,11 @@
 # Teszt backlog (30+ terv)
 
 ## Célmix összesítés
-- Összes tesztterv: 40
-- Unit: 22
+- Összes tesztterv: 45
+- Unit: 24
 - Integration: 10
-- E2E/Contract: 8
-- Negatív teszt: 15 (`negative` tipus)
+- E2E/Contract: 11
+- Negatív teszt: 17 (`negative` tipus)
 
 Evidence referencia:
 - CI workflow: [.github/workflows/ci.yml](../../.github/workflows/ci.yml)
@@ -55,9 +55,15 @@ Evidence referencia:
 | T-38 | integration | happy | Ellenőrizze, hogy `submitReview` completed reservation után létrehozza a review rekordot és frissíti a merchant statot. | `mobile/nearpick/test/integration/reservation/submit_review_updates_stats_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
 | T-39 | e2e-contract | happy | Fogyasztói account flow: kategória, city mode és preferred radius mentése után a feed helyesen frissül. | `mobile/nearpick/integration_test/flows/consumer_account_and_location_flow_test.dart` | `Flutter integration tests (if present)` / CI step log |
 | T-40 | e2e-contract | happy | Merchant flow: QR vagy pickup input alapján a reservation `completed` lesz, majd a completed foglalás review-t kaphat. | `mobile/nearpick/integration_test/flows/merchant_qr_complete_and_review_flow_test.dart` | `Flutter integration tests (if present)` / CI step log |
+| T-41 | unit | happy | Ellenőrizze, hogy az `AdminDashboardStats.fromCollections` helyesen számolja a user, merchant, customer, active product és completed reservation metrikákat. | `mobile/nearpick/test/unit/admin/admin_dashboard_stats_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
+| T-42 | unit | edge | Ellenőrizze, hogy az `AdminMessage.fromDoc` fallbackeket ad hiányos admin message dokumentumra és az `isRead` a `readAt` mezőből számol. | `mobile/nearpick/test/unit/models/admin_message_model_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
+| T-43 | e2e-contract | happy | Admin flow: admin claimmel a RootRouter admin home-ra navigál, a dashboard betölt és legalább egy felhasználó detail megnyitható. | `mobile/nearpick/integration_test/flows/admin_dashboard_flow_test.dart` | `Flutter integration tests (if present)` / CI step log |
+| T-44 | e2e-contract | negative | Firestore contract: nem admin user ne tudjon más user adminMessages alkollekcióját olvasni vagy idegen read receiptet írni. | `mobile/nearpick/integration_test/contracts/admin_messages_rules_test.dart` | `Flutter integration tests (if present)` / CI step log |
+| T-45 | e2e-contract | negative | Functions contract: nem admin callable hívó kapjon `permission-denied` hibát `setUserAccountStatus`, `hideProductForAdmin` és `sendAdminMessageToMerchant` esetén. | `functions/test/admin_callables_policy.test.js` | `Functions tests` / node:test log |
 
 ## Refaktor pontok a backloghoz
 - `new_product_screen.dart`: validációs logika UI-ból kiemelése tiszta helperbe (`test/unit/validation/**`), hogy gyors unit tesztek irhatók legyenek.
 - `merchant_dashboard_screen.dart`: KPI aggregáció kiemelése tiszta függvénybe (`test/unit/dashboard/**`), hogy Firestore nélkül ellenőrizhető legyen.
 - `consumer_home_screen.dart`: offer szűres/rendezés kiszervezése (`test/unit/consumer/**`) determinisztikus unit tesztekhez.
 - `reservation_service.dart`: pickup kód generáló strategy injektálhatósága (`test/unit/reservation/**`) a nem determinisztikus rész kontrolljához.
+- Admin callable-ek: `assertAdminRequest` és a validációs ágak tesztelhető helperre bontása vagy functions-test alapú callable tesztek bevezetése.

@@ -7,7 +7,7 @@ A NearPick bírálói demója külön, izolált Firebase projektre épüljön, n
 Javasolt elv:
 
 - külön projekt, például `nearpick-demo-<felev>`
-- külön Auth felhasználók a fogyasztói és kereskedői szerepekhez
+- külön Auth felhasználók a fogyasztói, kereskedői és admin szerepekhez
 - előre feltöltött legalább 3 aktív termék
 - előre bekapcsolt Firestore, Auth, Storage és Functions szolgáltatások
 - a repo-ba csak a mintafájlok kerüljenek, a valódi kulcsok lokális fájlokban maradjanak
@@ -18,7 +18,17 @@ Az alábbi fiókok ajánlottak a bírálói csomaghoz:
 
 - Fogyasztó: `demo.user@nearpick.local`
 - Kereskedő: `demo.merchant@nearpick.local`
-- Javasolt jelszó mindkét fiókhoz: `NearPick123!`
+- Admin: `demo.admin@nearpick.local`, admin custom claimmel
+- Javasolt demó jelszó mindhárom seed fiókhoz: `NearPick123!`
+
+Az admin fióknál a jelszó mellett a Firebase Auth custom claim is szükséges. A projekt előkészítésekor futtasd:
+
+```bash
+cd functions
+npm run admin:set -- --email demo.admin@nearpick.local
+```
+
+Az admin fiók jelszava a többi seed fiókéval egyezően `NearPick123!`, de a custom claimet külön be kell állítani.
 
 Ajánlott seed adatok:
 
@@ -28,6 +38,8 @@ Ajánlott seed adatok:
 - legalább 1 korábbi `completed` foglalás a review flow demonstrálásához
 - legalább 1 `cancelled` foglalás `pending` refund státusszal
 - legalább 1 olyan aktív termék, ahol `quantityAvailable > 1`, hogy a mennyiségválasztó flow kipróbálható legyen
+- legalább 1 előre kijelölt teszttermék admin elrejtés/visszaállítás bemutatására
+- legalább 1 teszt merchant, akinek admin üzenet küldhető anélkül, hogy valós felhasználói adat sérülne
 
 ## Emulátor ajánlás
 
@@ -59,9 +71,14 @@ Ez a lépés hasznos akkor, ha a reviewer vagy az oktató helyi logokat akar lá
 - Completed demo foglalás review részének megmutatása.
 - Cancelled demo foglalás refund státuszának megmutatása.
 - Alapvető hibaállapotok, például kötelező mező hiánya vagy sold-out / insufficient quantity üzenet.
+- Admin dashboard megnyitása admin claimmel.
+- Felhasználó státuszkezelés előre kijelölt tesztfiókon.
+- Termék elrejtés/visszaállítás előre kijelölt tesztterméken.
+- Admin üzenet küldése kereskedőnek, majd merchant dashboardon az üzenet olvasottra jelölése.
 
 ## Ismert korlátok
 
 - A teljes lokális demóhoz a reviewernek külön el kell indítania az emulátorokat; a seed adatokat ez az útvonal sem tölti be automatikusan.
 - A `functions/package.json` jelenleg csak Functions emulátort indít, nem teljes Auth/Firestore/Storage emulátorkészletet.
 - A dokumentáció seed felhasználókat és seed adatokat ír elő, de ezek fenntartása a demo Firebase projekt adminisztrációjának része.
+- Az admin demo fiók csak akkor fog admin felületre routolni, ha a custom claim beállítása után a kliens friss ID tokent kap; ha nem jelenik meg az admin felület, jelentkezz ki és be újra.

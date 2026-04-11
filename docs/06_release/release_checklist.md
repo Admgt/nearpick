@@ -26,6 +26,8 @@ Kapcsolódó CI evidence hely: [`ci_evidence.md`](ci_evidence.md)
 - [x] Létezik adatvédelmi és licensing dokumentum.
 - [x] Automatizált dependency audit lépés be van kötve a CI-ba a `functions` csomagra.
 - [x] Flutter oldali dependency-vulnerability audit külön is be van vezetve.
+- [x] Az admin custom claim és adminMessages rules modell dokumentált.
+- [ ] Az admin callable-ek célzott negatív/happy path tesztfedése még backlog.
 
 ## UX dokumentáció
 
@@ -33,6 +35,7 @@ Kapcsolódó CI evidence hely: [`ci_evidence.md`](ci_evidence.md)
 - [x] A demóscript a bemutatási sorrendet és fallback lépéseket is tartalmazza.
 - [x] A UX evidence asset könyvtár struktúrája elő van készítve.
 - [x] Az új account/profile/pricing/refund/QR flow-khoz tartozó végleges képernyőképek evidence assetként is be vannak illesztve.
+- [x] Az admin dashboard, user detail, product detail, reservation detail és merchant admin messages screenshot evidence elérhető.
 
 ## AI dokumentáció teljessége
 

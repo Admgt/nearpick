@@ -28,6 +28,17 @@ Hivatkozások:
 5. Validáld a healthcheck endpointot.
 - A deploy után ellenőrizd, hogy a `healthcheck` HTTP function `200` vagy várt degradált státusszal válaszol, és a `checks.firestore` mező értelmes.
 
+6. Készítsd elő az admin felhasználót, ha a demó vagy release útvonal admin felületet is tartalmaz.
+- Firebase Authban hozd létre vagy azonosítsd az admin usert.
+- A `functions` mappában futtasd:
+
+```bash
+npm run admin:set -- --email <admin-email>
+```
+
+- Alternatíva: `npm run admin:set -- --uid <firebase-auth-uid>`.
+- Ellenőrizd, hogy a `users/{uid}` dokumentumban `role: admin`, `accountStatus: active`, a Firebase Auth custom claims között pedig `admin: true` szerepel.
+
 ## Konfiguráció és secretek
 
 - Futásidejű konfigurációs sablonok:
@@ -75,3 +86,16 @@ Hivatkozások:
   - tokenek manuális ellenőrzése és újraregisztrálása az érintett usereknél
 - Végleges javítási irány:
   - trigger contract tesztek és token-életciklus ellenőrzések hozzáadása
+
+### C forgatókönyv: az admin felület jogosultsági hibát ad
+
+- Tünetek: admin fiókkal belépve nem az admin home nyílik meg, vagy az admin callable műveletek `permission-denied` hibát adnak.
+- Gyors diagnózis:
+  - Firebase Auth custom claims ellenőrzése: `admin: true`
+  - `users/{uid}.accountStatus` érték ellenőrzése: `active`
+  - `users/{uid}.role` ellenőrzése: `admin`
+  - token refresh / újrabejelentkezés ellenőrzése, mert a kliens a friss ID token claimjeit használja
+- Ideiglenes mitigáció:
+  - admin claim újraállítása `npm run admin:set -- --email <admin-email>` paranccsal
+- Végleges javítási irány:
+  - admin provisioning lépés hozzáadása a demo seed checklisthez és célzott admin callable negatív tesztek bővítése

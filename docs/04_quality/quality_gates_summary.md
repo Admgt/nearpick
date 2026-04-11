@@ -32,6 +32,7 @@
 
 ## Jelenlegi maradó kockázatok
 - A mobil UI/E2E rétegben már van tényleges `integration_test/**/*_test.dart` suite, de még csak egy core flow-val.
+- Az admin felülethez jelenleg nincs külön teljes UI/E2E vagy callable-level quality gate; csak role routing és adminMessages rule modell evidence érhető el.
 - A Firestore rules ellenőrzése reprezentatív és hasznos, de nem teljes emulatoros allow/deny bizonyítás.
 - A secret scan mintaalapú, ezért nem helyettesít teljes SAST vagy fejlett DLP eszközt.
 - A Flutter dependency audit OSV advisory feedtől és hálózati elérhetőségtől függ; ez nem helyettesít teljes SBOM vagy SCA platformot.
@@ -39,5 +40,6 @@
 ## Következő ajánlott lépések
 - Firebase Emulator alapú rules teszt bootstrap bevezetése a legkritikusabb kollekciókra.
 - További `integration_test` UI-flow-k hozzáadása a reservation és completion utakra.
+- Admin UI smoke flow és admin callable permission-deny tesztek hozzáadása.
 - SBOM vagy fejlettebb SCA ellenőrzés hozzáadása a meglévő OSV audit mellé.
 - Acceptance feature-k automata összekötése smoke vagy BDD runnerrel.

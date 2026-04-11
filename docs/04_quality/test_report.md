@@ -33,12 +33,14 @@ Flutter:
 - refund adatok, pickup token, review modellek
 - UI űrlapvalidációk és hibamegjelenítés
 - merchant dashboard és CSV export logika
+- admin role routing widget szinten
 
 Functions és security:
 - `security_helpers.js` biztonsági segédlogika
 - Firestore rules szerződéses korlátai
 - Firestore rules reprezentatív allow/deny viselkedési modelljei
 - refund, review, archive és repricing callable döntési ágak
+- admin helper és `adminMessages` read / read receipt rule modell
 
 ### CI evidence
 
@@ -91,4 +93,5 @@ Functions quality gate:
 - A jelenlegi integration szint in-memory workflow / adaptor alapú, nem Firebase emulátor alapú.
 - Az `integration_test/` réteg most már validált Android emulatoros evidence-del rendelkezik, de még nem teljes suite.
 - Az új account/profile, review, refund és QR flow-khoz még nincs külön teljes UI/E2E evidence.
+- Az admin dashboard, admin termékmoderáció, fiókstátusz-kezelés és admin üzenetküldés még nem rendelkezik külön teljes UI/E2E vagy callable-level runtime evidence-szel.
 - A Functions quality gate lokálisan zöld, de a dependency advisories hosszabb távú karbantartása külön backlog-feladat marad.

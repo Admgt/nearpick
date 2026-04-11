@@ -35,6 +35,17 @@ Ez a dokumentum a NearPick jelenlegi konfigurációs modelljét foglalja össze 
 | `USE_FIREBASE_EMULATORS=true` | emulátoros átkötés | ha lokálisan az emulátorokra akarsz csatlakozni |
 | `FIREBASE_EMULATOR_HOST=127.0.0.1` | egyedi emulator host | ha a default host nem megfelelő |
 
+## Admin konfiguráció
+
+Az admin felület jogosultsági forrása Firebase Auth custom claim. A demo vagy fejlesztői projektben külön admin felhasználót kell előkészíteni, majd a `functions` csomag segédscriptjével beállítani:
+
+```bash
+cd functions
+npm run admin:set -- --email <admin-email>
+```
+
+A script alternatívája `--uid <firebase-auth-uid>`. A parancs a custom claim mellett a `users/{uid}` dokumentumban a `role: admin` és `accountStatus: active` mezőket is beállítja.
+
 ## Port- és útvonal-konvenciók
 
 - Ajánlott helyi Flutter web port: `49914`

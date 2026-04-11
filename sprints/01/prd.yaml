@@ -41,7 +41,7 @@ scope:
   out:
     - "Teljes értékű online fizetés és számlázás"
     - "Komplex dinamikus árazás és készletjóslás"
-    - "Webes admin felület (első verzióban)"
+    - "Külön webes admin felület (első verzióban); a később elkészült beépített admin/moderációs felület külön scope-bővítés"
     - "Kurír/last-mile logisztika integráció"
 success_metrics:
   - "≥15 korai felhasználó és ≥5 bolt aktív részvétele 2 héten át."

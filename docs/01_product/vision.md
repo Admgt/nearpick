@@ -14,9 +14,13 @@ A kis helyi kereskedőknél gyakran marad a nap végén olyan romlandó készlet
 - Cél: gyorsan feltölteni vagy szerkeszteni a megmaradt tételeket, csökkenteni a pazarlást, és átlátható módon kezelni a foglalásokat.
 - Frusztráció: lassú adminisztráció, rossz árazási döntések, nehezen áttekinthető foglalási életciklus.
 
+3. Platform admin / üzemeltető
+- Cél: gyorsan áttekinteni a felhasználói, termék- és foglalási állapotokat, kezelni a problémás fiókokat vagy ajánlatokat, és közvetlen üzenetet küldeni kereskedőknek.
+- Frusztráció: moderációs döntésekhez sok helyről kell adatot összegyűjteni, nincs gyors státuszkezelés vagy célzott kereskedői visszajelzés.
+
 ## Értékajánlat
 
-A NearPick egy Flutter + Firebase alapú mobilalkalmazás, amely segíti a kereskedőket az egyedi, kedvezményes tételek közzétételében, a fogyasztókat pedig a releváns, közeli ajánlatok megtalálásában. A jelenlegi termékverzió már account/profile szerkesztéssel, céghely-örökléssel, többdarabos foglalással, QR alapú átvételi támogatással, refund- és review-folyamattal, valamint baseline dinamikus árazási javaslatokkal is rendelkezik.
+A NearPick egy Flutter + Firebase alapú mobilalkalmazás, amely segíti a kereskedőket az egyedi, kedvezményes tételek közzétételében, a fogyasztókat pedig a releváns, közeli ajánlatok megtalálásában. A jelenlegi termékverzió már account/profile szerkesztéssel, céghely-örökléssel, többdarabos foglalással, QR alapú átvételi támogatással, refund- és review-folyamattal, baseline dinamikus árazási javaslatokkal, valamint admin claim alapú moderációs felülettel is rendelkezik.
 
 ## Siker definíciója
 
@@ -32,7 +36,7 @@ A metrikadefiníciók és a mérési megközelítés a [`metrics.md`](metrics.md
 
 - Teljes online fizetés és számlázás.
 - Futárszolgálati és kiszállítási integráció.
-- Teljes értékű backoffice vagy webes admin termék.
+- Teljes értékű backoffice vagy külön webes admin termék. A jelenlegi scope egy beépített, admin claimmel védett moderációs és áttekintő felület, nem teljes operációs backoffice.
 - Teljesen automatizált, ML-alapú dinamikus árazás és készlet-előrejelzés. A jelenlegi scope-ban csak baseline pricing recommendation és manuális alkalmazás van.
 
 ## Kockázatok és bizonytalanságok

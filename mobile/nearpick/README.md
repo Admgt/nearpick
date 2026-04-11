@@ -1,6 +1,6 @@
 # NearPick Flutter app
 
-Ez a mappa tartalmazza a NearPick Flutter kliensalkalmazását. A kliens Firebase Auth, Firestore, Storage és Firebase Messaging szolgáltatásokat használ vásárlói és kereskedői flow-khoz.
+Ez a mappa tartalmazza a NearPick Flutter kliensalkalmazását. A kliens Firebase Auth, Firestore, Storage, Functions és Firebase Messaging szolgáltatásokat használ vásárlói, kereskedői és admin flow-khoz.
 
 ## Mire való ez az app
 
@@ -9,6 +9,8 @@ Ez a mappa tartalmazza a NearPick Flutter kliensalkalmazását. A kliens Firebas
 - több darabos foglalás, QR-alapú átvétel, refund állapotkövetés és értékelés
 - kereskedői oldalon profil- és cégadat-kezelés, termékek feltöltése és szerkesztése az első foglalásig
 - kereskedői dashboard, árazási ajánlás, foglaláskezelés, CSV export és értékelési visszajelzés
+- admin oldalon rendszeráttekintés, felhasználói fiókstátusz-kezelés, termékmoderáció, foglalás-áttekintés és kereskedőnek küldhető admin üzenet
+- kereskedői oldalon admin üzenetek megtekintése és olvasottra jelölése a dashboardon
 - push értesítések új ajánlatokra és foglalási életciklusokra
 
 ## Jelenlegi feature snapshot
@@ -16,6 +18,7 @@ Ez a mappa tartalmazza a NearPick Flutter kliensalkalmazását. A kliens Firebas
 - Auth: email/jelszó bejelentkezés, regisztráció, elfelejtett jelszó flow
 - Consumer: feed + map nézet, location preference, multi-quantity foglalás, review megtekintés és beküldés
 - Merchant: company name és company location mentése, pricing recommendation, reservation lifecycle kezelés
+- Admin: claim alapú admin routing, dashboard, user/product/reservation listák, fiók felfüggesztés/tiltás, product hide/restore/delete és merchant admin message workflow
 - Fulfillment: pickup token / QR ellenőrzés, manuális token fallback, refund státuszok
 - Reporting: merchant dashboard és CSV export
 
@@ -74,6 +77,7 @@ Fontos:
 - A verziókezelt `firebase.json` ebben a mappában FlutterFire metaadat, nem helyettesíti a lokális `firebase_options.dart` fájlt.
 - A mellékelt példa `firebase_options` jelenleg web, Android és iOS platformra tartalmaz beállítást; macOS, Windows és Linux nincs hozzá konfigurálva.
 - Opcionálisan támogatott a Firebase Emulator Suite átkötés `--dart-define=USE_FIREBASE_EMULATORS=true` kapcsolóval.
+- Admin felülethez a Firebase Auth felhasználón `admin: true` custom claim szükséges; a `users/{uid}.role = admin` önmagában nem elég. A repo gyökeréből a `functions` csomagban futtatható segédparancs: `npm run admin:set -- --email <admin-email>`.
 
 Megjegyzés:
 

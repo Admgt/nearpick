@@ -4,6 +4,7 @@
 flowchart LR
     user1[Vásárló]
     user2[Kereskedő]
+    adminUser[Admin]
     app[Flutter kliens]
     auth[Firebase Auth]
     fs[Cloud Firestore]
@@ -14,6 +15,7 @@ flowchart LR
 
     user1 --> app
     user2 --> app
+    adminUser --> app
     app --> auth
     app --> fs
     app --> storage
@@ -32,8 +34,9 @@ A NearPick célja, hogy a közeli, időérzékeny kedvezményes termékeket gyor
 ## Fő komponensek
 
 - Flutter kliensalkalmazás
-  - auth, consumer és merchant képernyők
+  - auth, consumer, merchant és admin képernyők
   - account/profile, location, favorites, review és dashboard UI-k
+  - admin dashboard, user/product/reservation áttekintés és moderációs UI-k
   - ajánlási logika és kliensoldali szűrés
   - Firebase SDK integrációk
 - Firebase Auth
@@ -43,7 +46,7 @@ A NearPick célja, hogy a közeli, időérzékeny kedvezményes termékeket gyor
 - Firebase Storage
   - termékképek tárolása
 - Cloud Functions
-  - foglalási, refund, review, archiválási és repricing callable műveletek
+  - foglalási, refund, review, archiválási, repricing és admin callable műveletek
   - eseményvezérelt értesítési és thumbnail-generáló logika
 - Firebase Cloud Messaging
   - push értesítések
@@ -73,14 +76,16 @@ A Firebase serverless backend választás indoka az volt, hogy a hitelesítés, 
 6. Új termék létrehozásakor Cloud Function indulhat, amely szegmentált értesítéseket küld a releváns fogyasztóknak.
 7. Foglaláskor a backend callable tranzakció csökkenti a készletet, létrehozza a foglalási rekordot, pickup code-ot és pickup tokent generál.
 8. A kereskedő QR vagy pickup input alapján teljesíti a foglalást, a refund státuszt kezeli, a completed foglalás után pedig review érkezhet.
+9. Admin claimmel rendelkező aktív felhasználó admin dashboardon áttekinti a rendszerállapotot, fiókstátuszt módosít, terméket moderál, foglalási részletet néz meg, vagy admin üzenetet küld kereskedőnek.
 
 ## Authorization modell röviden
 
 Az authorization modell három pillérre épül:
 
 - Firebase Auth alapú hitelesítés
+- Firebase Auth custom claim alapú admin jogosultság (`admin: true`)
 - Firestore és Storage security rules alapú backend jogosultságkikényszerítés
-- Cloud Functions oldali üzleti szabály-ellenőrzés a kritikus reservation és product műveletekhez
+- Cloud Functions oldali üzleti szabály-ellenőrzés a kritikus reservation, product és admin műveletekhez
 - ownership és role mezők használata (`ownerId`, `merchantId`, `buyerId`, `role`)
 
 A kliensoldali tiltások és gombállapotok UX célúak, de nem helyettesítik a backend kontrollt. A biztonsági modell lényege, hogy a felhasználó csak a saját adataihoz és a szerepkörének megfelelő erőforrásokhoz férjen hozzá.

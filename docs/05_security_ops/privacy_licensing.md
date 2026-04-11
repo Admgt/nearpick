@@ -9,7 +9,7 @@
 ## Adatkategóriák
 
 1. Fiók-/profiladatok
-- Email, displayName, role, merchant esetén `companyName`.
+- Email, displayName, role, `accountStatus`, státuszfrissítési auditmezők, merchant esetén `companyName`.
 
 2. Termék- és kereskedői működési adatok
 - Termékmetaadatok, árazás, pricing recommendation snapshot, mennyiség, állapot, időbélyegek, opcionális képútvonalak és thumbnail útvonal.
@@ -29,11 +29,14 @@
 7. Értesítési token adatok
 - Eszköztoken rekordok user-tulajdonú alkollekcióban.
 
+8. Admin üzenetek és moderációs metaadatok
+- Kereskedőnek küldött admin üzenet tárgya, törzse, témája, létrehozó admin azonosítója/címkéje, létrehozási ideje és olvasási ideje.
+
 ## Adatfolyam összefoglaló
 
 - A kliens a Firebase SDK-n keresztül írja és olvassa az adatokat.
 - A Firestore és a Storage rule-okon keresztül kényszeríti ki a hozzáférést.
-- A Cloud Functions termék-, reservation-, user- és tokenadatokat olvasnak, és értesítéseket, review / refund / archive / repricing műveleteket kezelnek.
+- A Cloud Functions termék-, reservation-, user-, token- és admin message adatokat olvasnak/írnak, és értesítéseket, review / refund / archive / repricing / admin moderation műveleteket kezelnek.
 
 ## Adatmegőrzés és törlés
 
@@ -46,8 +49,11 @@
 ## Hozzáférési modell
 
 - A consumer és merchant szerepkörök a user profile-ban jelennek meg.
+- Az admin felület Firebase Auth custom claimet (`admin: true`) és aktív fiókstátuszt igényel.
 - A védett írások hitelesített usert és ownership/role korlátokat igényelnek.
 - A userhez kötött kollekciók (`users/{uid}`, prefs, tokens) a tulajdonosra vannak korlátozva.
+- Az admin szélesebb olvasási jogosultságot kap a `users`, `products`, `reservations`, `merchantStats`, `reviews` és egyes interakciós adatok áttekintéséhez.
+- A `users/{uid}/adminMessages` alkollekciót az admin és a címzett user olvashatja; kliensoldali létrehozás tiltott, olvasottra jelölés csak a címzett saját dokumentumán engedett.
 - A refund státuszfrissítés és review küldés kritikus útvonalon function-oldali state checkre támaszkodik.
 
 ## AI használat és adatok

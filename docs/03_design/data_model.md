@@ -7,13 +7,23 @@
 - Cél: profil + szerepkör + preferenciák + account / merchant metaadatok.
 - Fő mezők:
   - identity: `email`, `displayName`, `role`, `createdAt`
+  - account control: `accountStatus`, `statusUpdatedAt`, `statusUpdatedBy`
   - consumer prefs: `favoriteCategories`, `homeLocation`, `homeLocationMode`, `homeLocationCityId`, `preferredRadiusKm`
   - merchant profile: `companyName`, `companyLocation`
+
+Megjegyzés: admin belépéshez a `role: admin` mező mellett Firebase Auth custom claim `admin: true` is szükséges. A kliens routing és a Functions admin műveletek a custom claimet tekintik jogosultsági forrásnak.
 
 ### users/{uid}/fcmTokens/{tokenId}
 
 - Cél: push token nyilvántartás.
 - Fő mezők: `token`, `createdAt`, `platform`.
+
+### users/{uid}/adminMessages/{messageId}
+
+- Cél: admin által kereskedőnek küldött célzott tájékoztatás vagy moderációs üzenet.
+- Fő mezők: `recipientUserId`, `subject`, `body`, `topic`, `createdBy`, `createdByLabel`, `createdAt`, `readAt`.
+- Megengedett `topic` értékek: `general`, `rating`, `moderation`.
+- Integritás: kliensoldali create/delete tiltott; létrehozás Cloud Functionből történik, a címzett merchant csak a `readAt` mezőt frissítheti olvasási visszaigazolásként.
 
 ### products/{productId}
 
@@ -23,7 +33,7 @@
   - content: `merchantName`, `name`, `category`, `imageUrl`, `imagePath`, `thumbnailPath`
   - pricing: `originalPrice`, `discountedPrice`, `pricingRecommendation`
   - inventory: `quantity`, `quantityAvailable`
-  - lifecycle: `status`, `isDeleted`, `hasReservations`, `expiresAt`, `pickupStartAt`, `pickupEndAt`, `archivedAt`, `deletedAt`
+  - lifecycle: `status`, `statusBeforeHidden`, `isDeleted`, `hasReservations`, `expiresAt`, `pickupStartAt`, `pickupEndAt`, `archivedAt`, `deletedAt`
   - signals: `interestCount`, `createdAt`
   - geo: `location`
 
@@ -77,12 +87,14 @@
 - `users (merchant) (1) -> (N) reservations` a `merchantId` alapján.
 - `users (1) -> (N) interests` a `userId` alapján.
 - `reservations (1) -> (0..1) reviews` a reservation azonosító alapján.
+- `users (merchant) (1) -> (N) adminMessages` a `recipientUserId` és a `users/{uid}` alkollekció alapján.
 
 Integritási mechanizmusok:
 - A Firestore rule-ok kikényszerítik a tulajdonosi/user korlátokat.
 - A foglalási tranzakció kikényszeríti a mennyiségcsökkentést, a sold_out átmenetet és a többdarabos foglalás konzisztenciáját.
 - Az érdeklődés-létrehozási útvonal elkerüli a duplikált számlálást.
 - A review flow reservation-szintű egyediségre és completed státuszra támaszkodik.
+- Az admin fiókstátusz-kezelés és termékmoderáció Cloud Functions callable-ökön keresztül fut, admin claim ellenőrzéssel.
 
 ## Sémaevolúciós stratégia
 
@@ -93,6 +105,7 @@ Integritási mechanizmusok:
 ## Adatmegőrzés és törlés
 
 - A termékrekordok archiválhatók soft-delete mezőkkel.
+- Az admin törlés soft-delete/archiválás: `isDeleted: true`, `status: archived`, `deletedAt`, `archivedAt`, és szükség esetén kapcsolódó image path törlés.
 - A foglalási rekordok megmaradnak a tranzakciótörténethez.
 - A token dokumentumokat a jelenlegi token-életciklus események felülírják/frissítik.
 - A dedikált retention policy automatizálás egy még nyitott üzemeltetési megerősítési feladat.

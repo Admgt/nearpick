@@ -4,7 +4,7 @@
 
 - Szintek: `INFO`, `WARNING`, `ERROR`.
 - App oldali viselkedés: a felhasználó felé a hibák UI visszajelzésként jelennek meg; a kritikus szerveroldali diagnosztika a Cloud Functions logokban követhető.
-- Function oldali viselkedés: a kritikus műveletek (`reserveProduct`, `completeReservation`, `archiveProduct`, `notifyOnNewProduct`, `healthcheck`) JSON logbejegyzéseket írnak.
+- Function oldali viselkedés: a kritikus műveletek (`reserveProduct`, `completeReservation`, `archiveProduct`, `notifyOnNewProduct`, `healthcheck`) és az admin műveletek (`setUserAccountStatus`, `sendAdminMessageToMerchant`, `hideProductForAdmin`, `restoreProductForAdmin`, `deleteProductForAdmin`) JSON logbejegyzéseket írnak.
 - Minden szerveroldali log tartalmaz `event` és `contextId` mezőt; ahol releváns, szerepel benne `productId`, `reservationId`, `userId`, `failedCount` vagy más üzleti kontextus.
 
 Hivatkozás:
@@ -64,6 +64,9 @@ Ha a Firestore elérés hibázik, a healthcheck `503` státuszt és `status: deg
 5. Healthcheck latency
 - Hogyan: a `healthcheck` endpoint válaszidejének trendelése, különösen degradált állapotok előtt.
 
+6. Admin moderációs műveletek száma és hibaaránya
+- Hogyan: `admin.user_status.*`, `admin.message_to_merchant.*`, `admin.product_hide.*`, `admin.product_restore.*`, `admin.product_delete.*` logesemények aggregálása.
+
 ## Log minta
 
 Sikeres healthcheck példa:
@@ -76,6 +79,12 @@ Hibás foglalási művelet példa:
 
 ```json
 {"severity":"ERROR","event":"reservation.reserve.failed","timestamp":"2026-03-14T12:02:00.000Z","contextId":"trace-456","productId":"product-1","userId":"buyer-1","error":{"code":"failed-precondition","message":"Elfogyott.","name":"Error"}}
+```
+
+Sikeres admin státuszfrissítés példa:
+
+```json
+{"severity":"INFO","event":"admin.user_status.completed","timestamp":"2026-04-11T12:10:00.000Z","contextId":"trace-admin-1","targetUserId":"merchant-1","userId":"admin-1","accountStatus":"suspended"}
 ```
 
 ## Hibakeresési útmutató
@@ -92,7 +101,10 @@ Hibás foglalási művelet példa:
 4. Adatelérési probléma
 - Ellenőrizni kell a rule útvonalat a `firestore.rules` fájlban és az érintett user role/ownership adatokat.
 
-5. Healthcheck hiba
+5. Admin jogosultsági probléma
+- Ellenőrizni kell az Auth custom claimet (`admin: true`), a `users/{uid}.accountStatus` értékét és azt, hogy a kliens frissített ID tokent használ-e.
+
+6. Healthcheck hiba
 - Először a `healthcheck` válasz `checks` mezőjét kell megnézni.
 - Ha `checks.firestore = error`, akkor Firestore jogosultság, projektelérés vagy platformoldali kiesés gyanús.
 

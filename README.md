@@ -12,11 +12,12 @@ Kapcsolódó dokumentációs belépési pont: [`docs/00_index.md`](docs/00_index
 
 ## Fő funkciók
 
-- Email/jelszó alapú regisztráció és bejelentkezés szerepkör szerinti routolással, kereskedői cégnévvel és jelszó-visszaállítási lehetőséggel.
+- Email/jelszó alapú regisztráció és bejelentkezés szerepkör szerinti routolással, kereskedői cégnévvel, admin claim alapú admin belépéssel és jelszó-visszaállítási lehetőséggel.
 - Location-aware fogyasztói feed kategóriával, térképpel, kedvencekkel, account beállításokkal és előre definiált város alapú helybeállítással.
 - Termékrészlet, többdarabos foglalás, foglalási állapotkövetés, pickup code / QR token megjelenítés, lemondás és refund igénylés.
 - Kereskedői profil céghellyel, új termék létrehozás vagy szerkesztés, automatikusan örökölt helyadat, képfeltöltés és generált thumbnail.
 - Dinamikus árazási javaslatok, merchant dashboard, értékelések áttekintése és CSV export a foglalási adatokhoz.
+- Admin felület rendszeráttekintéssel, felhasználó- és termékmoderációval, foglalás áttekintéssel, fiókstátusz-kezeléssel és kereskedőnek küldhető admin üzenetekkel.
 
 ## Architektúra áttekintés
 
@@ -78,6 +79,15 @@ Az [`.env.example`](.env.example) a bírálói és fejlesztői konfigurációhoz
 
 Fontos: az app futás közben nem `.env` fájlból olvas, hanem a lokálisan előállított FlutterFire/Firebase config fájlokból, illetve opcionálisan `--dart-define` paraméterből. Az `.env.example` a reviewer számára azt dokumentálja, milyen értékeket kell előkészíteni a lokális mintafájlok kitöltéséhez.
 
+Admin belépéshez nem elég a `users/{uid}.role = admin` mező: a Firebase Auth felhasználón admin custom claimnek is lennie kell. A repo ehhez segédscriptet ad:
+
+```bash
+cd functions
+npm run admin:set -- --email demo.admin@nearpick.local
+```
+
+Ugyanez `--uid <firebase-auth-uid>` paraméterrel is futtatható. A script az Auth custom claimet és a `users/{uid}` profil alapmezőit is beállítja.
+
 ### Klónozás
 
 ```bash
@@ -103,7 +113,8 @@ flutter pub get
 
 A reviewer gyors kipróbálásához a demo Firebase projektben legyen előkészítve:
 
-- a két demo felhasználó
+- a fogyasztói és kereskedői demo felhasználó
+- egy admin demo felhasználó admin custom claimmel
 - legalább 3 aktív termék több kategóriában
 - legalább 1 korábbi `completed` foglalás a review flow-hoz
 - legalább 1 `cancelled` foglalás refund státusszal
@@ -170,7 +181,7 @@ flutter run -d <android-device-id>
 
 ### Elvárt kezdőképernyő
 
-Sikeres indulás után a `NearPick - Bejelentkezés` képernyő jelenik meg. Bejelentkezés után a szerepkörtől függően vagy a fogyasztói feed, vagy a kereskedői home nyílik meg felső navigációs sávval.
+Sikeres indulás után a `NearPick - Bejelentkezés` képernyő jelenik meg. Bejelentkezés után a szerepkörtől és az admin custom claimtől függően a fogyasztói feed, a kereskedői home vagy a `NearPick Admin` felület nyílik meg.
 
 ## Demo hitelesítő adatok
 
@@ -178,6 +189,7 @@ Az alábbi seed felhasználókat a dedikált demo Firebase projektben kell előr
 
 - Fogyasztó: `demo.user@nearpick.local` / `NearPick123!`
 - Kereskedő: `demo.merchant@nearpick.local` / `NearPick123!`
+- Admin: `demo.admin@nearpick.local` / `NearPick123!` admin custom claimmel.
 
 Részletes környezeti elvárások: [`docs/06_release/demo_environment.md`](docs/06_release/demo_environment.md)
 
@@ -193,6 +205,7 @@ Részletes környezeti elvárások: [`docs/06_release/demo_environment.md`](docs
 8. A fogyasztói feedben állíts be kategóriát vagy helyet, nyisd meg a termékrészletet, majd foglalj le egy vagy több darabot.
 9. Nyisd meg a foglalás részleteit, és ellenőrizd, hogy a státusz, a pickup code, a QR token és a refund információk láthatók.
 10. Ha van `completed` demo foglalás, mutasd meg a review küldését vagy a már rögzített értékelést.
+11. Jelentkezz be az admin demo fiókkal, és mutasd meg az admin dashboard metrikáit, a felhasználó részletoldali státuszkezelést, a termék elrejtés/visszaállítás műveletet, valamint egy kereskedőnek küldött admin üzenetet.
 
 1 perces első kipróbálási útvonal:
 

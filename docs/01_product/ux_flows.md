@@ -1,6 +1,6 @@
 # UX flow-k
 
-Ez a dokumentum a 2026-04-08-ig frissített kódállapot UX szintű összefoglalása. A `docs/assets/ux/` mappában a jelenlegi mobilflow-khoz tartozó screenshot evidence elérhető, beleértve az account/profile, pricing, refund és review állapotokat is.
+Ez a dokumentum a 2026-04-11-ig frissített kódállapot UX szintű összefoglalása. A `docs/assets/ux/` mappában a jelenlegi mobilflow-khoz tartozó screenshot evidence elérhető, beleértve az account/profile, pricing, refund, review és admin állapotokat is.
 
 ## 1. Felhasználói regisztráció, bejelentkezés és password reset
 
@@ -16,7 +16,7 @@ A felhasználó tudjon új fiókot létrehozni, password resetet kezdeményezni,
 1. A felhasználó megnyitja a `NearPick - Bejelentkezés` képernyőt.
 2. Ha még nincs fiókja, megnyitja a regisztrációs képernyőt.
 3. Megadja az email címet, jelszót és a szükséges profiladatokat. Kereskedőként cégnevet is meg kell adnia.
-4. Sikeres regisztráció vagy bejelentkezés után a rendszer a szerepkör alapján a fogyasztói vagy kereskedői kezdőképernyőre navigál.
+4. Sikeres regisztráció vagy bejelentkezés után a rendszer a szerepkör és az admin custom claim alapján a fogyasztói, kereskedői vagy admin kezdőképernyőre navigál.
 5. Ha elfelejtette a jelszavát, dialógusban reset emailt kérhet.
 
 ### Happy path
@@ -24,6 +24,7 @@ A felhasználó tudjon új fiókot létrehozni, password resetet kezdeményezni,
 - A mezők helyesen vannak kitöltve.
 - A Firebase Auth elfogadja a hitelesítést.
 - A `users` gyűjteményből a szerepkör kiolvasható.
+- Admin esetben a Firebase Auth tokenben `admin: true` custom claim található.
 - A felhasználó a megfelelő kezdőképernyőre jut.
 - Password resetnél sikeres email-küldési visszajelzés jelenik meg.
 
@@ -211,3 +212,68 @@ A foglalási életciklus teljes útja átlátható legyen a vásárló és a ker
 - A lemondási flow és refund kérés: `cancel_reservation.png`
 - A merchant refund állapotkezelő képernyő: `manage_refund.png`
 - A completed reservation utáni review flow: `review_flow.png`
+
+## 5. Admin dashboard, moderáció és kereskedői üzenetek
+
+![Admin dashboard](../assets/ux/admin_dashboard.png)
+![Admin users](../assets/ux/admin_users.png)
+![Admin merchant detail](../assets/ux/admin_merchant_detail.png)
+![Admin merchant message](../assets/ux/admin_merchant_message.png)
+![Admin products](../assets/ux/admin_products.png)
+![Admin product detail](../assets/ux/admin_product_details.png)
+![Admin reservation detail](../assets/ux/admin_reservation_detail.png)
+![Merchant dashboard with admin messages](../assets/ux/merchant_dashboard.png)
+
+### Cél
+
+Az admin gyorsan át tudja tekinteni a teljes rendszer állapotát, meg tudja keresni az érintett felhasználókat, termékeket vagy foglalásokat, és szükség esetén fiókstátuszt, termék láthatóságot vagy kereskedőnek küldött admin üzenetet tud kezelni.
+
+### Lépéssor
+
+1. Az admin custom claimmel rendelkező felhasználó belép.
+2. A rendszer a `NearPick Admin` felületre navigál.
+3. Az admin a dashboardon látja a fő mutatókat: összes felhasználó, kereskedő, vásárló, aktív termék, összes foglalás és completed foglalás.
+4. Az admin a felhasználók, kereskedők, vásárlók, termékek és foglalások között keresni és státusz szerint szűrni tud.
+5. Felhasználó részletoldalon az admin `suspended`, `blocked` vagy `active` státuszt állíthat.
+6. Termék részletoldalon az admin elrejtheti, visszaállíthatja vagy archivált törlésre állíthatja a terméket.
+7. Kereskedő részletoldalon az admin üzenetet küldhet `general`, `rating` vagy `moderation` témával; alacsony rating esetén sablon is használható.
+8. A kereskedő a saját dashboardján látja az admin üzeneteket, és olvasottra jelölheti őket.
+
+### Happy path
+
+- Az admin account aktív, és a tokenben `admin: true` claim van.
+- A dashboard streamjei betöltik a `users`, `products`, `reservations` és `merchantStats` adatokat.
+- A fiókstátusz módosítás callable-on keresztül sikeresen lefut.
+- A termékmoderáció callable-on keresztül módosítja a termék státuszát.
+- Az admin üzenet létrejön a kereskedő `adminMessages` alkollekciójában, és push értesítést küldhet, ha van elérhető FCM token.
+
+### Hibaállapotok
+
+- Nem admin felhasználó admin műveletet próbál indítani, ezért jogosultsági hibát kap.
+- Nem aktív admin fiók esetén a rendszer nem engedi a védett műveletet.
+- Az admin saját fiókját nem tudja felfüggeszteni vagy tiltani az admin felületről.
+- Admin üzenet csak kereskedőnek küldhető; hiányzó tárgy vagy üzenettörzs validációs hibát ad.
+- Hiányzó termék vagy felhasználó esetén a callable `not-found` hibával tér vissza.
+
+### Üres állapotok
+
+- Nincs a keresésnek megfelelő felhasználó, termék vagy foglalás.
+- Egy kereskedőnek még nincs admin üzenete.
+- Egy termékhez nincs kapcsolódó foglalás.
+
+### Screenshot evidence
+
+- Admin dashboard rendszeráttekintéssel: `admin_dashboard.png`
+- Admin felhasználólista / keresés: `admin_users.png`
+- Kereskedő admin részletoldal: `admin_merchant_detail.png`
+- Admin üzenetküldés kereskedőnek: `admin_merchant_message.png`
+- Admin termékmoderációs lista: `admin_products.png`
+- Admin termék részlet és moderációs műveletek: `admin_product_details.png`
+- Admin foglalási részletoldal: `admin_reservation_detail.png`
+- Merchant dashboard admin üzenetekkel: `merchant_dashboard.png`
+
+### Akadálymentességi megfontolások
+
+- A navigációs célok szöveges címkével is rendelkeznek.
+- A státuszok chipként és szövegként is megjelennek.
+- A moderációs műveletek gombbal indíthatók, és siker vagy hiba esetén snackbar visszajelzés jelenik meg.

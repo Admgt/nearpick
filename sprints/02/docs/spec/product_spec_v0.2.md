@@ -13,7 +13,7 @@ Ezzel a felhasználók időben értesülnek a közeli kedvezményekről, a bolto
 - Out: 
     - Online fizetés és számlázás
     - Statisztikai dashboard
-    - Webes adminfelület
+    - Külön webes adminfelület; a később elkészült beépített admin/moderációs felület nem része ennek a v0.2 scope-nak
     - Kurír integráció
 
 ## User Story térkép
