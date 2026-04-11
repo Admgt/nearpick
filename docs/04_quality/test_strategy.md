@@ -1,6 +1,6 @@
 # Tesztstratégia
 
-## Aktuális állapot 2026-04-07
+## Aktuális állapot 2026-04-11
 
 ### Cél és scope
 
@@ -14,13 +14,13 @@ Az aktuális stratégia a meglévő repo-struktúrára épít:
 
 ### Jelenlegi tesztmix
 
-A 2026-04-07-es statikus repo-audit alapján:
+A 2026-04-11-es statikus repo-audit alapján:
 
 | Kategória | Darab | Megjegyzés |
 |---|---:|---|
 | Flutter test definíció | 85 | `test/**` és `integration_test/**` |
-| Functions / rules JS teszt | 54 | `functions/test/**` |
-| Összes automata tesztdefiníció | 139 | statikus inventory, nem egyetlen futás eredménye |
+| Functions / rules JS teszt | 68 | `functions/test/**` |
+| Összes automata tesztdefiníció | 153 | statikus inventory, nem egyetlen futás eredménye |
 
 A mix továbbra is megfelel a minimum `30+` automata tesztelvárásnak, de a minőségi fókusz most már nem a darabszám, hanem az új mobilflow-k következetes védelme.
 
@@ -50,6 +50,7 @@ Már van explicit teszt- vagy kódszintű védelem az alábbi újabb területekr
 - product edit constraint az első foglalás előtt / után
 - admin role routing
 - adminMessages Firestore read/read receipt rule modell
+- admin callable permission-deny, validációs és happy path esetek a fiókstátusz, termékmoderáció és admin üzenetküldés útvonalakra
 
 ### Firestore és Functions stratégia
 
@@ -64,9 +65,9 @@ Lefedett rules / helper esetek:
 - reservation olvasás csak buyer vagy merchant számára engedett
 - review, refund és archíválási helper döntések külön security helper tesztekkel támogatottak
 - admin helper jelenléte és `adminMessages` olvasási / olvasottra jelölési szabályai
+- admin callable contract tesztek: nem admin hívó tiltása, saját admin fiók tiltásának blokkolása, fiókstátusz-frissítés, admin üzenetküldés push ággal, termék elrejtés/visszaállítás és admin archiválás
 
 Admin területen még célzottan bővítendő:
-- `setUserAccountStatus`, `sendAdminMessageToMerchant`, `hideProductForAdmin`, `restoreProductForAdmin`, `deleteProductForAdmin` callable negatív és happy path tesztek
 - admin dashboard stat aggregáció és admin message modell unit tesztek
 - admin felület UI smoke / integration_test flow legalább a dashboard és egy moderációs művelet ellenőrzésére
 
@@ -112,7 +113,7 @@ npm run scan:deps
 
 - A `mobile/nearpick/integration_test/**/*_test.dart` réteg még csak egy core flow-t fed le, nem teljes E2E suite.
 - Az új account/profile, review, refund és QR flow-khoz még nincs teljes UI/E2E fedés.
-- Az admin dashboard, admin moderációs callable-ök és admin üzenetküldés UI/E2E fedése még hiányzik.
+- Az admin felület UI/E2E fedése még hiányzik; az admin callable-ök alap negatív és happy path Functions evidence-e már elkészült.
 - A Firestore rules ellenőrzése még nem emulatoros allow/deny futás, hanem szerződés + viselkedésmodell.
 - A manuális acceptance feature-k még nem kapcsolódnak automata runnerhez.
 - A Flutter dependency audit advisory feed-alapú, ezért hálózati elérhetőséget igényel.

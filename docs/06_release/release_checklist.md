@@ -27,7 +27,7 @@ Kapcsolódó CI evidence hely: [`ci_evidence.md`](ci_evidence.md)
 - [x] Automatizált dependency audit lépés be van kötve a CI-ba a `functions` csomagra.
 - [x] Flutter oldali dependency-vulnerability audit külön is be van vezetve.
 - [x] Az admin custom claim és adminMessages rules modell dokumentált.
-- [ ] Az admin callable-ek célzott negatív/happy path tesztfedése még backlog.
+- [x] Az admin callable-ek célzott negatív/happy path tesztfedése elkészült.
 
 ## UX dokumentáció
 

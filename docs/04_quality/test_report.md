@@ -1,6 +1,6 @@
 # Teszt riport
 
-## Aktuális állapot 2026-04-08
+## Aktuális állapot 2026-04-11
 
 ### Jelenlegi repo-állapot
 
@@ -8,13 +8,13 @@ Ez a dokumentum kétféle evidence-et különít el:
 - statikus repo-inventory: mit tartalmaz most a kódállapot
 - utolsó ténylegesen rögzített futási evidence: mi lett valóban lefuttatva és dokumentálva
 
-A 2026-04-07-es statikus repo-audit alapján:
+A 2026-04-11-es statikus repo-audit alapján:
 
 | Kategória | Darab | Megjegyzés |
 |---|---:|---|
 | Flutter test definíció | 85 | `test/**` és `integration_test/**` |
-| Functions / rules JS teszt | 54 | `functions/test/**` |
-| Összes automata tesztdefiníció | 139 | statikus inventory, nem egyetlen futás eredménye |
+| Functions / rules JS teszt | 68 | `functions/test/**` |
+| Összes automata tesztdefiníció | 153 | statikus inventory, nem egyetlen futás eredménye |
 
 Automatizált, külön futó E2E UI suite jelenleg:
 - `mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart`
@@ -41,6 +41,7 @@ Functions és security:
 - Firestore rules reprezentatív allow/deny viselkedési modelljei
 - refund, review, archive és repricing callable döntési ágak
 - admin helper és `adminMessages` read / read receipt rule modell
+- admin callable contract tesztek: jogosultsági tiltás, fiókstátusz-kezelés, admin üzenetküldés push ággal, termék elrejtés/visszaállítás és admin archiválás
 
 ### CI evidence
 
@@ -61,7 +62,7 @@ Megjegyzés:
 
 ### Utolsó ténylegesen rögzített runtime evidence
 
-A 2026-04-08-i lokális újrafuttatás alapján:
+A 2026-04-08-i lokális újrafuttatás és a 2026-04-11-i Functions újrafuttatás alapján:
 
 Flutter unit/widget/workflow réteg:
 - parancs: `powershell -ExecutionPolicy Bypass -File scripts/test_all.ps1`
@@ -78,7 +79,7 @@ Valódi Android emulatoros `integration_test` evidence:
 
 Functions quality gate:
 - `npm.cmd run lint`: passed
-- `npm.cmd test`: `54/54` passed
+- `npm.cmd test`: `68/68` passed
 - `npm.cmd run scan:deps`: passed
 - megjegyzés: az `npm.cmd ci` közben az npm általános audit összegzést jelzett, de a repository dedikált dependency audit scriptje végül `Functions dependency audit rendben` eredményt adott a dokumentált suppressions mellett
 
@@ -93,5 +94,5 @@ Functions quality gate:
 - A jelenlegi integration szint in-memory workflow / adaptor alapú, nem Firebase emulátor alapú.
 - Az `integration_test/` réteg most már validált Android emulatoros evidence-del rendelkezik, de még nem teljes suite.
 - Az új account/profile, review, refund és QR flow-khoz még nincs külön teljes UI/E2E evidence.
-- Az admin dashboard, admin termékmoderáció, fiókstátusz-kezelés és admin üzenetküldés még nem rendelkezik külön teljes UI/E2E vagy callable-level runtime evidence-szel.
+- Az admin dashboard, admin termékmoderáció, fiókstátusz-kezelés és admin üzenetküldés még nem rendelkezik külön teljes UI/E2E evidence-szel; callable-level runtime evidence már van a Functions tesztekben.
 - A Functions quality gate lokálisan zöld, de a dependency advisories hosszabb távú karbantartása külön backlog-feladat marad.

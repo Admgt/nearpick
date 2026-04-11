@@ -10,10 +10,11 @@ Ezzel a felhasználók időben értesülnek a közeli kedvezményekről, a bolto
     - Feltöltött termékek azonnali megjelenése a vásárlói feedben
     - Egyszerű szűrés kategória és távolság alapján
     - Alap ajánlás (preferencia + közelség)
+    - Beépített admin/moderációs felület admin claim alapú belépéssel, rendszeráttekintéssel, fiókstátusz-kezeléssel, termékmoderációval és kereskedői admin üzenetekkel
 - Out: 
     - Online fizetés és számlázás
-    - Statisztikai dashboard
-    - Külön webes adminfelület; a később elkészült beépített admin/moderációs felület nem része ennek a v0.2 scope-nak
+    - Teljes értékű kereskedői analitikai dashboard
+    - Külön webes adminfelület; a jelenlegi admin/moderációs útvonal a Flutter kliensbe épített felület
     - Kurír integráció
 
 ## User Story térkép
@@ -22,6 +23,7 @@ Ezzel a felhasználók időben értesülnek a közeli kedvezményekről, a bolto
 - US-03: Terméklista megjelenítése (feltöltött tételek Firestore-ból)
 - US-04: Szűrés kategória és távolság alapján
 - US-05: Vásárlói feed frissülése új termék feltöltése után
+- US-06: Admin rendszeráttekintés és moderáció admin custom claimmel
 
 ## NFR (mérhető)
 - NFR-1: Termékfeltöltés → feed frissülés TTFB < 2.0s (Firebase/Firestore valós idejű update)
@@ -35,3 +37,4 @@ Ezzel a felhasználók időben értesülnek a közeli kedvezményekről, a bolto
 - AC3: Sikeres mentés után lista frissül és toast jelenik meg
 - AC4: Szűrés alkalmazásakor csak releváns termékek jelennek meg
 - AC5: Új termék feltöltése után a vásárlói feed automatikusan frissül
+- AC6: Admin claimmel belépve az admin dashboard nyílik meg, és a felhasználó-, termék- és foglalási áttekintés elérhető

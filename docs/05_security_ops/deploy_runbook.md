@@ -98,4 +98,4 @@ npm run admin:set -- --email <admin-email>
 - Ideiglenes mitigáció:
   - admin claim újraállítása `npm run admin:set -- --email <admin-email>` paranccsal
 - Végleges javítási irány:
-  - admin provisioning lépés hozzáadása a demo seed checklisthez és célzott admin callable negatív tesztek bővítése
+  - admin provisioning lépés ellenőrzése a demo seed checklistben és célzott admin callable negatív tesztek fenntartása

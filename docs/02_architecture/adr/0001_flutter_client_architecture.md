@@ -5,16 +5,16 @@
 
 ## Kontextus
 
-A NearPick elsődleges felhasználói felülete egy Flutter kliens, amely fogyasztói és kereskedői nézetet is kiszolgál. A repository jelenlegi állapotában a kliens oldalon történik a szerepkör alapú navigáció, a képernyőkompozíció, az ajánlási logika egy része, valamint több Firebase SDK hívás kezdeményezése. A döntést úgy kellett rögzíteni, hogy az támogassa az egykódbázisú fejlesztést, a gyors MVP-szállítást és a szakdolgozati bemutathatóságot.
+A NearPick elsődleges felhasználói felülete egy Flutter kliens, amely fogyasztói, kereskedői és admin nézetet is kiszolgál. A repository jelenlegi állapotában a kliens oldalon történik a szerepkör és admin custom claim alapú navigáció, a képernyőkompozíció, az ajánlási logika egy része, valamint több Firebase SDK és Cloud Functions hívás kezdeményezése. A döntést úgy kellett rögzíteni, hogy az támogassa az egykódbázisú fejlesztést, a gyors MVP-szállítást és a szakdolgozati bemutathatóságot.
 
 ## Döntés
 
 A kliensarchitektúra Flutter alapú, és a következő fő szervezési elvekre épül:
 
-- egy közös Flutter alkalmazás szolgálja ki a fogyasztói és kereskedői felhasználói utakat
+- egy közös Flutter alkalmazás szolgálja ki a fogyasztói, kereskedői és admin felhasználói utakat
 - a `RootRouter` kezeli az auth állapotból és a user szerepkörből következő belépési döntéseket
-- a képernyők feature-alapon szerveződnek (`features/auth`, `features/consumer`, `features/merchant`)
-- a Firebase integrációk szolgáltatásosztályokban jelennek meg (`AuthService`, `ProductService`, `ReservationService`, `NotificationService`)
+- a képernyők feature-alapon szerveződnek (`features/auth`, `features/consumer`, `features/merchant`, `features/admin`)
+- a Firebase integrációk szolgáltatásosztályokban jelennek meg (`AuthService`, `ProductService`, `ReservationService`, `NotificationService`, `AdminService`, `AdminMessageService`)
 - a tisztább, tesztelhető üzleti részek külön workflow vagy helper rétegbe kerülnek, ahol ez már megtörtént
 
 ## Következmények
@@ -48,6 +48,7 @@ Negatív vagy vállalt tradeoffok:
 - Tesztek:
   - `mobile/nearpick/test/widget/auth/login_screen_test.dart`
   - `mobile/nearpick/test/widget/auth/register_screen_test.dart`
+  - `mobile/nearpick/test/widget/auth/root_router_test.dart`
   - `mobile/nearpick/test/widget/merchant/new_product_screen_test.dart`
 - CI evidence:
   - `.github/workflows/ci.yml`

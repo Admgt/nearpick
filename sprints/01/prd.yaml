@@ -1,6 +1,6 @@
 meta:
   version: "0.1"
-  last_updated: "2025-10-18"
+  last_updated: "2026-04-11"
 problem:
   statement: "A városi kiskereskedők nap végén megmaradó, gyorsan romló készleteit nehéz célzottan és időben eljuttatni a megfelelő vevőkhöz; a jelenlegi megoldások csomag-centrikusak és nem termékszintűek, így a fogyasztók nem kapnak személyre szabott, hely- és preferenciaalapú értesítést a valóban releváns tételekről."
 target_audience:
@@ -37,11 +37,12 @@ scope:
     - "Push értesítések releváns új termékekről (FCM + Cloud Functions)"
     - "Alap ajánlás: tag- és preferenciaegyezés, frissesség, távolság, népszerűség"
     - "Kereskedői mini-dashboard (alap statisztikák)"
+    - "Beépített, admin claimmel védett admin/moderációs felület rendszeráttekintéssel, fiókstátusz-kezeléssel, termékmoderációval és kereskedői admin üzenetekkel"
     - "Firestore Security Rules és alap audit események"
   out:
     - "Teljes értékű online fizetés és számlázás"
     - "Komplex dinamikus árazás és készletjóslás"
-    - "Külön webes admin felület (első verzióban); a később elkészült beépített admin/moderációs felület külön scope-bővítés"
+    - "Külön webes admin felület; a jelenlegi admin/moderációs útvonal a Flutter kliensbe épített, admin custom claimmel védett felület"
     - "Kurír/last-mile logisztika integráció"
 success_metrics:
   - "≥15 korai felhasználó és ≥5 bolt aktív részvétele 2 héten át."

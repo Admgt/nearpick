@@ -59,11 +59,13 @@ Evidence referencia:
 | T-42 | unit | edge | Ellenőrizze, hogy az `AdminMessage.fromDoc` fallbackeket ad hiányos admin message dokumentumra és az `isRead` a `readAt` mezőből számol. | `mobile/nearpick/test/unit/models/admin_message_model_test.dart` | `Flutter unit/widget tests + JUnit` / JUnit XML |
 | T-43 | e2e-contract | happy | Admin flow: admin claimmel a RootRouter admin home-ra navigál, a dashboard betölt és legalább egy felhasználó detail megnyitható. | `mobile/nearpick/integration_test/flows/admin_dashboard_flow_test.dart` | `Flutter integration tests (if present)` / CI step log |
 | T-44 | e2e-contract | negative | Firestore contract: nem admin user ne tudjon más user adminMessages alkollekcióját olvasni vagy idegen read receiptet írni. | `mobile/nearpick/integration_test/contracts/admin_messages_rules_test.dart` | `Flutter integration tests (if present)` / CI step log |
-| T-45 | e2e-contract | negative | Functions contract: nem admin callable hívó kapjon `permission-denied` hibát `setUserAccountStatus`, `hideProductForAdmin` és `sendAdminMessageToMerchant` esetén. | `functions/test/admin_callables_policy.test.js` | `Functions tests` / node:test log |
+
+## Lezárt backlog tétel
+- T-45: az admin callable functions-test alapú negatív és happy path fedése elkészült a `functions/test/admin_callables_policy.test.js` fájlban. A 2026-04-11-i `npm.cmd test` futásban a teljes Functions suite `68/68` passed eredménnyel zárt.
 
 ## Refaktor pontok a backloghoz
 - `new_product_screen.dart`: validációs logika UI-ból kiemelése tiszta helperbe (`test/unit/validation/**`), hogy gyors unit tesztek irhatók legyenek.
 - `merchant_dashboard_screen.dart`: KPI aggregáció kiemelése tiszta függvénybe (`test/unit/dashboard/**`), hogy Firestore nélkül ellenőrizhető legyen.
 - `consumer_home_screen.dart`: offer szűres/rendezés kiszervezése (`test/unit/consumer/**`) determinisztikus unit tesztekhez.
 - `reservation_service.dart`: pickup kód generáló strategy injektálhatósága (`test/unit/reservation/**`) a nem determinisztikus rész kontrolljához.
-- Admin callable-ek: `assertAdminRequest` és a validációs ágak tesztelhető helperre bontása vagy functions-test alapú callable tesztek bevezetése.
+- Admin callable-ek: később csak a teljesebb Firebase emulatoros lefedés bővítendő.

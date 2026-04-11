@@ -29,7 +29,7 @@ Negatív vagy vállalt tradeoffok:
 
 - a lokális setup első lépésként kézi konfigurációs másolást igényel
 - a teljes offline reprodukció jelenleg nem érhető el
-- iOS esetén hiányzik a verziókezelt example plist útvonal
+- iOS esetén is lokálisan kitöltött plist kell, de ehhez már van verziókezelt example útvonal
 
 ## Alternatívák
 
@@ -54,6 +54,7 @@ Negatív vagy vállalt tradeoffok:
 - Dokumentációs artefaktok:
   - `.env.example`
   - `README.md`
+  - `mobile/nearpick/ios/Runner/GoogleService-Info.plist.example`
   - `docs/06_release/demo_environment.md`
 - Manuális demó validáció:
   - `docs/06_release/demo_script.md`
