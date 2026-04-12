@@ -1,6 +1,6 @@
 # Tesztstratégia
 
-## Aktuális állapot 2026-04-11
+## Aktuális állapot 2026-04-12
 
 ### Cél és scope
 
@@ -14,13 +14,13 @@ Az aktuális stratégia a meglévő repo-struktúrára épít:
 
 ### Jelenlegi tesztmix
 
-A 2026-04-11-es statikus repo-audit alapján:
+A 2026-04-12-es statikus repo-audit alapján:
 
 | Kategória | Darab | Megjegyzés |
 |---|---:|---|
-| Flutter test definíció | 93 | `test/**` és `integration_test/**` |
-| Functions / rules JS teszt | 69 | `functions/test/**` |
-| Összes automata tesztdefiníció | 162 | statikus inventory, nem egyetlen futás eredménye |
+| Flutter test definíció | 96 | `test/**` és `integration_test/**` |
+| Functions / rules JS teszt | 71 | `functions/test/**` |
+| Összes automata tesztdefiníció | 167 | statikus inventory, nem egyetlen futás eredménye |
 
 A mix továbbra is megfelel a minimum `30+` automata tesztelvárásnak, de a minőségi fókusz most már nem a darabszám, hanem az új mobilflow-k következetes védelme.
 
@@ -29,7 +29,7 @@ A mix továbbra is megfelel a minimum `30+` automata tesztelvárásnak, de a min
 - Unit: ajánlási logika, geó számítás, modellek, pricing, dashboard aggregáció, location preference, pickup token és error mapping.
 - Widget: login, register, root routing és új termék képernyő validáció / pricing javaslat.
 - Integration/workflow: regisztráció, login, terméklétrehozás, browse/detail adatok, érdeklődés, többdarabos foglalás, refund állapotok.
-- Integration_test UI/E2E: jelenleg három validált flow létezik: `auth_and_product_flow_test.dart`, `reservation_refund_review_flow_test.dart` és `admin_product_moderation_flow_test.dart`.
+- Integration_test UI/E2E: jelenleg három validált flow létezik: `auth_and_product_flow_test.dart`, `reservation_refund_review_flow_test.dart` és `admin_product_moderation_flow_test.dart`; az admin product moderation flow már 4 tesztesetet tartalmaz.
 
 Az integration szint ebben a repo-ban két részre vált:
 - `test/integration/**`: workflow / adaptor szintű automatizálás, gyors és determinisztikus, in-memory fake gateway-ekkel
@@ -53,7 +53,7 @@ Már van explicit teszt- vagy kódszintű védelem az alábbi újabb területekr
 - egységes error mapper, `AppException` és callable `contextId` korreláció
 - adminMessages Firestore read/read receipt rule modell
 - admin callable permission-deny, validációs és happy path esetek a fiókstátusz, termékmoderáció és admin üzenetküldés útvonalakra
-- admin product detail moderációs UI/E2E flow Android emulatoron: elrejtés, archivált törlés és visszaállítás
+- admin product detail moderációs UI/E2E flow: elrejtés, archivált törlés, visszaállítás, archivált termék gombrejtése és lejárt / elfogyott termék törlési jogosultsága
 
 ### Firestore és Functions stratégia
 
@@ -68,7 +68,7 @@ Lefedett rules / helper esetek:
 - reservation olvasás csak buyer vagy merchant számára engedett
 - review, refund és archíválási helper döntések külön security helper tesztekkel támogatottak
 - admin helper jelenléte és `adminMessages` olvasási / olvasottra jelölési szabályai
-- admin callable contract tesztek: nem admin hívó tiltása, saját admin fiók tiltásának blokkolása, fiókstátusz-frissítés, admin üzenetküldés push ággal, termék elrejtés/visszaállítás és admin archiválás
+- admin callable contract tesztek: nem admin hívó tiltása, saját admin fiók tiltásának blokkolása, fiókstátusz-frissítés, admin üzenetküldés push ággal, termék elrejtés/visszaállítás, admin oldali `deleteProductForAdmin` archiválás és Storage képtörlési hibatűrés
 
 Admin területen még célzottan bővítendő:
 - admin dashboard stat aggregáció és admin message modell unit tesztek
