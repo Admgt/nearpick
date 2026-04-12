@@ -17,6 +17,22 @@ function createFakeFirestore(seed = {}) {
   const serverTimestampSentinel = {__fieldValue: "serverTimestamp"};
   const deleteSentinel = {__fieldValue: "delete"};
 
+  function applyWrite(path, data, {merge = false, requireExisting = false} = {}) {
+    if (requireExisting && !docs.has(path)) {
+      throw new Error("not-found");
+    }
+
+    const next = merge || requireExisting ? {...(docs.get(path) ?? {})} : {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value === deleteSentinel) {
+        delete next[key];
+      } else {
+        next[key] = value;
+      }
+    }
+    docs.set(path, next);
+  }
+
   class FakeDocRef {
     constructor(path) {
       this.path = path;
@@ -33,16 +49,7 @@ function createFakeFirestore(seed = {}) {
 
     async set(data, options = {}) {
       sets.push({data, options, path: this.path});
-
-      const next = options.merge ? {...(docs.get(this.path) ?? {})} : {};
-      for (const [key, value] of Object.entries(data)) {
-        if (value === deleteSentinel) {
-          delete next[key];
-        } else {
-          next[key] = value;
-        }
-      }
-      docs.set(this.path, next);
+      applyWrite(this.path, data, {merge: options.merge === true});
     }
 
     collection(name) {
@@ -78,9 +85,21 @@ function createFakeFirestore(seed = {}) {
     }
   }
 
+  class FakeTransaction {
+    async get(ref) {
+      return ref.get();
+    }
+
+    update(ref, data) {
+      applyWrite(ref.path, data, {requireExisting: true});
+      return this;
+    }
+  }
+
   const firestore = function firestore() {
     return {
       collection: (name) => new FakeCollectionRef(name),
+      runTransaction: async (handler) => handler(new FakeTransaction()),
     };
   };
   firestore.FieldValue = {
@@ -97,11 +116,12 @@ function createFakeFirestore(seed = {}) {
   };
 }
 
-function installAdminFakes(seed = {}) {
+function installAdminFakes(seed = {}, options = {}) {
   const db = createFakeFirestore(seed);
   const state = {
     deletedFiles: [],
     sentMulticasts: [],
+    storageDeleteError: options.storageDeleteError,
     updatedUsers: [],
     ...db,
   };
@@ -136,6 +156,9 @@ function installAdminFakes(seed = {}) {
         file: (path) => ({
           delete: async (options) => {
             state.deletedFiles.push({options, path});
+            if (state.storageDeleteError) {
+              throw state.storageDeleteError;
+            }
           },
         }),
       }),
@@ -150,6 +173,17 @@ function adminRequest(data = {}) {
     auth: {
       token: {admin: true},
       uid: "admin-1",
+    },
+    data,
+    headers: {"x-correlation-id": "test-context"},
+  };
+}
+
+function merchantRequest(data = {}) {
+  return {
+    auth: {
+      token: {admin: false},
+      uid: "merchant-1",
     },
     data,
     headers: {"x-correlation-id": "test-context"},
@@ -372,6 +406,42 @@ test("restoreProductForAdmin visszaállítja az előző státuszt", async () => 
   });
 });
 
+test("archiveProduct sikeres marad Storage keptorlesi hiba eseten", async () => {
+  const state = installAdminFakes({
+    "products/product-1": {
+      hasImage: true,
+      imagePath: "products/merchant-1/product-1/main.jpg",
+      imageUrl: "https://example.test/main.jpg",
+      ownerId: "merchant-1",
+      status: "active",
+    },
+    "users/merchant-1": {accountStatus: "active", role: "merchant"},
+  }, {storageDeleteError: new Error("storage-delete-failed")});
+
+  const result = await functions.archiveProduct.run(merchantRequest({
+    productId: "product-1",
+  }));
+
+  assert.deepEqual(result, {
+    archived: true,
+    contextId: "test-context",
+  });
+  assert.deepEqual(state.docs.get("products/product-1"), {
+    archivedAt: state.serverTimestampSentinel,
+    deletedAt: state.serverTimestampSentinel,
+    hasImage: false,
+    isDeleted: true,
+    ownerId: "merchant-1",
+    status: "archived",
+  });
+  assert.deepEqual(state.deletedFiles, [
+    {
+      options: {ignoreNotFound: true},
+      path: "products/merchant-1/product-1/main.jpg",
+    },
+  ]);
+});
+
 test("deleteProductForAdmin archiválja a terméket és törli a saját képet", async () => {
   const state = installAdminFakes({
     "products/product-1": {
@@ -383,6 +453,42 @@ test("deleteProductForAdmin archiválja a terméket és törli a saját képet",
     },
     "users/admin-1": {accountStatus: "active", role: "admin"},
   });
+
+  const result = await functions.deleteProductForAdmin.run(adminRequest({
+    productId: "product-1",
+  }));
+
+  assert.deepEqual(result, {
+    archived: true,
+    contextId: "test-context",
+  });
+  assert.deepEqual(state.docs.get("products/product-1"), {
+    archivedAt: state.serverTimestampSentinel,
+    deletedAt: state.serverTimestampSentinel,
+    hasImage: false,
+    isDeleted: true,
+    ownerId: "merchant-1",
+    status: "archived",
+  });
+  assert.deepEqual(state.deletedFiles, [
+    {
+      options: {ignoreNotFound: true},
+      path: "products/merchant-1/product-1/main.jpg",
+    },
+  ]);
+});
+
+test("deleteProductForAdmin sikeres marad Storage keptorlesi hiba eseten", async () => {
+  const state = installAdminFakes({
+    "products/product-1": {
+      hasImage: true,
+      imagePath: "products/merchant-1/product-1/main.jpg",
+      imageUrl: "https://example.test/main.jpg",
+      ownerId: "merchant-1",
+      status: "active",
+    },
+    "users/admin-1": {accountStatus: "active", role: "admin"},
+  }, {storageDeleteError: new Error("storage-delete-failed")});
 
   const result = await functions.deleteProductForAdmin.run(adminRequest({
     productId: "product-1",

@@ -209,6 +209,30 @@ function asHttpsError(error, contextId) {
   }
 }
 
+async function deleteArchivedProductImage({
+  contextId,
+  imagePath,
+  productId,
+  userId,
+}) {
+  if (!imagePath) {
+    return;
+  }
+
+  try {
+    await admin.storage().bucket().file(imagePath).delete({
+      ignoreNotFound: true,
+    });
+  } catch (error) {
+    logWarn("product.archive.image_delete_failed", {
+      contextId,
+      imagePath,
+      productId,
+      userId,
+    }, error);
+  }
+}
+
 async function expireDueReservations({limit = 50, contextId}) {
   const db = admin.firestore();
   const now = admin.firestore.Timestamp.now();
@@ -1010,9 +1034,12 @@ exports.archiveProduct = onCall(async (request) => {
       });
     });
 
-    if (imagePath) {
-      await admin.storage().bucket().file(imagePath).delete({ignoreNotFound: true});
-    }
+    await deleteArchivedProductImage({
+      contextId,
+      imagePath,
+      productId: trimmedProductId,
+      userId: uid,
+    });
   } catch (error) {
     logError("product.archive.failed", {
       contextId,
@@ -1379,9 +1406,12 @@ exports.deleteProductForAdmin = onCall(async (request) => {
     status: "archived",
   }, {merge: true});
 
-  if (imagePath) {
-    await admin.storage().bucket().file(imagePath).delete({ignoreNotFound: true});
-  }
+  await deleteArchivedProductImage({
+    contextId,
+    imagePath,
+    productId: productId.trim(),
+    userId: request.auth.uid,
+  });
 
   logInfo("admin.product_delete.completed", {
     contextId,

@@ -130,7 +130,12 @@ class _AdminProductDetailScreenState extends State<AdminProductDetailScreen> {
   Widget build(BuildContext context) {
     final product = widget.product;
     final merchant = widget.merchant;
-    final isHidden = product.effectiveStatus == 'hidden';
+    final effectiveStatus = product.effectiveStatus;
+    final isHidden = effectiveStatus == 'hidden';
+    final isArchived = effectiveStatus == 'archived';
+    final canChangeVisibility =
+        isHidden ||
+        (effectiveStatus != 'expired' && effectiveStatus != 'sold_out');
 
     return Scaffold(
       appBar: AppBar(title: Text('Termek: ${product.name}')),
@@ -185,25 +190,30 @@ class _AdminProductDetailScreenState extends State<AdminProductDetailScreen> {
                     const SizedBox(height: 8),
                     Text('Letrehozva: ${formatDateTime(product.createdAt!)}'),
                   ],
-                  const SizedBox(height: 20),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      FilledButton.tonal(
-                        onPressed: _actionLoading
-                            ? null
-                            : isHidden
-                            ? _restoreProduct
-                            : _hideProduct,
-                        child: Text(isHidden ? 'Visszaallitas' : 'Elrejtes'),
-                      ),
-                      OutlinedButton(
-                        onPressed: _actionLoading ? null : _deleteProduct,
-                        child: const Text('Torles'),
-                      ),
-                    ],
-                  ),
+                  if (!isArchived) ...[
+                    const SizedBox(height: 20),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        if (canChangeVisibility)
+                          FilledButton.tonal(
+                            onPressed: _actionLoading
+                                ? null
+                                : isHidden
+                                ? _restoreProduct
+                                : _hideProduct,
+                            child: Text(
+                              isHidden ? 'Visszaallitas' : 'Elrejtes',
+                            ),
+                          ),
+                        OutlinedButton(
+                          onPressed: _actionLoading ? null : _deleteProduct,
+                          child: const Text('Torles'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

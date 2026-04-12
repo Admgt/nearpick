@@ -76,6 +76,47 @@ void main() {
     expect(actions, contains('restore:product-1'));
     expect(find.text('A termek ujra lathato.'), findsOneWidget);
   });
+
+  testWidgets('admin does not see moderation buttons on archived products', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _AdminProductModerationApp(
+        product: _product(status: 'archived'),
+        merchant: _merchant(),
+        reservations: const [],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Archivalt'), findsOneWidget);
+    expect(find.text('Elrejtes'), findsNothing);
+    expect(find.text('Visszaallitas'), findsNothing);
+    expect(find.text('Torles'), findsNothing);
+  });
+
+  testWidgets('admin can only delete expired and sold out products', (
+    tester,
+  ) async {
+    for (final caseData in const [
+      (status: 'expired', label: 'Lejart'),
+      (status: 'sold_out', label: 'Elfogyott'),
+    ]) {
+      await tester.pumpWidget(
+        _AdminProductModerationApp(
+          product: _product(status: caseData.status),
+          merchant: _merchant(),
+          reservations: const [],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(caseData.label), findsOneWidget);
+      expect(find.text('Elrejtes'), findsNothing);
+      expect(find.text('Visszaallitas'), findsNothing);
+      expect(find.text('Torles'), findsOneWidget);
+    }
+  });
 }
 
 class _AdminProductModerationApp extends StatelessWidget {
@@ -126,9 +167,9 @@ Product _product({String status = 'active'}) {
     discountedPrice: 490,
     quantity: 4,
     quantityAvailable: 2,
-    expiresAt: DateTime(2026, 4, 11, 18),
-    pickupStartAt: DateTime(2026, 4, 11, 16),
-    pickupEndAt: DateTime(2026, 4, 11, 18),
+    expiresAt: DateTime(2099, 4, 11, 18),
+    pickupStartAt: DateTime(2099, 4, 11, 16),
+    pickupEndAt: DateTime(2099, 4, 11, 18),
     createdAt: DateTime(2026, 4, 11, 9),
     location: null,
     interestCount: 3,
