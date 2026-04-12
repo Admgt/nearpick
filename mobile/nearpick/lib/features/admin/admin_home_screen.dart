@@ -130,6 +130,38 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 
+  Widget _buildResponsiveListTile({
+    required BuildContext context,
+    Widget? leading,
+    required Widget title,
+    Widget? subtitle,
+    required List<Widget> actions,
+    VoidCallback? onTap,
+  }) {
+    final compact = isCompactLayout(context);
+    final actionWrap = Wrap(spacing: 8, runSpacing: 8, children: actions);
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: leading,
+      title: title,
+      subtitle: compact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (subtitle != null) subtitle,
+                if (actions.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  actionWrap,
+                ],
+              ],
+            )
+          : subtitle,
+      trailing: compact || actions.isEmpty ? null : actionWrap,
+      onTap: onTap,
+    );
+  }
+
   Widget _buildDashboard({
     required BuildContext context,
     required AdminDashboardStats stats,
@@ -300,8 +332,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 const Text('Nincs a keresesnek megfelelo felhasznalo.')
               else
                 ...filteredUsers.map((user) {
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
+                  return _buildResponsiveListTile(
+                    context: context,
                     leading: CircleAvatar(
                       child: Text(
                         user.primaryLabel.isEmpty
@@ -311,30 +343,27 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     ),
                     title: Text(user.primaryLabel),
                     subtitle: Text(userSubtitle(user)),
-                    trailing: Wrap(
-                      spacing: 8,
-                      children: [
-                        Chip(label: Text(roleLabel(user.role))),
-                        Chip(
-                          label: Text(accountStatusLabel(user.accountStatus)),
-                          backgroundColor: accountStatusColor(
-                            context,
-                            user.accountStatus,
-                          ).withValues(alpha: 0.14),
+                    actions: [
+                      Chip(label: Text(roleLabel(user.role))),
+                      Chip(
+                        label: Text(accountStatusLabel(user.accountStatus)),
+                        backgroundColor: accountStatusColor(
+                          context,
+                          user.accountStatus,
+                        ).withValues(alpha: 0.14),
+                      ),
+                      TextButton(
+                        onPressed: () => _openUserDetail(
+                          user: user,
+                          products: products,
+                          reservations: reservations,
+                          productsById: productsById,
+                          usersById: usersById,
+                          merchantStats: merchantStatsById[user.id],
                         ),
-                        TextButton(
-                          onPressed: () => _openUserDetail(
-                            user: user,
-                            products: products,
-                            reservations: reservations,
-                            productsById: productsById,
-                            usersById: usersById,
-                            merchantStats: merchantStatsById[user.id],
-                          ),
-                          child: const Text('Reszletek'),
-                        ),
-                      ],
-                    ),
+                        child: const Text('Reszletek'),
+                      ),
+                    ],
                   );
                 }),
             ],
@@ -411,38 +440,33 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       .where((product) => product.isEffectivelyActive)
                       .length;
 
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
+                  return _buildResponsiveListTile(
+                    context: context,
                     title: Text(merchant.primaryLabel),
                     subtitle: Text(userSubtitle(merchant)),
-                    trailing: Wrap(
-                      spacing: 8,
-                      children: [
-                        Chip(label: Text('Termek: ${merchantProducts.length}')),
-                        Chip(label: Text('Aktiv: $activeProductCount')),
-                        Chip(
-                          label: Text(
-                            'Rating: ${merchantRatingLabel(merchantStats)}',
-                          ),
+                    actions: [
+                      Chip(label: Text('Termek: ${merchantProducts.length}')),
+                      Chip(label: Text('Aktiv: $activeProductCount')),
+                      Chip(
+                        label: Text(
+                          'Rating: ${merchantRatingLabel(merchantStats)}',
                         ),
-                        Chip(
-                          label: Text(
-                            'Foglalas: ${merchantReservations.length}',
-                          ),
+                      ),
+                      Chip(
+                        label: Text('Foglalas: ${merchantReservations.length}'),
+                      ),
+                      TextButton(
+                        onPressed: () => _openUserDetail(
+                          user: merchant,
+                          products: products,
+                          reservations: reservations,
+                          productsById: productsById,
+                          usersById: usersById,
+                          merchantStats: merchantStats,
                         ),
-                        TextButton(
-                          onPressed: () => _openUserDetail(
-                            user: merchant,
-                            products: products,
-                            reservations: reservations,
-                            productsById: productsById,
-                            usersById: usersById,
-                            merchantStats: merchantStats,
-                          ),
-                          child: const Text('Reszletek'),
-                        ),
-                      ],
-                    ),
+                        child: const Text('Reszletek'),
+                      ),
+                    ],
                   );
                 }),
             ],
@@ -514,33 +538,28 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       .where((reservation) => reservation.status == 'cancelled')
                       .length;
 
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
+                  return _buildResponsiveListTile(
+                    context: context,
                     title: Text(customer.primaryLabel),
                     subtitle: Text(userSubtitle(customer)),
-                    trailing: Wrap(
-                      spacing: 8,
-                      children: [
-                        Chip(
-                          label: Text(
-                            'Foglalas: ${customerReservations.length}',
-                          ),
+                    actions: [
+                      Chip(
+                        label: Text('Foglalas: ${customerReservations.length}'),
+                      ),
+                      Chip(label: Text('Completed: $completedCount')),
+                      Chip(label: Text('Lemondott: $cancelledCount')),
+                      TextButton(
+                        onPressed: () => _openUserDetail(
+                          user: customer,
+                          products: products,
+                          reservations: reservations,
+                          productsById: productsById,
+                          usersById: usersById,
+                          merchantStats: merchantStatsById[customer.id],
                         ),
-                        Chip(label: Text('Completed: $completedCount')),
-                        Chip(label: Text('Lemondott: $cancelledCount')),
-                        TextButton(
-                          onPressed: () => _openUserDetail(
-                            user: customer,
-                            products: products,
-                            reservations: reservations,
-                            productsById: productsById,
-                            usersById: usersById,
-                            merchantStats: merchantStatsById[customer.id],
-                          ),
-                          child: const Text('Reszletek'),
-                        ),
-                      ],
-                    ),
+                        child: const Text('Reszletek'),
+                      ),
+                    ],
                   );
                 }),
             ],
@@ -629,32 +648,29 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               else
                 ...filteredProducts.map((product) {
                   final merchant = usersById[product.ownerId];
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
+                  return _buildResponsiveListTile(
+                    context: context,
                     title: Text(product.name),
                     subtitle: Text(
                       '${merchant?.primaryLabel ?? product.merchantName} | ${product.category} | ${product.createdAt == null ? 'Nincs datum' : formatDateTime(product.createdAt!)}',
                     ),
-                    trailing: Wrap(
-                      spacing: 8,
-                      children: [
-                        Chip(
-                          label: Text(productStatusLabel(product)),
-                          backgroundColor: productStatusColor(
-                            context,
-                            product,
-                          ).withValues(alpha: 0.14),
+                    actions: [
+                      Chip(
+                        label: Text(productStatusLabel(product)),
+                        backgroundColor: productStatusColor(
+                          context,
+                          product,
+                        ).withValues(alpha: 0.14),
+                      ),
+                      TextButton(
+                        onPressed: () => _openProductDetail(
+                          product: product,
+                          usersById: usersById,
+                          reservations: reservations,
                         ),
-                        TextButton(
-                          onPressed: () => _openProductDetail(
-                            product: product,
-                            usersById: usersById,
-                            reservations: reservations,
-                          ),
-                          child: const Text('Megnyitas'),
-                        ),
-                      ],
-                    ),
+                        child: const Text('Megnyitas'),
+                      ),
+                    ],
                   );
                 }),
             ],
@@ -744,8 +760,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 const Text('Nincs megjelenitheto foglalas.')
               else
                 ...filteredReservations.map((reservation) {
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
+                  return _buildResponsiveListTile(
+                    context: context,
                     title: Text(
                       reservationProductLabel(
                         reservation: reservation,
@@ -755,26 +771,23 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     subtitle: Text(
                       '${reservationBuyerLabel(reservation: reservation, usersById: usersById)} | ${reservationMerchantLabel(reservation: reservation, usersById: usersById)} | ${reservation.createdAt == null ? 'Nincs datum' : formatDateTime(reservation.createdAt!)}',
                     ),
-                    trailing: Wrap(
-                      spacing: 8,
-                      children: [
-                        Chip(
-                          label: Text(reservationStatusLabel(reservation)),
-                          backgroundColor: reservationStatusColor(
-                            context,
-                            reservation,
-                          ).withValues(alpha: 0.14),
+                    actions: [
+                      Chip(
+                        label: Text(reservationStatusLabel(reservation)),
+                        backgroundColor: reservationStatusColor(
+                          context,
+                          reservation,
+                        ).withValues(alpha: 0.14),
+                      ),
+                      TextButton(
+                        onPressed: () => _openReservationDetail(
+                          reservation: reservation,
+                          productsById: productsById,
+                          usersById: usersById,
                         ),
-                        TextButton(
-                          onPressed: () => _openReservationDetail(
-                            reservation: reservation,
-                            productsById: productsById,
-                            usersById: usersById,
-                          ),
-                          child: const Text('Reszletek'),
-                        ),
-                      ],
-                    ),
+                        child: const Text('Reszletek'),
+                      ),
+                    ],
                   );
                 }),
             ],
@@ -914,12 +927,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
+    final compact = isCompactLayout(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text('NearPick Admin - ${_section.label}'),
         actions: [
-          if (currentUser?.email != null)
+          if (!compact && currentUser?.email != null)
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: Center(child: Text(currentUser!.email!)),

@@ -279,70 +279,104 @@ class _SelectedOfferCard extends StatelessWidget {
     final distanceText = offer.distanceKm == null
         ? 'Nincs tavolsag adat'
         : distanceLabelKm(offer.distanceKm!);
+    final compact = isCompactLayout(context);
+    final thumbnail =
+        hasImage &&
+            ((imagePath != null && imagePath.isNotEmpty) ||
+                (imageUrl != null && imageUrl.isNotEmpty))
+        ? StorageImage(
+            imagePath: imagePath,
+            imageUrl: imageUrl,
+            width: compact ? 60 : 72,
+            height: compact ? 60 : 72,
+            borderRadius: 14,
+            maxSizeBytes: 256 * 1024,
+          )
+        : Container(
+            width: compact ? 60 : 72,
+            height: compact ? 60 : 72,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.storefront_outlined),
+          );
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          name,
+          maxLines: compact ? 2 : 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          merchantName.isEmpty
+              ? '$category | $distanceText'
+              : '$merchantName | $category | $distanceText',
+          maxLines: compact ? 2 : 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            _MiniPill(label: '$discountedPrice Ft'),
+            _MiniPill(label: '$quantityAvailable db'),
+            _MiniPill(
+              label: offer.isWithinPreferredRadius
+                  ? 'Sajat sugarban'
+                  : 'Sajat sugaron kivul',
+            ),
+          ],
+        ),
+      ],
+    );
+    final actions = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        FilledButton.tonal(onPressed: onOpen, child: const Text('Reszletek')),
+        FilledButton(
+          onPressed: quantityAvailable <= 0 ? null : onReserve,
+          child: const Text('Foglalas'),
+        ),
+      ],
+    );
+
+    if (compact) {
+      return SurfaceCard(
+        radius: 24,
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                thumbnail,
+                const SizedBox(width: 12),
+                Expanded(child: details),
+              ],
+            ),
+            const SizedBox(height: 10),
+            actions,
+          ],
+        ),
+      );
+    }
 
     return SurfaceCard(
       radius: 24,
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          if (hasImage &&
-              ((imagePath != null && imagePath.isNotEmpty) ||
-                  (imageUrl != null && imageUrl.isNotEmpty)))
-            StorageImage(
-              imagePath: imagePath,
-              imageUrl: imageUrl,
-              width: 72,
-              height: 72,
-              borderRadius: 14,
-              maxSizeBytes: 256 * 1024,
-            )
-          else
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(Icons.storefront_outlined),
-            ),
+          thumbnail,
           const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  merchantName.isEmpty
-                      ? '$category | $distanceText'
-                      : '$merchantName | $category | $distanceText',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    _MiniPill(label: '$discountedPrice Ft'),
-                    _MiniPill(label: '$quantityAvailable db'),
-                    _MiniPill(
-                      label: offer.isWithinPreferredRadius
-                          ? 'Sajat sugarban'
-                          : 'Sajat sugaron kivul',
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          Expanded(child: details),
           const SizedBox(width: 12),
           Column(
             mainAxisSize: MainAxisSize.min,

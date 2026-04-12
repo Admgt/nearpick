@@ -239,6 +239,7 @@ class _MerchantReservationsScreenState
               itemBuilder: (context, index) {
                 final reservation = Reservation.fromDoc(docs[index]);
                 final product = reservation.productSnapshot;
+                final compact = isCompactLayout(context);
                 final name = product['name'] as String? ?? 'Ismeretlen termek';
                 final imageUrl = product['imageUrl'] as String?;
                 final expiresAt = reservation.expiresAt;
@@ -260,6 +261,45 @@ class _MerchantReservationsScreenState
                 if (expiresAt != null) {
                   expiresText = formatDateTime(expiresAt);
                 }
+                final statusLabel = _merchantReservationStatusLabel(
+                  reservation,
+                  isPastExpiry: isPastExpiry,
+                );
+                final action = isReserved
+                    ? ElevatedButton(
+                        onPressed: _loadingIds.contains(reservation.id)
+                            ? null
+                            : () async {
+                                setState(() => _loadingIds.add(reservation.id));
+                                try {
+                                  final pickupInput = await _promptPickupInput(
+                                    reservation,
+                                  );
+                                  if (!mounted ||
+                                      pickupInput == null ||
+                                      pickupInput.isEmpty) {
+                                    return;
+                                  }
+                                  await _handlePickupInput(
+                                    pickupInput: pickupInput,
+                                    merchantId: user.uid,
+                                  );
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(appErrorMessage(e))),
+                                  );
+                                } finally {
+                                  if (mounted) {
+                                    setState(
+                                      () => _loadingIds.remove(reservation.id),
+                                    );
+                                  }
+                                }
+                              },
+                        child: const Text('QR atvetel'),
+                      )
+                    : Text(statusLabel);
 
                 return ListTile(
                   leading: SizedBox(
@@ -297,60 +337,19 @@ class _MerchantReservationsScreenState
                         Text('Foglalva: ${formatDateTime(reservedAt)}'),
                       Text('Atvetel: $pickupWindowText'),
                       Text('Lejar: $expiresText'),
-                      Text(
-                        'Status: ${_merchantReservationStatusLabel(reservation, isPastExpiry: isPastExpiry)}',
-                      ),
+                      Text('Status: $statusLabel'),
                       if (reservation.isCancelled)
                         Text(
                           'Ok: ${cancellationReasonLabel(reservation.cancelReasonCode)}',
                         ),
                       if (refundText != null) Text(refundText),
+                      if (compact && isReserved) ...[
+                        const SizedBox(height: 8),
+                        Align(alignment: Alignment.centerLeft, child: action),
+                      ],
                     ],
                   ),
-                  trailing: isReserved
-                      ? ElevatedButton(
-                          onPressed: _loadingIds.contains(reservation.id)
-                              ? null
-                              : () async {
-                                  setState(
-                                    () => _loadingIds.add(reservation.id),
-                                  );
-                                  try {
-                                    final pickupInput =
-                                        await _promptPickupInput(reservation);
-                                    if (!mounted ||
-                                        pickupInput == null ||
-                                        pickupInput.isEmpty) {
-                                      return;
-                                    }
-                                    await _handlePickupInput(
-                                      pickupInput: pickupInput,
-                                      merchantId: user.uid,
-                                    );
-                                  } catch (e) {
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(appErrorMessage(e)),
-                                      ),
-                                    );
-                                  } finally {
-                                    if (mounted) {
-                                      setState(
-                                        () =>
-                                            _loadingIds.remove(reservation.id),
-                                      );
-                                    }
-                                  }
-                                },
-                          child: const Text('QR atvetel'),
-                        )
-                      : Text(
-                          _merchantReservationStatusLabel(
-                            reservation,
-                            isPastExpiry: isPastExpiry,
-                          ),
-                        ),
+                  trailing: compact ? null : action,
                   onTap: () =>
                       _openReservationDetail(reservationId: reservation.id),
                 );

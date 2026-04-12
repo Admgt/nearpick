@@ -102,6 +102,7 @@ class MyReservationsScreen extends StatelessWidget {
                 final original = snapshotData['originalPrice'] as int? ?? 0;
                 final totalDiscounted = discounted * reservation.qty;
                 final totalOriginal = original * reservation.qty;
+                final compact = isCompactLayout(context);
                 final expiresAt = reservation.expiresAt;
                 final reservedAt = reservation.createdAt;
                 final pickupWindowText = formatPickupWindow(
@@ -116,6 +117,42 @@ class MyReservationsScreen extends StatelessWidget {
                 if (expiresAt != null) {
                   expiresText = formatDateTime(expiresAt);
                 }
+                final priceSummary = Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: compact
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '$totalDiscounted Ft',
+                      textAlign: compact ? TextAlign.start : TextAlign.end,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    if (reservation.qty > 1 || totalOriginal > totalDiscounted)
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            if (reservation.qty > 1)
+                              TextSpan(text: '$discounted Ft / db'),
+                            if (reservation.qty > 1 &&
+                                totalOriginal > totalDiscounted)
+                              const TextSpan(text: ' | '),
+                            if (totalOriginal > totalDiscounted)
+                              TextSpan(
+                                text: '$totalOriginal Ft',
+                                style: const TextStyle(
+                                  decoration: TextDecoration.lineThrough,
+                                ),
+                              ),
+                          ],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: compact ? TextAlign.start : TextAlign.end,
+                        style: const TextStyle(fontSize: 11, height: 1.1),
+                      ),
+                  ],
+                );
 
                 return ListTile(
                   leading: SizedBox(
@@ -162,46 +199,15 @@ class MyReservationsScreen extends StatelessWidget {
                         Text(
                           'Refund: ${refundStatusLabel(reservation.refundStatus)}',
                         ),
+                      if (compact) ...[const SizedBox(height: 6), priceSummary],
                     ],
                   ),
-                  trailing: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 140),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '$totalDiscounted Ft',
-                          textAlign: TextAlign.end,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                  trailing: compact
+                      ? null
+                      : ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 140),
+                          child: priceSummary,
                         ),
-                        if (reservation.qty > 1 ||
-                            totalOriginal > totalDiscounted)
-                          Text.rich(
-                            TextSpan(
-                              children: [
-                                if (reservation.qty > 1)
-                                  TextSpan(text: '$discounted Ft / db'),
-                                if (reservation.qty > 1 &&
-                                    totalOriginal > totalDiscounted)
-                                  const TextSpan(text: ' | '),
-                                if (totalOriginal > totalDiscounted)
-                                  TextSpan(
-                                    text: '$totalOriginal Ft',
-                                    style: const TextStyle(
-                                      decoration: TextDecoration.lineThrough,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.end,
-                            style: const TextStyle(fontSize: 11, height: 1.1),
-                          ),
-                      ],
-                    ),
-                  ),
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(

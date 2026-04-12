@@ -428,6 +428,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
               )
             : null;
         final isInterested = interestedProductIds.contains(docId);
+        final compact = isCompactLayout(context);
 
         String expiresText = 'Ismeretlen lejarat';
         if (expiresAt != null) {
@@ -470,6 +471,118 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                 ),
               ),
         ];
+        final titleActions = <Widget>[
+          if (isInterested) const Icon(Icons.favorite, size: 18),
+          IconButton(
+            icon: const Icon(Icons.info_outline, size: 18),
+            tooltip: 'Miert ajanlott?',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () => _showReasonsDialog(result),
+          ),
+        ];
+        final subtitleText = pickupWindowText == null
+            ? merchantName.isEmpty
+                  ? '$category\n$expiresText - Elerheto: $quantityAvailable db'
+                  : '$merchantName\n$category - $expiresText - Elerheto: $quantityAvailable db'
+            : merchantName.isEmpty
+            ? '$category\n$expiresText - Elerheto: $quantityAvailable db\nAtvetel: $pickupWindowText'
+            : '$merchantName\n$category - $expiresText - Elerheto: $quantityAvailable db\nAtvetel: $pickupWindowText';
+        final priceColumn = Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: compact
+              ? CrossAxisAlignment.start
+              : CrossAxisAlignment.end,
+          children: [
+            Text(
+              '$discounted Ft',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            if (original > discounted)
+              Text(
+                '$original Ft',
+                style: const TextStyle(
+                  decoration: TextDecoration.lineThrough,
+                  fontSize: 12,
+                ),
+              ),
+          ],
+        );
+        final reserveButton = ElevatedButton(
+          onPressed: quantityAvailable <= 0
+              ? null
+              : () => _reserveProduct(docId, data),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            minimumSize: const Size(0, 0),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            textStyle: const TextStyle(fontSize: 12),
+          ),
+          child: const Text('Lefoglalom'),
+        );
+        final dismissButton = IconButton(
+          icon: const Icon(Icons.thumb_down_outlined, size: 18),
+          tooltip: 'Nem erdekel',
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+          visualDensity: VisualDensity.compact,
+          onPressed: () => _dismissCategoryForProduct(
+            productId: docId,
+            category: category,
+            ownerId: data['ownerId'] as String?,
+          ),
+        );
+
+        if (compact) {
+          return InkWell(
+            onTap: () => _openProductDetail(productId: docId, data: data),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildThumbnail(
+                    imagePath: imagePath,
+                    imageUrl: imageUrl,
+                    hasImage: hasImage,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                name,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ),
+                            ...titleActions,
+                          ],
+                        ),
+                        Text(subtitleText),
+                        if (chips.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Wrap(spacing: 6, runSpacing: 6, children: chips),
+                        ],
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [priceColumn, reserveButton, dismissButton],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
         return ListTile(
           leading: _buildThumbnail(
@@ -480,28 +593,13 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
           title: Row(
             children: [
               Expanded(child: Text(name)),
-              if (isInterested) const Icon(Icons.favorite, size: 18),
-              IconButton(
-                icon: const Icon(Icons.info_outline, size: 18),
-                tooltip: 'Miert ajanlott?',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: () => _showReasonsDialog(result),
-              ),
+              ...titleActions,
             ],
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                pickupWindowText == null
-                    ? merchantName.isEmpty
-                          ? '$category\n$expiresText - Elerheto: $quantityAvailable db'
-                          : '$merchantName\n$category - $expiresText - Elerheto: $quantityAvailable db'
-                    : merchantName.isEmpty
-                    ? '$category\n$expiresText - Elerheto: $quantityAvailable db\nAtvetel: $pickupWindowText'
-                    : '$merchantName\n$category - $expiresText - Elerheto: $quantityAvailable db\nAtvetel: $pickupWindowText',
-              ),
+              Text(subtitleText),
               if (chips.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Wrap(spacing: 6, runSpacing: 6, children: chips),
@@ -513,53 +611,11 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '$discounted Ft',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  if (original > discounted)
-                    Text(
-                      '$original Ft',
-                      style: const TextStyle(
-                        decoration: TextDecoration.lineThrough,
-                        fontSize: 12,
-                      ),
-                    ),
-                ],
-              ),
+              priceColumn,
               const SizedBox(width: 4),
-              ElevatedButton(
-                onPressed: quantityAvailable <= 0
-                    ? null
-                    : () => _reserveProduct(docId, data),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  textStyle: const TextStyle(fontSize: 12),
-                ),
-                child: const Text('Lefoglalom'),
-              ),
+              reserveButton,
               const SizedBox(width: 4),
-              IconButton(
-                icon: const Icon(Icons.thumb_down_outlined, size: 18),
-                tooltip: 'Nem erdekel',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                visualDensity: VisualDensity.compact,
-                onPressed: () => _dismissCategoryForProduct(
-                  productId: docId,
-                  category: category,
-                  ownerId: data['ownerId'] as String?,
-                ),
-              ),
+              dismissButton,
             ],
           ),
           onTap: () => _openProductDetail(productId: docId, data: data),
@@ -576,9 +632,44 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
         '[ConsumerHome] build #$_buildCounter user=${FirebaseAuth.instance.currentUser?.uid}',
       );
     }
+    final compact = isCompactLayout(context);
+    final categoryDropdown = DropdownButton<String>(
+      value: _selectedCategory,
+      isExpanded: true,
+      items: _allCategories
+          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+          .toList(),
+      onChanged: (value) {
+        if (value != null) {
+          setState(() {
+            _selectedCategory = value;
+          });
+        }
+      },
+    );
+    final browseModeButton = SegmentedButton<_BrowseMode>(
+      segments: const [
+        ButtonSegment<_BrowseMode>(
+          value: _BrowseMode.list,
+          icon: Icon(Icons.view_list_outlined),
+          label: Text('Lista'),
+        ),
+        ButtonSegment<_BrowseMode>(
+          value: _BrowseMode.map,
+          icon: Icon(Icons.map_outlined),
+          label: Text('Terkep'),
+        ),
+      ],
+      selected: {_browseMode},
+      onSelectionChanged: (selection) {
+        setState(() {
+          _browseMode = selection.first;
+        });
+      },
+    );
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NearPick - Ajánlatok a közelben'),
+        title: Text(compact ? 'NearPick' : 'NearPick - Ajánlatok a közelben'),
         actions: [
           ...buildConsumerAppBarActions(
             context,
@@ -592,53 +683,66 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  const Text('Kategória:'),
-                  SizedBox(
-                    width: 280,
-                    child: DropdownButton<String>(
-                      value: _selectedCategory,
-                      isExpanded: true,
-                      items: _allCategories
-                          .map(
-                            (c) => DropdownMenuItem(value: c, child: Text(c)),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedCategory = value;
-                          });
-                        }
-                      },
+              child: compact
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text('Kategória:'),
+                        categoryDropdown,
+                        const SizedBox(height: 8),
+                        browseModeButton,
+                      ],
+                    )
+                  : Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        const Text('Kategória:'),
+                        SizedBox(
+                          width: 280,
+                          child: DropdownButton<String>(
+                            value: _selectedCategory,
+                            isExpanded: true,
+                            items: _allCategories
+                                .map(
+                                  (c) => DropdownMenuItem(
+                                    value: c,
+                                    child: Text(c),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _selectedCategory = value;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                        SegmentedButton<_BrowseMode>(
+                          segments: const [
+                            ButtonSegment<_BrowseMode>(
+                              value: _BrowseMode.list,
+                              icon: Icon(Icons.view_list_outlined),
+                              label: Text('Lista'),
+                            ),
+                            ButtonSegment<_BrowseMode>(
+                              value: _BrowseMode.map,
+                              icon: Icon(Icons.map_outlined),
+                              label: Text('Terkep'),
+                            ),
+                          ],
+                          selected: {_browseMode},
+                          onSelectionChanged: (selection) {
+                            setState(() {
+                              _browseMode = selection.first;
+                            });
+                          },
+                        ),
+                      ],
                     ),
-                  ),
-                  SegmentedButton<_BrowseMode>(
-                    segments: const [
-                      ButtonSegment<_BrowseMode>(
-                        value: _BrowseMode.list,
-                        icon: Icon(Icons.view_list_outlined),
-                        label: Text('Lista'),
-                      ),
-                      ButtonSegment<_BrowseMode>(
-                        value: _BrowseMode.map,
-                        icon: Icon(Icons.map_outlined),
-                        label: Text('Terkep'),
-                      ),
-                    ],
-                    selected: {_browseMode},
-                    onSelectionChanged: (selection) {
-                      setState(() {
-                        _browseMode = selection.first;
-                      });
-                    },
-                  ),
-                ],
-              ),
             ),
 
             const Divider(height: 1),

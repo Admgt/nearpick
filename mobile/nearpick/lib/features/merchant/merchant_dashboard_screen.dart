@@ -183,6 +183,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
     final adminMessagesStream = _adminMessageService.watchMessagesForUser(
       user.uid,
     );
+    final compact = isCompactLayout(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -193,22 +194,39 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
             current: MerchantTopDestination.dashboard,
             onSelected: _openTopDestination,
           ),
-          TextButton.icon(
-            onPressed: _exportingCsv
-                ? null
-                : () => _exportReservationsCsv(
-                    context: context,
-                    merchantId: user.uid,
-                  ),
-            icon: _exportingCsv
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.download_outlined),
-            label: const Text('CSV export'),
-          ),
+          compact
+              ? IconButton(
+                  onPressed: _exportingCsv
+                      ? null
+                      : () => _exportReservationsCsv(
+                          context: context,
+                          merchantId: user.uid,
+                        ),
+                  icon: _exportingCsv
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.download_outlined),
+                  tooltip: 'CSV export',
+                )
+              : TextButton.icon(
+                  onPressed: _exportingCsv
+                      ? null
+                      : () => _exportReservationsCsv(
+                          context: context,
+                          merchantId: user.uid,
+                        ),
+                  icon: _exportingCsv
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.download_outlined),
+                  label: const Text('CSV export'),
+                ),
         ],
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -398,6 +416,32 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                                   )
                                 else
                                   ...messages.take(5).map((message) {
+                                    final readAction = message.isRead
+                                        ? const Text('Olvasva')
+                                        : TextButton(
+                                            onPressed:
+                                                _markingAdminMessageIds
+                                                    .contains(message.id)
+                                                ? null
+                                                : () => _markAdminMessageRead(
+                                                    userId: user.uid,
+                                                    messageId: message.id,
+                                                  ),
+                                            child:
+                                                _markingAdminMessageIds
+                                                    .contains(message.id)
+                                                ? const SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  )
+                                                : const Text(
+                                                    'Olvasottra jelol',
+                                                  ),
+                                          );
                                     return ListTile(
                                       contentPadding: EdgeInsets.zero,
                                       leading: Icon(
@@ -406,36 +450,27 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                                             : Icons.mark_email_unread_outlined,
                                       ),
                                       title: Text(message.subject),
-                                      subtitle: Text(
-                                        '${_adminMessageTopicLabel(message.topic)} | ${message.createdAt == null ? 'Nincs datum' : formatDateTime(message.createdAt!)}\n${message.body}',
-                                      ),
-                                      isThreeLine: true,
-                                      trailing: message.isRead
-                                          ? const Text('Olvasva')
-                                          : TextButton(
-                                              onPressed:
-                                                  _markingAdminMessageIds
-                                                      .contains(message.id)
-                                                  ? null
-                                                  : () => _markAdminMessageRead(
-                                                      userId: user.uid,
-                                                      messageId: message.id,
-                                                    ),
-                                              child:
-                                                  _markingAdminMessageIds
-                                                      .contains(message.id)
-                                                  ? const SizedBox(
-                                                      width: 16,
-                                                      height: 16,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                            strokeWidth: 2,
-                                                          ),
-                                                    )
-                                                  : const Text(
-                                                      'Olvasottra jelol',
-                                                    ),
+                                      subtitle: compact
+                                          ? Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  '${_adminMessageTopicLabel(message.topic)} | ${message.createdAt == null ? 'Nincs datum' : formatDateTime(message.createdAt!)}\n${message.body}',
+                                                ),
+                                                const SizedBox(height: 6),
+                                                Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: readAction,
+                                                ),
+                                              ],
+                                            )
+                                          : Text(
+                                              '${_adminMessageTopicLabel(message.topic)} | ${message.createdAt == null ? 'Nincs datum' : formatDateTime(message.createdAt!)}\n${message.body}',
                                             ),
+                                      isThreeLine: true,
+                                      trailing: compact ? null : readAction,
                                     );
                                   }),
                               ],
@@ -454,12 +489,12 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                       ),
                       const SizedBox(height: 16),
                       GridView.count(
-                        crossAxisCount: 2,
+                        crossAxisCount: compact ? 1 : 2,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 1.6,
+                        childAspectRatio: compact ? 2.6 : 1.6,
                         children: [
                           _KpiCard(
                             label: 'Mai megtekintesek',
@@ -523,12 +558,12 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                       ),
                       const SizedBox(height: 8),
                       GridView.count(
-                        crossAxisCount: 2,
+                        crossAxisCount: compact ? 1 : 2,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 1.8,
+                        childAspectRatio: compact ? 2.6 : 1.8,
                         children: [
                           _KpiCard(
                             label: 'Pricing coverage',
@@ -551,23 +586,37 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _StatusChip(
-                              label: 'Tul alacsony ar',
-                              value: metrics.priceTooLowCount,
+                      compact
+                          ? Column(
+                              children: [
+                                _StatusChip(
+                                  label: 'Tul alacsony ar',
+                                  value: metrics.priceTooLowCount,
+                                ),
+                                const SizedBox(height: 8),
+                                _StatusChip(
+                                  label: 'Tul magas ar',
+                                  value: metrics.priceTooHighCount,
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: _StatusChip(
+                                    label: 'Tul alacsony ar',
+                                    value: metrics.priceTooLowCount,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _StatusChip(
+                                    label: 'Tul magas ar',
+                                    value: metrics.priceTooHighCount,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _StatusChip(
-                              label: 'Tul magas ar',
-                              value: metrics.priceTooHighCount,
-                            ),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 20),
                       Text(
                         'Arazasi lehetosegek',
@@ -598,36 +647,49 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                                 : 'Emeld';
                             final deviationLabel =
                                 '${insight.deviationPercent > 0 ? '+' : ''}${insight.deviationPercent}%';
+                            final details = hasReservations
+                                ? 'A termekre mar erkezett foglalas, ezert az ar nem modosithato. Elteres: $deviationLabel.'
+                                : '$action az arat ${insight.recommendedPrice} Ft kozelebe. '
+                                      'Aktualis: ${insight.actualPrice} Ft, sav: '
+                                      '${insight.minimumSuggestedPrice}-${insight.maximumSuggestedPrice} Ft. '
+                                      'Kereslet: ${demandLevelLabel(insight.demandLevel)}. '
+                                      'Elteres: $deviationLabel.';
+                            final applyButton = ElevatedButton(
+                              onPressed:
+                                  hasReservations ||
+                                      _repricingIds.contains(entry.key)
+                                  ? null
+                                  : () => _applyRecommendedPrice(
+                                      context: context,
+                                      productId: entry.key,
+                                    ),
+                              child: _repricingIds.contains(entry.key)
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('Alkalmaz'),
+                            );
                             return ListTile(
                               title: Text(name),
-                              subtitle: Text(
-                                hasReservations
-                                    ? 'A termekre mar erkezett foglalas, ezert az ar nem modosithato. Elteres: $deviationLabel.'
-                                    : '$action az arat ${insight.recommendedPrice} Ft kozelebe. '
-                                          'Aktualis: ${insight.actualPrice} Ft, sav: '
-                                          '${insight.minimumSuggestedPrice}-${insight.maximumSuggestedPrice} Ft. '
-                                          'Kereslet: ${demandLevelLabel(insight.demandLevel)}. '
-                                          'Elteres: $deviationLabel.',
-                              ),
-                              trailing: ElevatedButton(
-                                onPressed:
-                                    hasReservations ||
-                                        _repricingIds.contains(entry.key)
-                                    ? null
-                                    : () => _applyRecommendedPrice(
-                                        context: context,
-                                        productId: entry.key,
-                                      ),
-                                child: _repricingIds.contains(entry.key)
-                                    ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
+                              subtitle: compact
+                                  ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(details),
+                                        const SizedBox(height: 8),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: applyButton,
                                         ),
-                                      )
-                                    : const Text('Alkalmaz'),
-                              ),
+                                      ],
+                                    )
+                                  : Text(details),
+                              trailing: compact ? null : applyButton,
                             );
                           },
                         ),
@@ -637,30 +699,49 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _StatusChip(
-                              label: 'Active',
-                              value: metrics.activeOffers,
+                      compact
+                          ? Column(
+                              children: [
+                                _StatusChip(
+                                  label: 'Active',
+                                  value: metrics.activeOffers,
+                                ),
+                                const SizedBox(height: 8),
+                                _StatusChip(
+                                  label: 'Expired',
+                                  value: metrics.expiredOffers,
+                                ),
+                                const SizedBox(height: 8),
+                                _StatusChip(
+                                  label: 'Sold out',
+                                  value: metrics.soldOutOffers,
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: _StatusChip(
+                                    label: 'Active',
+                                    value: metrics.activeOffers,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _StatusChip(
+                                    label: 'Expired',
+                                    value: metrics.expiredOffers,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _StatusChip(
+                                    label: 'Sold out',
+                                    value: metrics.soldOutOffers,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _StatusChip(
-                              label: 'Expired',
-                              value: metrics.expiredOffers,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _StatusChip(
-                              label: 'Sold out',
-                              value: metrics.soldOutOffers,
-                            ),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 16),
                       const Text(
                         'A megtekintes a termek reszleteinek megnyitasat jelenti, '

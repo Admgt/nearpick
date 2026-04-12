@@ -41,149 +41,165 @@ class ProductListTile extends StatelessWidget {
     }
 
     final imagePath = product.thumbnailPath ?? product.imagePath;
+    final compact = isCompactLayout(context);
+    final thumbnail =
+        product.hasImage &&
+            ((imagePath != null && imagePath.isNotEmpty) ||
+                (product.imageUrl != null && product.imageUrl!.isNotEmpty))
+        ? StorageImage(
+            imagePath: imagePath,
+            imageUrl: product.imageUrl,
+            width: compact ? 64 : 78,
+            height: compact ? 64 : 78,
+            borderRadius: compact ? 14 : 18,
+            maxSizeBytes: 256 * 1024,
+          )
+        : ClipRRect(
+            borderRadius: BorderRadius.circular(compact ? 14 : 18),
+            child: Container(
+              width: compact ? 64 : 78,
+              height: compact ? 64 : 78,
+              color: theme.colorScheme.surfaceContainerHighest,
+              child: const Icon(Icons.photo_outlined),
+            ),
+          );
+    final reservedBadge = reservedCount > 0
+        ? Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondary.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              'Foglalas $reservedCount',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.secondary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          )
+        : null;
+    final titleRow = Row(
+      children: [
+        Expanded(child: Text(product.name, style: theme.textTheme.titleMedium)),
+        if (reservedBadge != null) ...[const SizedBox(width: 8), reservedBadge],
+      ],
+    );
+    final metaChips = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _MetaChip(label: product.category),
+        _MetaChip(label: expiresText, icon: Icons.schedule_outlined),
+        _MetaChip(
+          label: 'Mennyiseg ${product.quantityAvailable} db',
+          icon: Icons.inventory_2_outlined,
+        ),
+        if (product.pickupStartAt != null && product.pickupEndAt != null)
+          _MetaChip(
+            label: 'Atvetel $pickupWindowText',
+            icon: Icons.schedule_send_outlined,
+          ),
+        _MetaChip(label: 'Status ${product.status}', icon: Icons.flag_outlined),
+        if (product.hasReservations)
+          _MetaChip(label: 'Szerkesztes zarolva', icon: Icons.lock_outline),
+        if (demandLevel != null)
+          _MetaChip(
+            label: 'Kereslet ${demandLevelLabel(demandLevel)}',
+            icon: Icons.trending_up_outlined,
+          ),
+        if (recommendedPrice != null)
+          _MetaChip(
+            label: 'Javasolt ar $recommendedPrice Ft',
+            icon: Icons.sell_outlined,
+          ),
+        if (expectedReservations24h != null)
+          _MetaChip(
+            label: 'Varhato foglalas $expectedReservations24h / 24h',
+            icon: Icons.query_stats_outlined,
+          ),
+      ],
+    );
+    final priceBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${product.discountedPrice} Ft',
+          style: theme.textTheme.titleLarge,
+        ),
+        if (product.originalPrice > product.discountedPrice)
+          Text(
+            '${product.originalPrice} Ft',
+            style: theme.textTheme.bodySmall?.copyWith(
+              decoration: TextDecoration.lineThrough,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+      ],
+    );
+    final actions = <Widget>[
+      if (onEdit != null)
+        IconButton(
+          icon: const Icon(Icons.edit_outlined),
+          tooltip: 'Szerkesztes',
+          onPressed: onEdit,
+        ),
+      IconButton(
+        icon: const Icon(Icons.delete_outline),
+        tooltip: 'Torles',
+        onPressed: onArchive,
+      ),
+    ];
+
+    if (compact) {
+      return SurfaceCard(
+        radius: 24,
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                thumbnail,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [titleRow, const SizedBox(height: 8), metaChips],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(child: priceBlock),
+                ...actions,
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     return SurfaceCard(
       radius: 24,
       padding: const EdgeInsets.all(18),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          product.hasImage &&
-                  ((imagePath != null && imagePath.isNotEmpty) ||
-                      (product.imageUrl != null &&
-                          product.imageUrl!.isNotEmpty))
-              ? StorageImage(
-                  imagePath: imagePath,
-                  imageUrl: product.imageUrl,
-                  width: 78,
-                  height: 78,
-                  borderRadius: 18,
-                  maxSizeBytes: 256 * 1024,
-                )
-              : ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Container(
-                    width: 78,
-                    height: 78,
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: const Icon(Icons.photo_outlined),
-                  ),
-                ),
+          thumbnail,
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        product.name,
-                        style: theme.textTheme.titleMedium,
-                      ),
-                    ),
-                    if (reservedCount > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondary.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          'Foglalas $reservedCount',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                titleRow,
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _MetaChip(label: product.category),
-                    _MetaChip(
-                      label: expiresText,
-                      icon: Icons.schedule_outlined,
-                    ),
-                    _MetaChip(
-                      label: 'Mennyiseg ${product.quantityAvailable} db',
-                      icon: Icons.inventory_2_outlined,
-                    ),
-                    if (product.pickupStartAt != null &&
-                        product.pickupEndAt != null)
-                      _MetaChip(
-                        label: 'Atvetel $pickupWindowText',
-                        icon: Icons.schedule_send_outlined,
-                      ),
-                    _MetaChip(
-                      label: 'Status ${product.status}',
-                      icon: Icons.flag_outlined,
-                    ),
-                    if (product.hasReservations)
-                      _MetaChip(
-                        label: 'Szerkesztes zarolva',
-                        icon: Icons.lock_outline,
-                      ),
-                    if (demandLevel != null)
-                      _MetaChip(
-                        label: 'Kereslet ${demandLevelLabel(demandLevel)}',
-                        icon: Icons.trending_up_outlined,
-                      ),
-                    if (recommendedPrice != null)
-                      _MetaChip(
-                        label: 'Javasolt ar $recommendedPrice Ft',
-                        icon: Icons.sell_outlined,
-                      ),
-                    if (expectedReservations24h != null)
-                      _MetaChip(
-                        label:
-                            'Varhato foglalas $expectedReservations24h / 24h',
-                        icon: Icons.query_stats_outlined,
-                      ),
-                  ],
-                ),
+                metaChips,
                 const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${product.discountedPrice} Ft',
-                          style: theme.textTheme.titleLarge,
-                        ),
-                        if (product.originalPrice > product.discountedPrice)
-                          Text(
-                            '${product.originalPrice} Ft',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              decoration: TextDecoration.lineThrough,
-                              color: theme.colorScheme.onSurface.withOpacity(
-                                0.6,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const Spacer(),
-                    if (onEdit != null)
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        tooltip: 'Szerkesztes',
-                        onPressed: onEdit,
-                      ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      tooltip: 'Torles',
-                      onPressed: onArchive,
-                    ),
-                  ],
-                ),
+                Row(children: [priceBlock, const Spacer(), ...actions]),
               ],
             ),
           ),

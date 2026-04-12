@@ -486,6 +486,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
   Widget build(BuildContext context) {
     final initialProduct = widget.initialProduct;
     final isEditing = initialProduct != null;
+    final compact = isCompactLayout(context);
     final hasExistingImage =
         initialProduct?.hasImage == true &&
         initialProduct?.imagePath != null &&
@@ -665,46 +666,100 @@ class _NewProductScreenState extends State<NewProductScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _selectedExpiry == null
-                                ? 'Nincs kivalasztva lejarati datum'
-                                : 'Lejarat: ${formatDate(_selectedExpiry!)}',
+                    compact
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                _selectedExpiry == null
+                                    ? 'Nincs kivalasztva lejarati datum'
+                                    : 'Lejarat: ${formatDate(_selectedExpiry!)}',
+                              ),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton(
+                                  key: const ValueKey(
+                                    'new_product_pick_expiry_button',
+                                  ),
+                                  onPressed: _pickExpiryDate,
+                                  child: const Text('Lejarati datum'),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _selectedExpiry == null
+                                      ? 'Nincs kivalasztva lejarati datum'
+                                      : 'Lejarat: ${formatDate(_selectedExpiry!)}',
+                                ),
+                              ),
+                              TextButton(
+                                key: const ValueKey(
+                                  'new_product_pick_expiry_button',
+                                ),
+                                onPressed: _pickExpiryDate,
+                                child: const Text('Lejarati datum'),
+                              ),
+                            ],
                           ),
-                        ),
-                        TextButton(
-                          key: const ValueKey('new_product_pick_expiry_button'),
-                          onPressed: _pickExpiryDate,
-                          child: const Text('Lejarati datum'),
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Atvetel: ${_formatTimeOfDay(_selectedPickupStartTime)} - ${_formatTimeOfDay(_selectedPickupEndTime)}',
+                    compact
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                'Atvetel: ${_formatTimeOfDay(_selectedPickupStartTime)} - ${_formatTimeOfDay(_selectedPickupEndTime)}',
+                              ),
+                              Wrap(
+                                spacing: 8,
+                                children: [
+                                  TextButton(
+                                    key: const ValueKey(
+                                      'new_product_pickup_start_time_button',
+                                    ),
+                                    onPressed: () =>
+                                        _pickPickupTime(isStart: true),
+                                    child: const Text('Kezdo ido'),
+                                  ),
+                                  TextButton(
+                                    key: const ValueKey(
+                                      'new_product_pickup_end_time_button',
+                                    ),
+                                    onPressed: () =>
+                                        _pickPickupTime(isStart: false),
+                                    child: const Text('Vege ido'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Atvetel: ${_formatTimeOfDay(_selectedPickupStartTime)} - ${_formatTimeOfDay(_selectedPickupEndTime)}',
+                                ),
+                              ),
+                              TextButton(
+                                key: const ValueKey(
+                                  'new_product_pickup_start_time_button',
+                                ),
+                                onPressed: () => _pickPickupTime(isStart: true),
+                                child: const Text('Kezdo ido'),
+                              ),
+                              TextButton(
+                                key: const ValueKey(
+                                  'new_product_pickup_end_time_button',
+                                ),
+                                onPressed: () =>
+                                    _pickPickupTime(isStart: false),
+                                child: const Text('Vege ido'),
+                              ),
+                            ],
                           ),
-                        ),
-                        TextButton(
-                          key: const ValueKey(
-                            'new_product_pickup_start_time_button',
-                          ),
-                          onPressed: () => _pickPickupTime(isStart: true),
-                          child: const Text('Kezdo ido'),
-                        ),
-                        TextButton(
-                          key: const ValueKey(
-                            'new_product_pickup_end_time_button',
-                          ),
-                          onPressed: () => _pickPickupTime(isStart: false),
-                          child: const Text('Vege ido'),
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,

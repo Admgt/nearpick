@@ -141,6 +141,7 @@ class _MerchantReservationDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    final compact = isCompactLayout(context);
     final reservationStream = FirebaseFirestore.instance
         .collection('reservations')
         .doc(widget.reservationId)
@@ -287,35 +288,67 @@ class _MerchantReservationDetailScreenState
                         maxLines: 3,
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _openScanner,
-                              icon: const Icon(Icons.qr_code_scanner_outlined),
-                              label: const Text('QR ujrabeolvasas'),
+                      compact
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: _openScanner,
+                                  icon: const Icon(
+                                    Icons.qr_code_scanner_outlined,
+                                  ),
+                                  label: const Text('QR ujrabeolvasas'),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton.icon(
+                                  onPressed: !_submitting
+                                      ? () => _completeReservation(reservation)
+                                      : null,
+                                  icon: _submitting
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.task_alt_outlined),
+                                  label: const Text('Atvetel rogzitese'),
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: _openScanner,
+                                    icon: const Icon(
+                                      Icons.qr_code_scanner_outlined,
+                                    ),
+                                    label: const Text('QR ujrabeolvasas'),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: !_submitting
+                                        ? () =>
+                                              _completeReservation(reservation)
+                                        : null,
+                                    icon: _submitting
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(Icons.task_alt_outlined),
+                                    label: const Text('Atvetel rogzitese'),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: !_submitting
-                                  ? () => _completeReservation(reservation)
-                                  : null,
-                              icon: _submitting
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Icons.task_alt_outlined),
-                              label: const Text('Atvetel rogzitese'),
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                     if (canManageRefund) ...[
                       const SizedBox(height: 20),

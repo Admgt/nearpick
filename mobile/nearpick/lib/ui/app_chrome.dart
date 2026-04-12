@@ -1,4 +1,29 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
+const double compactLayoutBreakpoint = 600;
+
+bool isCompactLayout(BuildContext context) =>
+    MediaQuery.sizeOf(context).width < compactLayoutBreakpoint;
+
+EdgeInsets compactEdgeInsets(
+  EdgeInsetsGeometry padding,
+  TextDirection textDirection,
+) {
+  final resolved = padding.resolve(textDirection);
+  double scale(double value, double minimum) {
+    if (value == 0) return 0;
+    return math.max(minimum, value * 0.72);
+  }
+
+  return EdgeInsets.fromLTRB(
+    scale(resolved.left, 12),
+    scale(resolved.top, 10),
+    scale(resolved.right, 12),
+    scale(resolved.bottom, 10),
+  );
+}
 
 class NearPickBackground extends StatelessWidget {
   final Widget child;
@@ -15,6 +40,12 @@ class NearPickBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final compact = isCompactLayout(context);
+    final textDirection = Directionality.of(context);
+    final effectivePadding = compact
+        ? compactEdgeInsets(padding, textDirection)
+        : padding;
+    final effectiveMaxWidth = compact ? double.infinity : maxWidth;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -55,9 +86,12 @@ class NearPickBackground extends StatelessWidget {
             ),
           ),
           Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxWidth),
-              child: Padding(padding: padding, child: child),
+            child: SafeArea(
+              top: false,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: effectiveMaxWidth),
+                child: Padding(padding: effectivePadding, child: child),
+              ),
             ),
           ),
         ],
@@ -81,21 +115,35 @@ class SurfaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final compact = isCompactLayout(context);
+    final effectivePadding = compact
+        ? compactEdgeInsets(padding, Directionality.of(context))
+        : padding;
+    final effectiveRadius = compact ? math.min(radius, 18.0) : radius;
+    final effectiveShadow = compact
+        ? const [
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 14,
+              offset: Offset(0, 8),
+            ),
+          ]
+        : const [
+            BoxShadow(
+              color: Color(0x12000000),
+              blurRadius: 28,
+              offset: Offset(0, 14),
+            ),
+          ];
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.86),
-        borderRadius: BorderRadius.circular(radius),
+        borderRadius: BorderRadius.circular(effectiveRadius),
         border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 28,
-            offset: Offset(0, 14),
-          ),
-        ],
+        boxShadow: effectiveShadow,
       ),
-      child: Padding(padding: padding, child: child),
+      child: Padding(padding: effectivePadding, child: child),
     );
   }
 }
@@ -118,12 +166,15 @@ class InfoBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final badgeColor = tint ?? scheme.primary;
+    final compact = isCompactLayout(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: compact
+          ? const EdgeInsets.symmetric(horizontal: 12, vertical: 10)
+          : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: badgeColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(compact ? 14 : 18),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
