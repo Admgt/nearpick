@@ -1,3 +1,19 @@
+String normalizeCategoryForFilter(String value) {
+  return value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .replaceAll('á', 'a')
+      .replaceAll('é', 'e')
+      .replaceAll('í', 'i')
+      .replaceAll('ó', 'o')
+      .replaceAll('ö', 'o')
+      .replaceAll('ő', 'o')
+      .replaceAll('ú', 'u')
+      .replaceAll('ü', 'u')
+      .replaceAll('ű', 'u');
+}
+
 bool shouldIncludeOffer({
   required String productId,
   required Map<String, dynamic> product,
@@ -21,10 +37,14 @@ bool shouldIncludeOffer({
     return false;
   }
 
-  if (selectedCategory == allCategoryLabel) {
+  final normalizedSelectedCategory = normalizeCategoryForFilter(
+    selectedCategory,
+  );
+  if (normalizedSelectedCategory ==
+      normalizeCategoryForFilter(allCategoryLabel)) {
     return true;
   }
 
   final category = product['category'] as String? ?? '';
-  return category == selectedCategory;
+  return normalizeCategoryForFilter(category) == normalizedSelectedCategory;
 }

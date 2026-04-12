@@ -82,4 +82,35 @@ void main() {
       isFalse,
     );
   });
+
+  test('shouldIncludeOffer matches accented display categories', () {
+    expect(
+      shouldIncludeOffer(
+        productId: 'p1',
+        product: const {
+          'status': 'active',
+          'quantityAvailable': 1,
+          'category': 'Egyeb',
+        },
+        dismissedProductIds: const {},
+        selectedCategory: 'Egyéb',
+        allCategoryLabel: 'Összes kategória',
+      ),
+      isTrue,
+    );
+    expect(
+      shouldIncludeOffer(
+        productId: 'p2',
+        product: const {
+          'status': 'active',
+          'quantityAvailable': 1,
+          'category': 'Peksutemeny',
+        },
+        dismissedProductIds: const {},
+        selectedCategory: 'Péksütemény',
+        allCategoryLabel: 'Összes kategória',
+      ),
+      isTrue,
+    );
+  });
 }
