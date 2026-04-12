@@ -1,5 +1,6 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nearpick/core/error/app_exception.dart';
 import 'package:nearpick/core/error/app_error_message.dart';
 
 void main() {
@@ -48,6 +49,32 @@ void main() {
     expect(
       appErrorMessage(Exception('Nincs jogosultsÃ¡g.')),
       'Nincs jogosultsagod ehhez a muvelethez.',
+    );
+  });
+
+  test('adds context id from app exceptions', () {
+    const error = AppException(
+      code: 'failed-precondition',
+      message: 'A termek mar nem erheto el.',
+      contextId: 'ctx-123',
+    );
+
+    expect(
+      appErrorMessage(error),
+      'A termek mar nem erheto el. Hibaazonosito: ctx-123',
+    );
+  });
+
+  test('adds context id from Firebase functions details', () {
+    final error = FirebaseFunctionsException(
+      code: 'not-found',
+      message: 'A termek nem talalhato.',
+      details: {'contextId': 'ctx-456'},
+    );
+
+    expect(
+      appErrorMessage(error),
+      'A termek nem talalhato. Hibaazonosito: ctx-456',
     );
   });
 }

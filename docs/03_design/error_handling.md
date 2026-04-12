@@ -44,13 +44,15 @@
 
 ## Backend/contract hibastruktúra
 
-A jelenlegi forma még nem teljesen egységes, de a fő UI flow-kon már közös kliensoldali error mapper normalizálja a Firebase auth/functions és az általános kivételek egy részét. A reservation, product lifecycle és admin callable hibák a Functions oldali `HttpsError` -> kliensoldali üzenet leképezésre támaszkodnak.
+A jelenlegi forma már a fő kliensoldali service és UI útvonalakon közös hibaüzenet-mapperre támaszkodik. A service réteg `AppException` típussal ad tovább helyi validációs/auth/permission hibákat, a Firebase callable hibáknál pedig megőrzi a Functions oldali `HttpsError` `code`, `message` és `details.contextId` információit.
 
 Célforma:
 - `code`
 - `message`
 - `contextId` (opcionális korrelációs mező)
 - `retryable` (opcionális, kliensoldali döntést segítő flag)
+
+Kliensoldali callable hívásoknál a `reserveProduct`, `completeReservation`, `cancelReservation`, `updateRefundStatus`, `submitReview`, `archiveProduct`, `repriceProduct`, `setUserAccountStatus`, `sendAdminMessageToMerchant`, `hideProductForAdmin`, `restoreProductForAdmin` és `deleteProductForAdmin` payload automatikus `contextId` mezőt kap. A Functions `createContextId` továbbra is a korrelációs headereket preferálja, de callable data `contextId` alapján is képes azonosítót képezni.
 
 ## Naplózási szabályzat
 
@@ -60,6 +62,6 @@ Célforma:
 
 ## Ismert hiányok
 
-- A service réteg kivételei még mindig vegyes üzenetstílust tartalmaznak.
-- A központi kliensoldali error mapper még nem fedi le az összes képernyőt és service-t.
-- Még nincs formális correlation id továbbítás a kliens minden felületén.
+- A service réteg fő Firebase callable útvonalai egységesedtek, de a mélyebb workflow helper rétegben még maradtak egyszerű `Exception(...)` dobások.
+- A központi kliensoldali error mapper már lefedi a fő auth/product/reservation/admin/merchant felületeket és stream-hibák nagy részét, de a további új képernyőknél ezt kódreview checklistben is ellenőrizni kell.
+- A formális correlation id továbbítás a callable kliensútvonalakon elkészült; a nem callable Firestore/Storage direkt műveleteknél továbbra sincs minden esetben külön kliensoldali korrelációs mező.

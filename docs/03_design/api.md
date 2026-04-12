@@ -61,12 +61,13 @@ Hivatkozás: [`../../functions/index.js`](../../functions/index.js)
 
 ## Hibamodell
 
-A jelenlegi modell vegyes:
-- Firebase SDK kivételek (`FirebaseException`) a service rétegben.
-- Domain kivételek szöveges üzenetekként a kliensfolyamatban.
+A fő kliensoldali service és callable útvonalak közös alkalmazásszintű hibamodellre támaszkodnak:
+- a helyi validációs/auth/permission hibák `AppException` típussal adódnak tovább;
+- a Cloud Functions callable hibák `HttpsError` `code`, `message` és `details.contextId` mezőit a kliens megőrzi;
+- a callable payloadok kliensoldali `contextId` mezőt kapnak, amelyet a Functions logok is fel tudnak venni;
+- a user-facing szöveget a központi `appErrorMessage` mapper normalizálja.
 
-A célmodell:
-- Stabil alkalmazásszintű hibakategóriák:
+Stabil alkalmazásszintű hibakategóriák:
   - validation
   - auth
   - permission
@@ -74,6 +75,9 @@ A célmodell:
   - invalid_state / invalid_pickup
   - transient network
   - internal
+
+Korlát:
+- A közvetlen Firestore/Storage SDK műveletek továbbra is adhatnak natív Firebase SDK kivételt; ezek UI-megjelenítését a kliensoldali mapper kezeli, de nem minden ilyen direkt művelethez tartozik külön kliensoldali korrelációs mező.
 
 ## Retry és idempotencia
 

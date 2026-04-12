@@ -3,7 +3,7 @@
 ## Naplózási baseline
 
 - Szintek: `INFO`, `WARNING`, `ERROR`.
-- App oldali viselkedés: a felhasználó felé a hibák UI visszajelzésként jelennek meg; a kritikus szerveroldali diagnosztika a Cloud Functions logokban követhető.
+- App oldali viselkedés: a felhasználó felé a hibák UI visszajelzésként jelennek meg központi mapperen keresztül; callable hibáknál a kliens `contextId` mezőt küld, és a visszakapott `details.contextId` hibaazonosítóként megjeleníthető.
 - Function oldali viselkedés: a kritikus műveletek (`reserveProduct`, `completeReservation`, `archiveProduct`, `notifyOnNewProduct`, `healthcheck`) és az admin műveletek (`setUserAccountStatus`, `sendAdminMessageToMerchant`, `hideProductForAdmin`, `restoreProductForAdmin`, `deleteProductForAdmin`) JSON logbejegyzéseket írnak.
 - Minden szerveroldali log tartalmaz `event` és `contextId` mezőt; ahol releváns, szerepel benne `productId`, `reservationId`, `userId`, `failedCount` vagy más üzleti kontextus.
 
@@ -95,8 +95,8 @@ Sikeres admin státuszfrissítés példa:
 2. App flow probléma
 - Lokális futtatással reprodukálni kell, majd megvizsgálni az érintett screen/service útvonalakon a service szintű kivételeket.
 
-3. Értesítési probléma
-- Meg kell nézni a function logokat `contextId` szerint, majd a token perzisztálási útvonalat.
+3. Értesítési vagy callable probléma
+- Meg kell nézni a felületen megjelenő hibaazonosítót, majd a function logokat `contextId` szerint. Értesítési hibánál ezután a token perzisztálási útvonalat kell ellenőrizni.
 
 4. Adatelérési probléma
 - Ellenőrizni kell a rule útvonalat a `firestore.rules` fájlban és az érintett user role/ownership adatokat.
@@ -111,5 +111,5 @@ Sikeres admin státuszfrissítés példa:
 ## Következő megerősítési lépések
 
 - Dashboard-szintű metrikaláthatóság és alap riasztási küszöbök hozzáadása.
-- A `contextId` továbbvitele kliensoldali hibaüzenet-korrelációig.
+- A nem callable Firestore/Storage direkt műveletek kliensoldali korrelációs stratégiájának tisztázása.
 - Egyszerű alert szabályok hozzáadása healthcheck és foglalási hibaarány köré.

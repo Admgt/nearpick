@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/error/app_error_message.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_chrome.dart';
 import 'account_screen.dart';
@@ -75,7 +76,7 @@ class FavoritesScreen extends StatelessWidget {
           if (snapshot.hasError) {
             return Center(
               child: Text(
-                'Hiba a kedvencek betöltésekor: ${snapshot.error}',
+                appErrorMessage(snapshot.error!),
                 textAlign: TextAlign.center,
               ),
             );

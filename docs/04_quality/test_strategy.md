@@ -18,9 +18,9 @@ A 2026-04-11-es statikus repo-audit alapján:
 
 | Kategória | Darab | Megjegyzés |
 |---|---:|---|
-| Flutter test definíció | 91 | `test/**` és `integration_test/**` |
-| Functions / rules JS teszt | 68 | `functions/test/**` |
-| Összes automata tesztdefiníció | 159 | statikus inventory, nem egyetlen futás eredménye |
+| Flutter test definíció | 93 | `test/**` és `integration_test/**` |
+| Functions / rules JS teszt | 69 | `functions/test/**` |
+| Összes automata tesztdefiníció | 162 | statikus inventory, nem egyetlen futás eredménye |
 
 A mix továbbra is megfelel a minimum `30+` automata tesztelvárásnak, de a minőségi fókusz most már nem a darabszám, hanem az új mobilflow-k következetes védelme.
 
@@ -50,6 +50,7 @@ Már van explicit teszt- vagy kódszintű védelem az alábbi újabb területekr
 - merchant CSV export
 - product edit constraint az első foglalás előtt / után
 - admin role routing
+- egységes error mapper, `AppException` és callable `contextId` korreláció
 - adminMessages Firestore read/read receipt rule modell
 - admin callable permission-deny, validációs és happy path esetek a fiókstátusz, termékmoderáció és admin üzenetküldés útvonalakra
 - admin product detail moderációs UI/E2E flow Android emulatoron: elrejtés, archivált törlés és visszaállítás

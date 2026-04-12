@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/error/app_error_message.dart';
 import '../reservation/reservation_support.dart';
 import '../../models/reservation.dart';
 import '../../ui/app_chrome.dart';
@@ -77,7 +78,7 @@ class MyReservationsScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Hiba: ${snapshot.error}'));
+            return Center(child: Text(appErrorMessage(snapshot.error!)));
           }
 
           final docs = snapshot.data?.docs ?? [];

@@ -161,7 +161,7 @@ class _MerchantReservationDetailScreenState
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Hiba: ${snapshot.error}'));
+            return Center(child: Text(appErrorMessage(snapshot.error!)));
           }
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return const Center(child: Text('A foglalas nem talalhato.'));

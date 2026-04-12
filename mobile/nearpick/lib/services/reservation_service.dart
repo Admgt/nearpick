@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../core/error/app_exception.dart';
+
 class ReservationService {
   final FirebaseFunctions _functions;
   final FirebaseAuth _auth;
@@ -21,26 +23,34 @@ class ReservationService {
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
-      throw Exception('Nincs bejelentkezett felhasznalo.');
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
     }
     if (quantity <= 0) {
-      throw Exception('Ervenytelen foglalasi mennyiseg.');
+      throw const AppException(
+        code: 'invalid-argument',
+        message: 'Ervenytelen foglalasi mennyiseg.',
+      );
     }
 
     try {
       final callable = _functions.httpsCallable('reserveProduct');
-      final response = await callable.call(<String, dynamic>{
-        'productId': productId,
-        'quantity': quantity,
-      });
+      final response = await callable.call(
+        withClientContextId({'productId': productId, 'quantity': quantity}),
+      );
       final data = Map<String, dynamic>.from(response.data as Map);
       final reservationId = data['reservationId'] as String?;
       if (reservationId == null || reservationId.isEmpty) {
-        throw Exception('A foglalas letrejott, de nincs reservationId.');
+        throw const AppException(
+          code: 'internal',
+          message: 'A foglalas letrejott, de nincs reservationId.',
+        );
       }
       return reservationId;
     } on FirebaseFunctionsException catch (e) {
-      throw Exception(e.message ?? 'A foglalas nem sikerult.');
+      throw AppException.fromFunctions(e, fallback: 'A foglalas nem sikerult.');
     }
   }
 
@@ -50,17 +60,25 @@ class ReservationService {
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
-      throw Exception('Nincs bejelentkezett felhasznalo.');
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
     }
 
     try {
       final callable = _functions.httpsCallable('completeReservation');
-      await callable.call(<String, dynamic>{
-        'reservationId': reservationId,
-        'pickupInput': pickupInput,
-      });
+      await callable.call(
+        withClientContextId({
+          'reservationId': reservationId,
+          'pickupInput': pickupInput,
+        }),
+      );
     } on FirebaseFunctionsException catch (e) {
-      throw Exception(e.message ?? 'A foglalas nem teljesitheto.');
+      throw AppException.fromFunctions(
+        e,
+        fallback: 'A foglalas nem teljesitheto.',
+      );
     }
   }
 
@@ -72,19 +90,27 @@ class ReservationService {
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
-      throw Exception('Nincs bejelentkezett felhasznalo.');
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
     }
 
     try {
       final callable = _functions.httpsCallable('cancelReservation');
-      await callable.call(<String, dynamic>{
-        'reservationId': reservationId,
-        'reasonCode': reasonCode,
-        'reasonNote': reasonNote,
-        'refundRequested': refundRequested,
-      });
+      await callable.call(
+        withClientContextId({
+          'reservationId': reservationId,
+          'reasonCode': reasonCode,
+          'reasonNote': reasonNote,
+          'refundRequested': refundRequested,
+        }),
+      );
     } on FirebaseFunctionsException catch (e) {
-      throw Exception(e.message ?? 'A foglalas nem mondhato le.');
+      throw AppException.fromFunctions(
+        e,
+        fallback: 'A foglalas nem mondhato le.',
+      );
     }
   }
 
@@ -94,17 +120,25 @@ class ReservationService {
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
-      throw Exception('Nincs bejelentkezett felhasznalo.');
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
     }
 
     try {
       final callable = _functions.httpsCallable('updateRefundStatus');
-      await callable.call(<String, dynamic>{
-        'reservationId': reservationId,
-        'refundStatus': refundStatus,
-      });
+      await callable.call(
+        withClientContextId({
+          'reservationId': reservationId,
+          'refundStatus': refundStatus,
+        }),
+      );
     } on FirebaseFunctionsException catch (e) {
-      throw Exception(e.message ?? 'A refund statusz nem modosithato.');
+      throw AppException.fromFunctions(
+        e,
+        fallback: 'A refund statusz nem modosithato.',
+      );
     }
   }
 
@@ -115,18 +149,26 @@ class ReservationService {
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
-      throw Exception('Nincs bejelentkezett felhasznalo.');
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
     }
 
     try {
       final callable = _functions.httpsCallable('submitReview');
-      await callable.call(<String, dynamic>{
-        'reservationId': reservationId,
-        'rating': rating,
-        'comment': comment,
-      });
+      await callable.call(
+        withClientContextId({
+          'reservationId': reservationId,
+          'rating': rating,
+          'comment': comment,
+        }),
+      );
     } on FirebaseFunctionsException catch (e) {
-      throw Exception(e.message ?? 'Az ertekeles nem kuldheto be.');
+      throw AppException.fromFunctions(
+        e,
+        fallback: 'Az ertekeles nem kuldheto be.',
+      );
     }
   }
 

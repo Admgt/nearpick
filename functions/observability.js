@@ -16,25 +16,56 @@ function getHeaderValue(headers, name) {
   return typeof value === "string" ? value : null;
 }
 
+function getContextDataValue(data) {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  const value = data.contextId;
+  return typeof value === "string" ? value : null;
+}
+
+function normalizeContextId(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.slice(0, 120);
+}
+
 function createContextId(source) {
   const headers = source?.headers ?? source?.rawRequest?.headers;
   const correlationId = getHeaderValue(headers, "x-correlation-id");
-  if (correlationId && correlationId.trim().length > 0) {
-    return correlationId.trim();
+  const normalizedCorrelationId = normalizeContextId(correlationId);
+  if (normalizedCorrelationId) {
+    return normalizedCorrelationId;
   }
 
   const requestId = getHeaderValue(headers, "x-request-id");
-  if (requestId && requestId.trim().length > 0) {
-    return requestId.trim();
+  const normalizedRequestId = normalizeContextId(requestId);
+  if (normalizedRequestId) {
+    return normalizedRequestId;
   }
 
   const traceContext = getHeaderValue(headers, "x-cloud-trace-context");
-  if (traceContext && traceContext.trim().length > 0) {
-    return traceContext.split("/")[0].trim();
+  const traceId = normalizeContextId(traceContext?.split("/")[0]);
+  if (traceId) {
+    return traceId;
   }
 
-  if (typeof source?.id === "string" && source.id.trim().length > 0) {
-    return source.id.trim();
+  const dataContextId = normalizeContextId(getContextDataValue(source?.data));
+  if (dataContextId) {
+    return dataContextId;
+  }
+
+  const sourceId = normalizeContextId(source?.id);
+  if (sourceId) {
+    return sourceId;
   }
 
   return randomUUID();

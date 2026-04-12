@@ -5,6 +5,7 @@ import '../models/app_user_profile.dart';
 import '../models/merchant_stats_summary.dart';
 import '../models/product.dart';
 import '../models/reservation.dart';
+import '../core/error/app_exception.dart';
 
 class AdminService {
   final FirebaseFirestore _db;
@@ -56,13 +57,13 @@ class AdminService {
   }) async {
     try {
       final callable = _functions.httpsCallable('setUserAccountStatus');
-      await callable.call(<String, dynamic>{
-        'userId': userId,
-        'accountStatus': accountStatus,
-      });
+      await callable.call(
+        withClientContextId({'userId': userId, 'accountStatus': accountStatus}),
+      );
     } on FirebaseFunctionsException catch (error) {
-      throw Exception(
-        error.message ?? 'A felhasznalo allapota nem modosithato.',
+      throw AppException.fromFunctions(
+        error,
+        fallback: 'A felhasznalo allapota nem modosithato.',
       );
     }
   }
@@ -70,27 +71,36 @@ class AdminService {
   Future<void> hideProduct({required String productId}) async {
     try {
       final callable = _functions.httpsCallable('hideProductForAdmin');
-      await callable.call(<String, dynamic>{'productId': productId});
+      await callable.call(withClientContextId({'productId': productId}));
     } on FirebaseFunctionsException catch (error) {
-      throw Exception(error.message ?? 'A termek nem rejtheto el.');
+      throw AppException.fromFunctions(
+        error,
+        fallback: 'A termek nem rejtheto el.',
+      );
     }
   }
 
   Future<void> restoreProduct({required String productId}) async {
     try {
       final callable = _functions.httpsCallable('restoreProductForAdmin');
-      await callable.call(<String, dynamic>{'productId': productId});
+      await callable.call(withClientContextId({'productId': productId}));
     } on FirebaseFunctionsException catch (error) {
-      throw Exception(error.message ?? 'A termek nem allithato vissza.');
+      throw AppException.fromFunctions(
+        error,
+        fallback: 'A termek nem allithato vissza.',
+      );
     }
   }
 
   Future<void> deleteProduct({required String productId}) async {
     try {
       final callable = _functions.httpsCallable('deleteProductForAdmin');
-      await callable.call(<String, dynamic>{'productId': productId});
+      await callable.call(withClientContextId({'productId': productId}));
     } on FirebaseFunctionsException catch (error) {
-      throw Exception(error.message ?? 'A termek torlese nem sikerult.');
+      throw AppException.fromFunctions(
+        error,
+        fallback: 'A termek torlese nem sikerult.',
+      );
     }
   }
 }

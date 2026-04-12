@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../core/error/app_exception.dart';
 import '../features/merchant/dynamic_pricing.dart';
 
 class DynamicPricingService {
@@ -19,7 +20,10 @@ class DynamicPricingService {
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
-      throw Exception('Nincs bejelentkezett felhasznalo.');
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
     }
 
     final now = DateTime.now();

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/error/app_error_message.dart';
 import '../../services/auth_service.dart';
 import '../../services/location_service.dart';
 import '../../ui/app_chrome.dart';
@@ -167,7 +168,7 @@ class _AccountScreenState extends State<AccountScreen> {
       if (!mounted) return;
       setState(() {
         _savingCategories = false;
-        _categoriesMessage = e.toString();
+        _categoriesMessage = appErrorMessage(e);
       });
     }
   }
@@ -195,7 +196,7 @@ class _AccountScreenState extends State<AccountScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _savingDisplayName = false);
-      _showSnackBar('A felhasznalonev mentese nem sikerult: $e');
+      _showSnackBar(appErrorMessage(e));
     }
   }
 
@@ -248,7 +249,7 @@ class _AccountScreenState extends State<AccountScreen> {
       if (!mounted) return;
       setState(() {
         _savingLocation = false;
-        _locationError = e.toString();
+        _locationError = appErrorMessage(e);
       });
     }
   }

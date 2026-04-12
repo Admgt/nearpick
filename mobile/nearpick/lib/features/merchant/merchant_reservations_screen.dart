@@ -223,7 +223,7 @@ class _MerchantReservationsScreenState
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Hiba: ${snapshot.error}'));
+            return Center(child: Text(appErrorMessage(snapshot.error!)));
           }
 
           final docs = snapshot.data?.docs ?? [];

@@ -382,9 +382,7 @@ class _AdminUserDetailScreenState extends State<AdminUserDetailScreen> {
                           );
                         }
                         if (snapshot.hasError) {
-                          return Text(
-                            'Hiba az admin uzenetek betoltese kozben: ${snapshot.error}',
-                          );
+                          return Text(appErrorMessage(snapshot.error!));
                         }
                         return _buildAdminMessageHistory(
                           snapshot.data ?? const [],

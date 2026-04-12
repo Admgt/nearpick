@@ -768,7 +768,7 @@ class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
                               if (snapshot.hasError) {
                                 return Center(
                                   child: Text(
-                                    'Hiba a termekek betolteseakor: ${snapshot.error}',
+                                    appErrorMessage(snapshot.error!),
                                     textAlign: TextAlign.center,
                                   ),
                                 );

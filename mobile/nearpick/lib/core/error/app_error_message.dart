@@ -2,31 +2,24 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../auth/auth_error_message.dart';
+import 'app_exception.dart';
 
 String appErrorMessage(
   Object error, {
   String fallback = 'Varatlan hiba tortent. Probald ujra.',
 }) {
+  if (error is AppException) {
+    final message = _messageForCode(error.code, error.message, fallback);
+    return _withContextId(message, error.contextId);
+  }
+
   if (error is FirebaseAuthException) {
     return authErrorMessage(error);
   }
 
   if (error is FirebaseFunctionsException) {
-    switch (error.code) {
-      case 'unauthenticated':
-        return 'Bejelentkezes szukseges.';
-      case 'permission-denied':
-        return 'Nincs jogosultsagod ehhez a muvelethez.';
-      case 'invalid-argument':
-        return 'Ervenytelen adatot adtal meg.';
-      case 'failed-precondition':
-        return _sanitizeMessage(error.message) ?? fallback;
-      case 'unavailable':
-        return 'A szolgaltatas jelenleg nem erheto el. Probald ujra.';
-    }
-
-    final sanitized = _sanitizeMessage(error.message);
-    return sanitized ?? fallback;
+    final message = _messageForCode(error.code, error.message, fallback);
+    return _withContextId(message, contextIdFromDetails(error.details));
   }
 
   if (error is FirebaseException) {
@@ -42,6 +35,37 @@ String appErrorMessage(
 
   final sanitized = _sanitizeMessage(error.toString());
   return sanitized ?? fallback;
+}
+
+String _messageForCode(String code, String? rawMessage, String fallback) {
+  switch (code) {
+    case 'unauthenticated':
+      return 'Bejelentkezes szukseges.';
+    case 'permission-denied':
+      return 'Nincs jogosultsagod ehhez a muvelethez.';
+    case 'invalid-argument':
+      return _sanitizeMessage(rawMessage) ?? 'Ervenytelen adatot adtal meg.';
+    case 'failed-precondition':
+    case 'not-found':
+    case 'already-exists':
+    case 'cancelled':
+      return _sanitizeMessage(rawMessage) ?? fallback;
+    case 'deadline-exceeded':
+    case 'resource-exhausted':
+    case 'unavailable':
+      return 'A szolgaltatas jelenleg nem erheto el. Probald ujra.';
+  }
+
+  final sanitized = _sanitizeMessage(rawMessage);
+  return sanitized ?? fallback;
+}
+
+String _withContextId(String message, String? contextId) {
+  final trimmed = contextId?.trim();
+  if (trimmed == null || trimmed.isEmpty) {
+    return message;
+  }
+  return '$message Hibaazonosito: $trimmed';
 }
 
 String? _sanitizeMessage(String? rawMessage) {

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
+import '../core/error/app_exception.dart';
 import '../models/admin_message.dart';
 
 class AdminMessageService {
@@ -31,14 +32,19 @@ class AdminMessageService {
   }) async {
     try {
       final callable = _functions.httpsCallable('sendAdminMessageToMerchant');
-      await callable.call(<String, dynamic>{
-        'merchantId': merchantId,
-        'subject': subject,
-        'body': body,
-        'topic': topic,
-      });
+      await callable.call(
+        withClientContextId({
+          'merchantId': merchantId,
+          'subject': subject,
+          'body': body,
+          'topic': topic,
+        }),
+      );
     } on FirebaseFunctionsException catch (error) {
-      throw Exception(error.message ?? 'Az admin uzenet kuldese nem sikerult.');
+      throw AppException.fromFunctions(
+        error,
+        fallback: 'Az admin uzenet kuldese nem sikerult.',
+      );
     }
   }
 

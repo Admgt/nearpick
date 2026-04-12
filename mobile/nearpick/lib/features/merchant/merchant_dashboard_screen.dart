@@ -220,7 +220,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
           if (productsSnap.hasError) {
             return Center(
               child: Text(
-                'Hiba a termekek betoltese soran: ${productsSnap.error}',
+                appErrorMessage(productsSnap.error!),
                 textAlign: TextAlign.center,
               ),
             );
@@ -249,7 +249,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
               if (interactionsSnap.hasError) {
                 return Center(
                   child: Text(
-                    'Hiba az interakciok betoltese soran: ${interactionsSnap.error}',
+                    appErrorMessage(interactionsSnap.error!),
                     textAlign: TextAlign.center,
                   ),
                 );
@@ -346,7 +346,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                           if (adminMessagesSnap.hasError) {
                             return SurfaceCard(
                               child: Text(
-                                'Hiba az admin uzenetek betoltese soran: ${adminMessagesSnap.error}',
+                                appErrorMessage(adminMessagesSnap.error!),
                               ),
                             );
                           }

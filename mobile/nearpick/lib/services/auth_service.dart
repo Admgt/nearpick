@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../core/error/app_exception.dart';
+
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -45,7 +47,10 @@ class AuthService {
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
-      throw Exception('Nincs bejelentkezett felhasznalo.');
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
     }
 
     final updates = <String, dynamic>{};
@@ -54,7 +59,10 @@ class AuthService {
     if (displayName != null) {
       trimmedDisplayName = displayName.trim();
       if (trimmedDisplayName.isEmpty) {
-        throw Exception('A felhasznalonev nem lehet ures.');
+        throw const AppException(
+          code: 'invalid-argument',
+          message: 'A felhasznalonev nem lehet ures.',
+        );
       }
       updates['displayName'] = trimmedDisplayName;
     }
@@ -62,7 +70,10 @@ class AuthService {
     if (companyName != null) {
       final trimmedCompanyName = companyName.trim();
       if (trimmedCompanyName.isEmpty) {
-        throw Exception('A ceg neve nem lehet ures.');
+        throw const AppException(
+          code: 'invalid-argument',
+          message: 'A ceg neve nem lehet ures.',
+        );
       }
       updates['companyName'] = trimmedCompanyName;
     }

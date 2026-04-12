@@ -28,10 +28,35 @@ String authErrorMessage(Object error) {
         return 'Tul sok sikertelen probalkozas tortent. Varj egy kicsit, majd probald ujra.';
     }
 
-    if (error.message != null && error.message!.isNotEmpty) {
-      return error.message!;
+    final sanitized = _sanitizeAuthMessage(error.message);
+    if (sanitized != null) {
+      return sanitized;
     }
   }
 
-  return error.toString();
+  return _sanitizeAuthMessage(error.toString()) ??
+      'A bejelentkezes nem sikerult. Probald ujra.';
+}
+
+String? _sanitizeAuthMessage(String? rawMessage) {
+  final trimmed = rawMessage?.trim();
+  if (trimmed == null || trimmed.isEmpty) {
+    return null;
+  }
+
+  var message = trimmed;
+  for (final prefix in const [
+    'Exception:',
+    'FirebaseAuthException:',
+    'FirebaseException:',
+  ]) {
+    if (message.startsWith(prefix)) {
+      message = message.substring(prefix.length).trim();
+    }
+  }
+
+  if (message.isEmpty) {
+    return null;
+  }
+  return message;
 }

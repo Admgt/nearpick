@@ -431,7 +431,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Hiba: ${snapshot.error}'));
+            return Center(child: Text(appErrorMessage(snapshot.error!)));
           }
           final reservation = snapshot.data;
           if (!snapshot.hasData || reservation == null) {

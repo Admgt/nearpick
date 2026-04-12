@@ -62,7 +62,7 @@ class MerchantHomeScreen extends StatelessWidget {
           if (snapshot.hasError) {
             return Center(
               child: Text(
-                'Hiba a termékek betöltésekor: ${snapshot.error}',
+                appErrorMessage(snapshot.error!),
                 textAlign: TextAlign.center,
               ),
             );

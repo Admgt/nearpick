@@ -27,6 +27,16 @@ test("createContextId falls back to cloud trace context header", () => {
   assert.equal(contextId, "trace-123");
 });
 
+test("createContextId falls back to callable data contextId", () => {
+  const contextId = createContextId({
+    data: {
+      contextId: "app-context-123",
+    },
+  });
+
+  assert.equal(contextId, "app-context-123");
+});
+
 test("buildHealthPayload returns the expected minimum health schema", () => {
   const payload = buildHealthPayload({
     contextId: "ctx-1",

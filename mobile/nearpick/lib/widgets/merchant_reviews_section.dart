@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../core/error/app_error_message.dart';
 import '../models/review.dart';
 import '../utils/date_time_formatters.dart';
 
@@ -53,7 +54,7 @@ class MerchantReviewsSection extends StatelessWidget {
               if (snapshot.connectionState == ConnectionState.waiting)
                 const Center(child: CircularProgressIndicator())
               else if (snapshot.hasError)
-                Text('A velemenyek nem tolthetok be: ${snapshot.error}')
+                Text(appErrorMessage(snapshot.error!))
               else if (reviews.isEmpty)
                 Text(emptyMessage)
               else

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/error/app_error_message.dart';
 import '../../services/auth_service.dart';
 import '../../services/location_service.dart';
 import '../../ui/app_chrome.dart';
@@ -122,7 +123,7 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _savingDisplayName = false);
-      _showSnackBar('A felhasznalonev mentese nem sikerult: $e');
+      _showSnackBar(appErrorMessage(e));
     }
   }
 
@@ -149,7 +150,7 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _savingCompanyName = false);
-      _showSnackBar('A cegnev mentese nem sikerult: $e');
+      _showSnackBar(appErrorMessage(e));
     }
   }
 
@@ -223,7 +224,7 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
       if (!mounted) return;
       setState(() {
         _savingLocation = false;
-        _locationError = e.toString();
+        _locationError = appErrorMessage(e);
       });
     }
   }

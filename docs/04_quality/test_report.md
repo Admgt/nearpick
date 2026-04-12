@@ -12,9 +12,9 @@ A 2026-04-11-es statikus repo-audit alapján:
 
 | Kategória | Darab | Megjegyzés |
 |---|---:|---|
-| Flutter test definíció | 91 | `test/**` és `integration_test/**` |
-| Functions / rules JS teszt | 68 | `functions/test/**` |
-| Összes automata tesztdefiníció | 159 | statikus inventory, nem egyetlen futás eredménye |
+| Flutter test definíció | 93 | `test/**` és `integration_test/**` |
+| Functions / rules JS teszt | 69 | `functions/test/**` |
+| Összes automata tesztdefiníció | 162 | statikus inventory, nem egyetlen futás eredménye |
 
 Automatizált, külön futó E2E UI suite jelenleg:
 - `mobile/nearpick/integration_test/flows/auth_and_product_flow_test.dart`
@@ -87,9 +87,16 @@ Valódi Android emulatoros `integration_test` evidence:
 
 Functions quality gate:
 - `npm.cmd run lint`: passed
-- `npm.cmd test`: `68/68` passed
+- `npm.cmd test`: korábbi teljes suite evidence `68/68` passed
+- célzott friss observability evidence: `node --test functions/test/observability.test.js` passed
 - `npm.cmd run scan:deps`: passed
 - megjegyzés: az `npm.cmd ci` közben az npm általános audit összegzést jelzett, de a repository dedikált dependency audit scriptje végül `Functions dependency audit rendben` eredményt adott a dokumentált suppressions mellett
+
+Friss célzott hibakezelési unit evidence:
+- parancs: `flutter test test/unit/error/app_error_message_test.dart test/unit/auth/auth_error_message_test.dart`
+- eredmény: `All tests passed`
+- parancs: `node --test functions/test/observability.test.js`
+- eredmény: passed
 
 ### Mit NEM állít ez a riport
 

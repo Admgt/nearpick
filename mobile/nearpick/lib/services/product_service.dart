@@ -5,6 +5,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
+import '../core/error/app_exception.dart';
 import '../features/merchant/dynamic_pricing.dart';
 import '../models/product.dart';
 
@@ -102,7 +103,10 @@ class ProductService {
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
-      throw Exception('Nincs bejelentkezett felhasznÇ­lÇü.');
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
     }
 
     final docRef = _db.collection('products').doc();
@@ -110,8 +114,10 @@ class ProductService {
     final merchantName = _resolveMerchantName(user, profileData);
     final resolvedLocation = location ?? _resolveMerchantLocation(profileData);
     if (resolvedLocation == null) {
-      throw Exception(
-        'A ceg helye nincs beallitva. Add meg a Profil ful alatt a ceg helyet.',
+      throw const AppException(
+        code: 'failed-precondition',
+        message:
+            'A ceg helye nincs beallitva. Add meg a Profil ful alatt a ceg helyet.',
       );
     }
 
@@ -174,22 +180,32 @@ class ProductService {
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
-      throw Exception('Nincs bejelentkezett felhasznalo.');
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
     }
 
     final productRef = _db.collection('products').doc(productId);
     final productSnap = await productRef.get();
     if (!productSnap.exists) {
-      throw Exception('A termek nem talalhato.');
+      throw const AppException(
+        code: 'not-found',
+        message: 'A termek nem talalhato.',
+      );
     }
 
     final existingProduct = Product.fromDoc(productSnap);
     if (existingProduct.ownerId != user.uid) {
-      throw Exception('Nincs jogosultsag.');
+      throw const AppException(
+        code: 'permission-denied',
+        message: 'Nincs jogosultsag.',
+      );
     }
     if (existingProduct.hasReservations) {
-      throw Exception(
-        'A termeket mar lefoglaltak, ezert tovabb nem modosithato.',
+      throw const AppException(
+        code: 'failed-precondition',
+        message: 'A termeket mar lefoglaltak, ezert tovabb nem modosithato.',
       );
     }
 
@@ -291,42 +307,62 @@ class ProductService {
   Future<void> archiveProduct({required String productId}) async {
     final user = _auth.currentUser;
     if (user == null) {
-      throw Exception('Nincs bejelentkezett felhasznÇ­lÇü.');
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
     }
 
     try {
       final callable = _functions.httpsCallable('archiveProduct');
-      await callable.call(<String, dynamic>{'productId': productId});
+      await callable.call(withClientContextId({'productId': productId}));
     } on FirebaseFunctionsException catch (e) {
-      throw Exception(e.message ?? 'A termek archivalsa nem sikerult.');
+      throw AppException.fromFunctions(
+        e,
+        fallback: 'A termek archivalsa nem sikerult.',
+      );
     }
   }
 
   Future<int> applyRecommendedPrice({required String productId}) async {
     final user = _auth.currentUser;
     if (user == null) {
-      throw Exception('Nincs bejelentkezett felhasznalo.');
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
     }
 
     try {
       final callable = _functions.httpsCallable('repriceProduct');
-      final response = await callable.call(<String, dynamic>{
-        'productId': productId,
-      });
+      final response = await callable.call(
+        withClientContextId({'productId': productId}),
+      );
       final data = Map<String, dynamic>.from(response.data as Map);
       final discountedPrice = data['discountedPrice'];
       if (discountedPrice is! int || discountedPrice <= 0) {
-        throw Exception('A szerver nem adott vissza ervenyes uj arat.');
+        throw const AppException(
+          code: 'internal',
+          message: 'A szerver nem adott vissza ervenyes uj arat.',
+        );
       }
       return discountedPrice;
     } on FirebaseFunctionsException catch (e) {
-      throw Exception(e.message ?? 'A termek ujraarazasa nem sikerult.');
+      throw AppException.fromFunctions(
+        e,
+        fallback: 'A termek ujraarazasa nem sikerult.',
+      );
     }
   }
 
   Future<void> markInterest({required String productId}) async {
     final user = _auth.currentUser;
-    if (user == null) throw Exception('Nincs bejelentkezett felhasználó.');
+    if (user == null) {
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
+    }
 
     final interestDocId = '${user.uid}_$productId';
     final interestRef = _db.collection('interests').doc(interestDocId);
@@ -349,7 +385,12 @@ class ProductService {
 
   Future<void> unmarkInterest({required String productId}) async {
     final user = _auth.currentUser;
-    if (user == null) throw Exception('Nincs bejelentkezett felhasználó.');
+    if (user == null) {
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
+    }
 
     final interestDocId = '${user.uid}_$productId';
     final interestRef = _db.collection('interests').doc(interestDocId);
@@ -372,7 +413,12 @@ class ProductService {
 
   Future<void> unmarkInterestForCurrentUser({required String productId}) async {
     final user = _auth.currentUser;
-    if (user == null) throw Exception('Nincs bejelentkezett felhasználó.');
+    if (user == null) {
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
+    }
 
     final query = await _db
         .collection('interests')
@@ -394,7 +440,12 @@ class ProductService {
     required String productId,
   }) async {
     final user = _auth.currentUser;
-    if (user == null) throw Exception('Nincs bejelentkezett felhasznÃ¡lÃ³.');
+    if (user == null) {
+      throw const AppException(
+        code: 'unauthenticated',
+        message: 'Bejelentkezes szukseges.',
+      );
+    }
 
     final productRef = _db.collection('products').doc(productId);
 
@@ -403,7 +454,10 @@ class ProductService {
 
     final ownerId = interestSnap.data()?['userId'] as String?;
     if (ownerId != null && ownerId != user.uid) {
-      throw Exception('Nincs jogosultsÃ¡g.');
+      throw const AppException(
+        code: 'permission-denied',
+        message: 'Nincs jogosultsag.',
+      );
     }
 
     await interestRef.delete();

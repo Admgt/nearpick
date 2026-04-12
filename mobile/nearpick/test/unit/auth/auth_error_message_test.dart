@@ -28,9 +28,9 @@ void main() {
     expect(authErrorMessage(error), 'Adj meg egy ervenyes email-cimet.');
   });
 
-  test('falls back to the original exception text for unknown errors', () {
+  test('strips generic exception prefixes for unknown errors', () {
     final error = Exception('unexpected');
 
-    expect(authErrorMessage(error), 'Exception: unexpected');
+    expect(authErrorMessage(error), 'unexpected');
   });
 }

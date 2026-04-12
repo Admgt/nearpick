@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/error/app_error_message.dart';
 import 'location_catalog.dart';
 import 'location_preferences.dart';
 import '../../services/location_service.dart';
@@ -161,7 +162,7 @@ class _LocationSettingsScreenState extends State<LocationSettingsScreen> {
       }, SetOptions(merge: true));
       setState(() => _message = 'Mentve.');
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = appErrorMessage(e));
     } finally {
       if (mounted) {
         setState(() => _loading = false);

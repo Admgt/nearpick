@@ -28,7 +28,7 @@ Megjegyzés:
 | Futtathatóság: Quickstart alapján indul | Igen | [`README.md`](../../README.md), [`demo_environment.md`](demo_environment.md) | Demo Firebase projekt alapú reviewer útvonal dokumentálva |
 | CI zöld a main/default branch-en | Igen | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`ci_evidence.md`](ci_evidence.md) | Az aktuálisan dokumentált HEAD-hez tartozó zöld run link rögzítve van |
 | Nincs secret a repo-ban | Igen | [`.env.example`](../../.env.example), [`scripts/secret_scan.sh`](../../scripts/secret_scan.sh), [`scripts/secret_scan.ps1`](../../scripts/secret_scan.ps1), [`.gitignore`](../../.gitignore) | Secret scan és gitignore szabályok megvannak |
-| Minimum tesztmix: 30+ automata teszt | Igen | [`test_strategy.md`](../04_quality/test_strategy.md), [`test_report.md`](../04_quality/test_report.md) | A statikus inventory 159 definíciót jelez, a friss runtime evidence pedig Flutter + Functions futást és három Android emulatoros `integration_test` flow-t is alátámaszt |
+| Minimum tesztmix: 30+ automata teszt | Igen | [`test_strategy.md`](../04_quality/test_strategy.md), [`test_report.md`](../04_quality/test_report.md) | A statikus inventory 162 definíciót jelez, a friss runtime evidence pedig Flutter + Functions célzott hibakezelési futást és három Android emulatoros `integration_test` flow-t is alátámaszt |
 | AI átláthatóság: manifest + prompt + verification | Igen | [`ai_manifest.md`](../07_ai/ai_manifest.md), [`prompt_log.md`](../07_ai/prompt_log.md), [`verification_log.md`](../07_ai/verification_log.md) | Megvannak, de mélységben még nem véglegesek |
 
 ## 6.3 100 pontos készültségi scorecard
