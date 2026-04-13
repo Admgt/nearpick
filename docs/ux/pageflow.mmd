@@ -1,0 +1,102 @@
+flowchart TD
+    S01["▶ 🔒 S01 - Login"]
+    S02["🔒 S02 - Regisztráció"]
+    D01{"♦ Jelszó reset dialógus"}
+
+    S03["▶ S03 - Fogyasztói ajánlatlista"]
+    S04["S04 - Termék részletek"]
+    S05["S05 - Foglalás részletei"]
+    S06["S06 - Fogyasztói fiók"]
+    D02{"♦ Ajánlási indokok"}
+    D03{"♦ Foglalási mennyiség"}
+    D04{"♦ Lemondás + refund"}
+    D05{"♦ Értékelés küldése"}
+    S18["S18 - Fogyasztói foglaláslista"]
+    S19["S19 - Fogyasztói kedvencek"]
+
+    S07["▶ S07 - Kereskedői terméklista"]
+    S08["S08 - Termékfeltöltő űrlap"]
+    S09["S09 - Kereskedői foglalás / refund"]
+    S10["S10 - Kereskedői dashboard"]
+    S11["S11 - Kereskedői fiók"]
+    S20["S20 - Kereskedői foglaláslista"]
+    D06{"♦ Képforrás választás"}
+
+    S12["▶ S12 - Admin dashboard"]
+    S13["S13 - Admin-felhasználók"]
+    S14["S14 - Admin-kereskedő részlet"]
+    S15["S15 - Admin-termékek"]
+    S16["S16 - Admin-termék részlet"]
+    S17["S17 - Admin-foglalás részlet"]
+    S21["S21 - Admin-kereskedők"]
+    S22["S22 - Admin-vásárlók"]
+    S23["S23 - Admin-foglalások"]
+    S24["S24 - Admin-vásárló részlet"]
+    D07{"♦ Admin üzenet"}
+
+    S01 -->|"Nincs fiókod? Regisztráció"| S02
+    S01 -->|"Elfelejtett jelszó"| D01
+    S02 -->|"Sikeres regisztráció / vissza"| S01
+
+    S01 -->|"Belépés, role=consumer"| S03
+    S01 -->|"Belépés, role=merchant"| S07
+    S01 -->|"Belépés, admin claim=true"| S12
+
+    S03 -->|"Termékkártya megnyitása"| S04
+    S03 -->|"Lefoglalom"| D03
+    D03 -->|"Foglalás"| S05
+    S03 -->|"Miért ajánlott?"| D02
+    S03 -->|"Fiókom app bar action"| S06
+    S03 -->|"Foglalásaim app bar action"| S18
+    S03 -->|"Kedvencek app bar action"| S19
+    S04 -->|"Lefoglalom"| D03
+    S04 -->|"Kedvenc / Nem érdekel"| S04
+    S04 -->|"Kedvenc után listából elérhető"| S19
+    S05 -->|"Foglalás lemondása"| D04
+    S05 -->|"Értékelés írása completed után"| D05
+    S18 -->|"Foglalás listaelem"| S05
+    S18 -->|"Kedvencek top navigation"| S19
+    S19 -->|"Termék listaelem"| S04
+    S19 -->|"Foglalásaim top navigation"| S18
+    S06 -->|"Kijelentkezés"| S01
+    S06 -->|"Home action"| S03
+    S06 -->|"Foglalásaim"| S18
+    S06 -->|"Kedvencek action"| S19
+
+    S07 -->|"+ Új termék"| S08
+    S07 -->|"Termék szerkesztése"| S08
+    S07 -->|"Foglalások action"| S20
+    S07 -->|"Dashboard action"| S10
+    S07 -->|"Profil action"| S11
+    S08 -->|"Kép hozzáadása"| D06
+    S08 -->|"Mentés"| S07
+    S20 -->|"Foglalás listaelem"| S09
+    S20 -->|"QR átvétel / kézi kód"| S09
+    S09 -->|"QR / pickup kód ellenőrzés"| S09
+    S09 -->|"Refund státusz módosítás"| S09
+    S10 -->|"Admin üzenet olvasottra jelölése"| S10
+    S11 -->|"Kijelentkezés"| S01
+    S11 -->|"Mentés / Home action"| S07
+
+    S12 -->|"Felhasználók navigation"| S13
+    S12 -->|"Kereskedők navigation"| S21
+    S12 -->|"Vásárlók navigation"| S22
+    S12 -->|"Termékek navigation"| S15
+    S12 -->|"Foglalások navigation"| S23
+    S13 -->|"Kereskedő részletek"| S14
+    S13 -->|"Vásárló részletek"| S24
+    S21 -->|"Kereskedő részletek"| S14
+    S22 -->|"Vásárló részletek"| S24
+    S14 -->|"Üzenet küldése"| D07
+    S15 -->|"Termék megnyitása"| S16
+    S16 -->|"Elrejtés / visszaállítás / törlés"| S16
+    S23 -->|"Foglalás részletek"| S17
+    S17 -->|"Részletek megtekintése"| S17
+    S12 -->|"Kijelentkezés"| S01
+
+    classDef entry fill:#e8f1ec,stroke:#1e6f5c,stroke-width:2px;
+    classDef guest fill:#fff3e0,stroke:#cb6e17,stroke-width:2px;
+    classDef modal fill:#eef3ff,stroke:#4b7be5,stroke-width:2px;
+    class S01,S03,S07,S12 entry;
+    class S01,S02 guest;
+    class D01,D02,D03,D04,D05,D06,D07 modal;
