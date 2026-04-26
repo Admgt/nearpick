@@ -60,6 +60,10 @@ A projekt indításához és futtatási parancsaihoz használd a [`../README.md`
 - Verifikációs napló: [`07_ai/verification_log.md`](07_ai/verification_log.md)
 - AI review checklist: [`07_ai/review_checklist.md`](07_ai/review_checklist.md)
 
+## Szakdolgozat
+
+- Szakdolgozat PDF: [`08_thesis/NearPick_szakdolgozat.pdf`](08_thesis/NearPick_szakdolgozat.pdf)
+
 ## Állapot
 
 Ez a struktúra végponttól végpontig létre van hozva. Az egyes dokumentumok explicit módon jelölik, hogy mely területek tekinthetők kész release artefaktumnak, és hol maradt nyitott korlát vagy későbbi megerősítési feladat.
