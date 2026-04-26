@@ -50,10 +50,10 @@ function shouldSuppress(packageName, details) {
   }
 
   if (packageName === "path-to-regexp" && installedVersion &&
-      compareVersions(installedVersion, "0.1.12") >= 0) {
+      compareVersions(installedVersion, "0.1.13") >= 0) {
     return {
       installedVersion,
-      reason: "Az audit adatbazis elavultnak tunik: a package-lock path-to-regexp 0.1.12+ verziot rogzit.",
+      reason: "Az audit adatbazis elavultnak tunik: a package-lock path-to-regexp 0.1.13+ verziot rogzit.",
     };
   }
 

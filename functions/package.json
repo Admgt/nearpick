@@ -23,7 +23,9 @@
   },
   "overrides": {
     "fast-xml-parser": "^5.5.8",
-    "minimatch": "^10.2.4"
+    "minimatch": "^10.2.4",
+    "path-to-regexp": "^0.1.13",
+    "protobufjs": "^7.5.5"
   },
   "devDependencies": {
     "firebase-functions-test": "^3.1.0"
