@@ -1,11 +1,11 @@
 {
-    "name": "nearpick",
-    "short_name": "nearpick",
+    "name": "NearPick",
+    "short_name": "NearPick",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Helyalapú alkalmazás közeli, kedvezményes élelmiszer-ajánlatok keresésére és foglalására.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
