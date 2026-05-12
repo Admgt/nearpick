@@ -7,9 +7,9 @@ Kitöltése minden olyan push után szükséges, amelyet release-közeli állapo
 
 - Branch: `main`
 - Workflow: [`ci.yml`](../../.github/workflows/ci.yml)
-- Legutóbbi zöld run URL: `https://github.com/SZTE-SZF/1-sprint-Admgt/actions/runs/25282437051`
-- Commit SHA: `bc5a1f5`
-- Run dátuma: `2026-05-03`
+- Legutóbbi zöld run URL: `https://github.com/Admgt/nearpick/actions/runs/25568469531`
+- Commit SHA: `26da299`
+- Run dátuma: `2026-05-08`
 - Rövid megjegyzés: az aktuális `main` HEAD-hez tartozó zöld CI futás, amely a release-dokumentáció frissített állapotát igazolja
 
 ## Elvárt minimális evidence

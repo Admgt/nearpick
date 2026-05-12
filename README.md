@@ -2,7 +2,7 @@
 
 Közeli, kedvezményes termékek gyors felfedezésére és lefoglalására készült Flutter + Firebase demóalkalmazás.
 
-[![CI](https://github.com/SZTE-SZF/1-sprint-Admgt/actions/workflows/ci.yml/badge.svg)](https://github.com/SZTE-SZF/1-sprint-Admgt/actions/workflows/ci.yml)
+[![CI](https://github.com/Admgt/nearpick/actions/workflows/ci.yml/badge.svg)](https://github.com/Admgt/nearpick/actions/workflows/ci.yml)
 
 ## Rövid leírás
 
@@ -93,8 +93,8 @@ Ugyanez `--uid <firebase-auth-uid>` paraméterrel is futtatható. A script az Au
 ### Klónozás
 
 ```bash
-git clone <repo-url>
-cd 1-sprint-Admgt
+git clone https://github.com/Admgt/nearpick.git
+cd nearpick
 ```
 
 ### Telepítés
